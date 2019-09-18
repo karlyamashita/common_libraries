@@ -1,0 +1,9 @@
+
+#ifndef NCA_INTEGRATED_RADIO_CHASSIS_H
+#define NCA_INTEGRATED_RADIO_CHASSIS_H
+
+void SendNCA_IntegratedRadioChassis(void);
+
+
+
+#endif // NCA_INTEGRATED_RADIO_CHASSIS_H

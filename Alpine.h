@@ -1,0 +1,26 @@
+
+
+#ifndef ALPINE_H
+#define ALPINE_H
+
+#define ALPINE_CUSTOMCODE 0x8672
+
+#define ALPINE_VOLUME_UP 0x14
+#define ALPINE_VOLUME_DOWN 0x15
+#define ALPINE_MUTE 0x16
+#define ALPINE_PRESET_UP 0x0E
+#define ALPINE_PRESET_DOWN 0x0F
+#define ALPINE_SOURCE 0x0A
+#define ALPINE_TRACK_UP 0x12
+#define ALPINE_TRACK_DOWN 0x13
+#define ALPINE_POWER 0x09
+#define ALPINE_ENT_PLAY 0x07
+#define ALPINE_BAND_PROGRAM 0x0D
+#define ALPINE_RECEIVE_CALL 0x56
+#define ALPINE_END_CALL 0x5C
+#define ALPINE_VOICE 0x51
+
+
+void AlpineCommand(unsigned char command);
+
+#endif // ALPINE_H

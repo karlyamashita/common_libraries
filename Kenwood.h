@@ -1,0 +1,27 @@
+
+#ifndef KENWOOD_H
+#define KENWOOD_H
+
+#define KENWOOD_CUSTOM_CODE 0xb946
+
+#define KENWOOD_VOLUME_UP 0x14
+#define KENWOOD_VOLUME_DOWN 0x15
+#define KENWOOD_ATT 0x16
+#define KENWOOD_SOURCE 0x13
+#define KENWOOD_SEEK_PLAY 0x0E
+#define KENWOOD_TRACK_UP 0x0B
+#define KENWOOD_TRACK_DOWN 0x0A
+#define KENWOOD_DISC_FM_UP 0x0D
+#define KENWOOD_DISC_AM_DOWN 0x0C
+#define KENWOOD_TEL_PHONE 0x92
+#define KENWOOD_VOICE 0x8B
+#define KENWOOD_ON_HOOK 0x88
+#define KENWOOD_OFF_HOOK 0x89
+#define KENWOOD_MUTE_ON_OFF 0x5B
+
+#define COMMAND_REPEAT 1
+#define COMMAND_NO_REPEAT 0
+
+void KenwoodCommand(unsigned char _button);
+
+#endif // KENWOOD_H

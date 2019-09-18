@@ -1,0 +1,22 @@
+#include "LSP.h"
+#ifdef USE_TOYOTA_CAN_ID
+#ifndef TOYOTA_CAN_ID
+#define TOYOTA_CAN_ID
+
+
+// 2018 Tacoma?
+// 500kbs
+#define TURN_SIGNALS_ID 0x614
+#define LIGHTING_STATUS_ID 0x63F
+#define PARKING_BRAKE_DOOR_ID 0x620
+#define FOOT_BRAKE_ID 0x226
+#define GEAR_INFORMATION_ID 0x3BC
+
+
+
+
+
+
+
+#endif//TOYOTA_CAN_ID
+#endif // USE_TOYOTA_CAN_ID
