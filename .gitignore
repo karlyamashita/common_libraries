@@ -2,9 +2,6 @@
 MDK-ARM/Bootloader/
 Drivers/
 Middlewares/
-.hg/
-
-.hgignore
 
 
 # Compiled source #
