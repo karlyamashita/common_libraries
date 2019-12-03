@@ -1,3 +1,6 @@
+#include "LSP.h"
+#ifdef USE_VIN
+
 #ifndef VIN_H
 #define VIN_H
 
@@ -15,4 +18,4 @@ void GetVIN_2_9(unsigned char * data);
 void GetVIN_10_17(unsigned char * data);
 #endif // GMLAN_V1
 #endif // VIN_H
-
+#endif // USE_VIN

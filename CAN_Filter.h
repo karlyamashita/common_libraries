@@ -1,8 +1,14 @@
+#include "LSP.h"
+
+#ifdef USE_CAN_FILTER
 #ifndef CAN_FILTER_H
 #define CAN_FILTER_H
 
-#include "can.h"
+#ifdef __STM32F1xx_HAL_CAN_H
+//#include "can.h"
+#endif // __STM32F1xx_HAL_CAN_H
 
 void SetCanFilter(void);
-void ClearCAN_Interrupts(CAN_HandleTypeDef *CanHandle);
+
 #endif // CAN_FILTER_H
+#endif // USE_CAN_FILTER

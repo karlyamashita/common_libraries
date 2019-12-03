@@ -1,4 +1,5 @@
-
+#include "LSP.h"
+#ifdef USE_VEHICLE_SPEED
 
 #ifndef VEHICLE_SPEED_H
 #define VEHICLE_SPEED_H
@@ -26,5 +27,5 @@ uint8_t GetVehicleSpeed(void);
 
 #endif // CHRYSLER_V3
 
-
 #endif // VEHICLE_SPEED_H
+#endif // USE_VEHICLE_SPEED

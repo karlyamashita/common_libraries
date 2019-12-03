@@ -3,8 +3,9 @@
 #ifndef CAN_TRANSCEIVER_MS_H
 #define CAN_TRANSCEIVER_MS_H
 
+#ifdef __STM32F1xx_HAL_CAN_H
 #include "can.h"
-
+#endif
 
 #define CAN_CONTROLLER1         1       // CAN Controller number
 #define CAN_CONTROLLER2			2

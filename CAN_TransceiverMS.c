@@ -2,9 +2,12 @@
 #ifdef USE_CAN_TRANSCEIVER_MS
 #include "main.h"
 #include "CAN_TransceiverMS.h"
+#include "GPIO_Ports.h"
+
+#ifdef __STM32F1xx_HAL_CAN_H
 #include "can.h"
 #include "gpio.h"
-#include "GPIO_Ports.h"
+#endif
 
 #ifdef USE_CAN_BUFFER_1 // single CAN transceiver
 void InitCAN_Transceiver(void) {

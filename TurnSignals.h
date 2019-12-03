@@ -1,3 +1,5 @@
+#include "LSP.h"
+#ifdef USE_TURN_SIGNALS
 #ifndef TURN_SIGNALS_H
 #define TURN_SIGNALS_H
 
@@ -26,3 +28,4 @@ TurnSignalStatus CheckTurnSignalDoubleClickStatus(void);
 
 
 #endif // TURN_SIGNALS_H
+#endif // USE_TURN_SIGNALS

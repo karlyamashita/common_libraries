@@ -1,5 +1,5 @@
 #include "LSP.h"
-#ifdef USE_CAN_TRANSCEIVER_MS
+#ifdef USE_CAN_TRANSCEIVER_FD
 #include "main.h"
 #include "CAN_TransceiverFD.h"
 #include "can.h"

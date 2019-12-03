@@ -5,41 +5,45 @@
 #include "main.h"
 #include "CAN_Buffer.h"
 #include "ringBuff.h"
-#include "can.h"
-// add your header files
+
+#ifdef __STM32F1xx_HAL_CAN_H
+//#include "can.h"
+#endif
 
 
 CanTxMsgTypeDef TxMessageBuffer1[CAN_MAX_TX_BUFF];
-CanTxMsgTypeDef TxMessageBuffer2[CAN_MAX_TX_BUFF];
 CanRxMsgTypeDef RxMessageBuffer1[CAN_MAX_TX_BUFF];
-CanRxMsgTypeDef RxMessageBuffer2[CAN_MAX_TX_BUFF];
-
 RING_BUFF_INFO TxMessagePtr1;
-RING_BUFF_INFO TxMessagePtr2;
 RING_BUFF_INFO RxMessagePtr1;
+extern CAN_HandleTypeDef hcan1;
+
+#ifdef USE_CAN_BUFFER_2
+CanTxMsgTypeDef TxMessageBuffer2[CAN_MAX_TX_BUFF];
+CanRxMsgTypeDef RxMessageBuffer2[CAN_MAX_TX_BUFF];
+RING_BUFF_INFO TxMessagePtr2;
 RING_BUFF_INFO RxMessagePtr2;
+extern CAN_HandleTypeDef hcan2;
+#endif
+
 
 #ifdef __STM32F1xx_HAL_CAN_H
-#ifdef USE_CAN_BUFFER_1
+
 static CanTxMsgTypeDef	TxMessage1;
 void InitTxMessagesCAN1(void) {
 	hcan1.pTxMsg = &TxMessage1;
 }
 
-#endif // CAN1
 #ifdef USE_CAN_BUFFER_2
 static CanTxMsgTypeDef	TxMessage2;
-// use can buffer 2
 void InitTxMessagesCAN2(void) {
 	hcan2.pTxMsg = &TxMessage2;	
 }
-#endif // CAN2
+#endif // USE_CAN_BUFFER_2
 
-#ifdef USE_CAN_BUFFER_1
 // using can buffer 1
 uint32_t transmitCount1 = 0;
 HAL_StatusTypeDef CAN_Status1;
-int SendTxMessage1(void) {
+int SendCanTxMessage1(void) {
 	unsigned char dataLength, i = 0;
 
 	if(TxMessagePtr1.iCnt_Handle) { // send available message
@@ -64,8 +68,6 @@ int SendTxMessage1(void) {
 			_Error_Handler(__FILE__, __LINE__);
 		}	
 		*/
-
-		//HAL_CAN_Receive_IT(&hcan1, CAN_FIFO0);
 			
 		DRV_RingBuffPtr__Output(&TxMessagePtr1, CAN_MAX_TX_BUFF); // increment output buffer ptr
 	}
@@ -73,7 +75,7 @@ int SendTxMessage1(void) {
 }
 
 // add to Tx buffer
-void AddTxBuffer1(CanTxMsgTypeDef *canMessage) {
+void AddCanTxBuffer1(CanTxMsgTypeDef *canMessage) {
 	unsigned char i;
 	TxMessageBuffer1[TxMessagePtr1.iIndexIN].ExtId = canMessage->ExtId;
 	TxMessageBuffer1[TxMessagePtr1.iIndexIN].StdId = canMessage->StdId;
@@ -87,7 +89,7 @@ void AddTxBuffer1(CanTxMsgTypeDef *canMessage) {
 }
 
 // add to Rx buffer
-void AddRxBuffer1(CAN_HandleTypeDef *hcan1) {
+void AddCanRxBuffer1(CAN_HandleTypeDef *hcan1) {
 	unsigned char i;
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].ExtId = hcan1->pRxMsg->ExtId;
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].StdId = hcan1->pRxMsg->StdId;
@@ -100,12 +102,11 @@ void AddRxBuffer1(CAN_HandleTypeDef *hcan1) {
 	DRV_RingBuffPtr__Input(&RxMessagePtr1, CAN_MAX_TX_BUFF); // increment input buffer ptr
 }
 
-#endif // CAN1
-
 #ifdef USE_CAN_BUFFER_2
+extern CAN_HandleTypeDef hcan2;
 uint32_t transmitCount2 = 0;
 HAL_StatusTypeDef CAN_Status2;
-int SendTxMessage2(void) {
+int SendCanTxMessage2(void) {
 	unsigned char dataLength, i = 0;
 
 	if(TxMessagePtr2.iCnt_Handle) { // send available message
@@ -131,27 +132,25 @@ int SendTxMessage2(void) {
 		}
 		*/
 
-		//HAL_CAN_Receive_IT(&hcan2, CAN_FIFO0);
-
 		DRV_RingBuffPtr__Output(&TxMessagePtr2, CAN_MAX_TX_BUFF); // increment output buffer ptr
 	}
 
 	return TxMessagePtr2.iCnt_Handle; // if no more message to handle then 0 will be returned
 }
 
-void AddTxBuffer2(CanTxMsgTypeDef *canMessage) {
+void AddCanTxBuffer2(CanTxMsgTypeDef *hcan2) {
 	unsigned char i;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].ExtId = canMessage->ExtId;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].StdId = canMessage->StdId;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].IDE = canMessage->IDE;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].DLC = canMessage->DLC;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].ExtId = hcan2->ExtId;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].StdId = hcan2->StdId;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].IDE = hcan2->IDE;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].DLC = hcan2->DLC;
 	for(i = 0; i < TxMessageBuffer2[TxMessagePtr2.iIndexIN].DLC; i++) {
-		TxMessageBuffer2[TxMessagePtr2.iIndexIN].Data[i] = canMessage->Data[i];
+		TxMessageBuffer2[TxMessagePtr2.iIndexIN].Data[i] = hcan2->Data[i];
 	}
 	DRV_RingBuffPtr__Input(&TxMessagePtr2, CAN_MAX_TX_BUFF); // increment input buffer ptr
 }
 
-void AddRxBuffer2(CAN_HandleTypeDef *hcan2) {
+void AddCanRxBuffer2(CAN_HandleTypeDef *hcan2) { // todo, need to find out if using CAN_HandleTypeDef or CanTxMsgTypeDef to eliminate a lot of this repeated code
 	unsigned char i;
 	RxMessageBuffer2[RxMessagePtr2.iIndexIN].ExtId = hcan2->pRxMsg->ExtId; 
 	RxMessageBuffer2[RxMessagePtr2.iIndexIN].StdId = hcan2->pRxMsg->StdId; 
@@ -163,7 +162,7 @@ void AddRxBuffer2(CAN_HandleTypeDef *hcan2) {
 	}
 	DRV_RingBuffPtr__Input(&RxMessagePtr2, CAN_MAX_TX_BUFF); // increment input buffer ptr
 }
-#endif // CAN2
+#endif // USE_CAN_BUFFER_2
 
 void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
 	int i = 0;
@@ -179,28 +178,21 @@ void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
 #endif // STM32F1xx_HAL_CAN_H
 
 #ifdef STM32F4xx_HAL_CAN_H
-
-HAL_StatusTypeDef CAN_Status1;
-int SendTxMessage1(void) {
-	uint32_t CAN_Tx_Mailboxes;
-
+HAL_StatusTypeDef CAN_Status1; // make it global for debugger window
+int SendCanTxMessage1(void) {
+	uint32_t CAN_Tx_Mailboxes; // indicates which tx buffer was used
 	if(TxMessagePtr1.iCnt_Handle) { // send available message
-
-		CAN_Status1 = HAL_CAN_AddTxMessage(&hcan1, &TxMessageBuffer1->CAN_TxHeaderTypeDef, TxMessageBuffer1->Data, &CAN_Tx_Mailboxes);
-		/*
-		if (CAN_Status1 != HAL_OK)
+		CAN_Status1 = HAL_CAN_AddTxMessage(&hcan1, &TxMessageBuffer1[TxMessagePtr1.iIndexOUT].CAN_TxHeaderTypeDef, TxMessageBuffer1[TxMessagePtr1.iIndexOUT].Data, &CAN_Tx_Mailboxes);
+		if (CAN_Status1 == HAL_OK)
 		{
-			_Error_Handler(__FILE__, __LINE__);
+			DRV_RingBuffPtr__Output(&TxMessagePtr1, CAN_MAX_TX_BUFF); // increment output buffer ptr
 		}	
-		*/
-			
-		DRV_RingBuffPtr__Output(&TxMessagePtr1, CAN_MAX_TX_BUFF); // increment output buffer ptr
 	}
 	return TxMessagePtr1.iCnt_Handle; // if no more message to handle then 0 will be returned
 }
 
 // add to Tx buffer
-void AddTxBuffer1(CanTxMsgTypeDef *canMessage) {
+void AddCanTxBuffer1(CanTxMsgTypeDef *canMessage) {
 	unsigned char i;
 	TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.ExtId = canMessage->CAN_TxHeaderTypeDef.ExtId;
 	TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.StdId = canMessage->CAN_TxHeaderTypeDef.StdId;
@@ -214,8 +206,9 @@ void AddTxBuffer1(CanTxMsgTypeDef *canMessage) {
 }
 
 // add to Rx buffer
-void AddRxBuffer1(CanRxMsgTypeDef *hcan1) {
+void AddCanRxBuffer1(CanRxMsgTypeDef *hcan1) {
 	unsigned char i;
+	CanBusActivityStatus(1); // CAN message received
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.ExtId = hcan1->CAN_RxHeaderTypeDef.ExtId;
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.StdId = hcan1->CAN_RxHeaderTypeDef.StdId;
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.RTR = hcan1->CAN_RxHeaderTypeDef.RTR;
@@ -227,6 +220,31 @@ void AddRxBuffer1(CanRxMsgTypeDef *hcan1) {
 	DRV_RingBuffPtr__Input(&RxMessagePtr1, CAN_MAX_TX_BUFF); // increment input buffer ptr
 }
 
+/*
+ * Copy buffer to canMsg array
+ * Input canMsg: pointer to array
+ * Output: 1 if data available, 0 if no new data
+ */
+uint8_t Can1DataAvailable(CanRxMsgTypeDef *canMsg)
+{
+	uint8_t i, canMsgAvailable = 0;
+	if(RxMessagePtr1.iCnt_Handle) {
+		canMsg->CAN_RxHeaderTypeDef.ExtId = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.ExtId;
+		canMsg->CAN_RxHeaderTypeDef.StdId = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.StdId;
+		canMsg->CAN_RxHeaderTypeDef.RTR = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.RTR;
+		canMsg->CAN_RxHeaderTypeDef.IDE = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.IDE;
+		canMsg->CAN_RxHeaderTypeDef.DLC = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.DLC;
+		for(i = 0; i < RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.DLC; i++) {
+			canMsg->Data[i] = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].Data[i];
+		}
+		DRV_RingBuffPtr__Output(&RxMessagePtr1, CAN_MAX_RX_BUFF); // increment output buffer ptr
+		canMsgAvailable = 1;
+		CanBusActivityStatus(0);// CAN message handled
+	}
+	return canMsgAvailable;
+}
+
+// todo - add CAN2 buffer
 void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
 	int i = 0;
 	TxMsg->CAN_TxHeaderTypeDef.ExtId = RxMsg->CAN_RxHeaderTypeDef.ExtId;
@@ -238,8 +256,18 @@ void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
 		TxMsg->Data[i] = RxMsg->Data[i];
 	}
 }
-
 #endif // STM32F4xx_HAL_CAN_H
+
+
+/*
+ * Description: If you want to show some CAN Rx status like blinking an LED,
+ * copy this somewhere in your program like main without the "__weak"
+ * Input: typically 1 or 0
+ * Output: none
+ */
+__weak void CanBusActivityStatus(uint8_t status) {
+
+}
 
 #endif // USE_CAN_BUFFER
 

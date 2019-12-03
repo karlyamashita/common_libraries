@@ -2,8 +2,11 @@
 #ifdef USE_GPIO_PORTS
 #include "main.h"
 #include "GPIO_Ports.h"
-#include "GPIO.h"
+#include "stm32f4xx_hal_gpio.h"
 
+#ifdef __STM32F1xx_HAL_CAN_H
+#include "GPIO.h"
+#endif
 
 // port A
 int8_t PortA_On (uint32_t pin) {

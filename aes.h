@@ -1,3 +1,6 @@
+#include "LSP.h"
+#ifdef USE_AES_ENCRYPTION
+
 #ifndef _AES_H_
 #define _AES_H_
 
@@ -88,3 +91,4 @@ void AES_CTR_xcrypt_buffer(struct AES_ctx* ctx, uint8_t* buf, uint32_t length);
 
 
 #endif //_AES_H_
+#endif // USE_AES_ENCRYPTION
