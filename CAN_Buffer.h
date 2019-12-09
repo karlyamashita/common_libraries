@@ -9,13 +9,13 @@
 
 #include "RingBuff.h"
 
-#define CAN_MAX_RX_BUFF 32
-#define CAN_MAX_TX_BUFF 32
+#define CAN_MAX_RX_BUFF 8
+#define CAN_MAX_TX_BUFF 8
 
 #define CAN_STD_ID 0x00
 #define CAN_EXT_ID 0x04
 
-#ifdef STM32F4xx_HAL_CAN_H
+#if defined STM32F4xx_HAL_CAN_H || defined STM32F042x6
 // Receive
 typedef struct CanRxMsgTypeDef{
 	CAN_RxHeaderTypeDef CAN_RxHeaderTypeDef;
@@ -34,7 +34,7 @@ void InitTxMessagesCAN1(void);
 #endif
 
 int SendCanTxMessage1(void);
-#ifdef STM32F4xx_HAL_CAN_H
+#if defined STM32F4xx_HAL_CAN_H || defined STM32F042x6
 void AddCanTxBuffer1(CanTxMsgTypeDef *hcan1);
 void AddCanRxBuffer1(CanRxMsgTypeDef *hcan1);
 uint8_t Can1DataAvailable(CanRxMsgTypeDef *canMsg);

@@ -15,7 +15,13 @@ CanTxMsgTypeDef TxMessageBuffer1[CAN_MAX_TX_BUFF];
 CanRxMsgTypeDef RxMessageBuffer1[CAN_MAX_TX_BUFF];
 RING_BUFF_INFO TxMessagePtr1;
 RING_BUFF_INFO RxMessagePtr1;
+#ifdef STM32F042x6
+extern CAN_HandleTypeDef hcan;
+#endif
+
+#ifdef STM32F4xx_HAL_CAN_H
 extern CAN_HandleTypeDef hcan1;
+#endif
 
 #ifdef USE_CAN_BUFFER_2
 CanTxMsgTypeDef TxMessageBuffer2[CAN_MAX_TX_BUFF];
@@ -177,7 +183,22 @@ void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
 }
 #endif // STM32F1xx_HAL_CAN_H
 
-#ifdef STM32F4xx_HAL_CAN_H
+#ifdef STM32F042x6
+HAL_StatusTypeDef CAN_Status1; // make it global for debugger window
+int SendCanTxMessage1(void) {
+	uint32_t CAN_Tx_Mailboxes; // indicates which tx buffer was used
+	if(TxMessagePtr1.iCnt_Handle) { // send available message
+		CAN_Status1 = HAL_CAN_AddTxMessage(&hcan, &TxMessageBuffer1[TxMessagePtr1.iIndexOUT].CAN_TxHeaderTypeDef, TxMessageBuffer1[TxMessagePtr1.iIndexOUT].Data, &CAN_Tx_Mailboxes);
+		if (CAN_Status1 == HAL_OK)
+		{
+			DRV_RingBuffPtr__Output(&TxMessagePtr1, CAN_MAX_TX_BUFF); // increment output buffer ptr
+		}
+	}
+	return TxMessagePtr1.iCnt_Handle; // if no more message to handle then 0 will be returned
+}
+#endif
+
+#if defined STM32F4xx_HAL_CAN_H
 HAL_StatusTypeDef CAN_Status1; // make it global for debugger window
 int SendCanTxMessage1(void) {
 	uint32_t CAN_Tx_Mailboxes; // indicates which tx buffer was used
@@ -186,11 +207,14 @@ int SendCanTxMessage1(void) {
 		if (CAN_Status1 == HAL_OK)
 		{
 			DRV_RingBuffPtr__Output(&TxMessagePtr1, CAN_MAX_TX_BUFF); // increment output buffer ptr
-		}	
+		}
 	}
 	return TxMessagePtr1.iCnt_Handle; // if no more message to handle then 0 will be returned
 }
 
+#endif
+
+#if defined STM32F4xx_HAL_CAN_H || defined STM32F042x6
 // add to Tx buffer
 void AddCanTxBuffer1(CanTxMsgTypeDef *canMessage) {
 	unsigned char i;
@@ -265,9 +289,9 @@ void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
  * Input: typically 1 or 0
  * Output: none
  */
-__weak void CanBusActivityStatus(uint8_t status) {
+//__weak void CanBusActivityStatus(uint8_t status) {
 
-}
+//}
 
 #endif // USE_CAN_BUFFER
 

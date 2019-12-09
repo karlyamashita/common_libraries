@@ -100,6 +100,7 @@
 //#define USE_TURN_SIGNALS
 #define USR_UART_BUFFER
 #define USE_USB_BUFFER
+//#define USE_USB_CAN_CONVERT
 //#define USE_VEHICLE_SPEED
 //#define USE_VIN
 //#define USE_VW_CAN_ID
