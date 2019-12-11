@@ -33,10 +33,11 @@ typedef	union UsbCanStruct {
 		uint8_t Command;
 		uint8_t IDE; // byte1
 		// RTR, ERR, Node byte6
-		unsigned RTR:1;
-		unsigned Err:1;
-		unsigned Node:4; // see Node defines
-		unsigned :10; // n/a
+		unsigned RTR:1; // byte2
+		unsigned Err:1; // not implemented
+		unsigned :6;
+		unsigned Node:4; // byte3, see Node defines
+		unsigned :4; // n/a
 
 		// ArbID byte4:7
 		uint32_t ArbId; // holds 11 and 29 bit ID. This has to align within 32bit address

@@ -232,7 +232,6 @@ void AddCanTxBuffer1(CanTxMsgTypeDef *canMessage) {
 // add to Rx buffer
 void AddCanRxBuffer1(CanRxMsgTypeDef *hcan1) {
 	unsigned char i;
-	CanBusActivityStatus(1); // CAN message received
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.ExtId = hcan1->CAN_RxHeaderTypeDef.ExtId;
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.StdId = hcan1->CAN_RxHeaderTypeDef.StdId;
 	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.RTR = hcan1->CAN_RxHeaderTypeDef.RTR;
@@ -263,7 +262,6 @@ uint8_t Can1DataAvailable(CanRxMsgTypeDef *canMsg)
 		}
 		DRV_RingBuffPtr__Output(&RxMessagePtr1, CAN_MAX_RX_BUFF); // increment output buffer ptr
 		canMsgAvailable = 1;
-		CanBusActivityStatus(0);// CAN message handled
 	}
 	return canMsgAvailable;
 }
@@ -280,18 +278,7 @@ void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
 		TxMsg->Data[i] = RxMsg->Data[i];
 	}
 }
+
 #endif // STM32F4xx_HAL_CAN_H
-
-
-/*
- * Description: If you want to show some CAN Rx status like blinking an LED,
- * copy this somewhere in your program like main without the "__weak"
- * Input: typically 1 or 0
- * Output: none
- */
-//__weak void CanBusActivityStatus(uint8_t status) {
-
-//}
-
 #endif // USE_CAN_BUFFER
 
