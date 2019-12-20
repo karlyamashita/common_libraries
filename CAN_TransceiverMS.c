@@ -4,20 +4,13 @@
 #include "CAN_TransceiverMS.h"
 #include "GPIO_Ports.h"
 
-#ifdef __STM32F1xx_HAL_CAN_H
-#include "can.h"
-#include "gpio.h"
-#endif
 
-#ifdef USE_CAN_BUFFER_1 // single CAN transceiver
-void InitCAN_Transceiver(void) {
-	CAN_TransceiverSetMode(CAN_CONTROLLER1, CAN_NORMAL);
-}
-
-void CAN_TransceiverSleep(void) {
-	CAN_TransceiverSetMode(CAN_CONTROLLER1, CAN_SLEEP);
-}
-
+/*
+ * function: sets up the CAN transceiver mode
+ * input: CAN channel - CAN_CONTROLLER1, CAN_CONTROLLER2. CAN mode - CAN_SLEEP, CAN_NORMAL
+ * output; none
+ * note: if transceiver is always on, then do not include this library, or you'll need to define an I/O CAN1_Mode0_Pin
+ */
 void CAN_TransceiverSetMode(unsigned char CAN_Controller, unsigned char mode) {
 	if(mode) {
 		PortB_Off(CAN1_Mode0_Pin); // low = normal
@@ -25,62 +18,6 @@ void CAN_TransceiverSetMode(unsigned char CAN_Controller, unsigned char mode) {
 		PortB_On(CAN1_Mode0_Pin); // high = sleep
 	}
 }
-#endif // USE_1_BUFFERS
-
-#ifdef USE_CAN_BUFFER_2 // dual CAN transceiver
-void InitDualCanTransceiver(void) {
-	CAN_DualTransceiverSetMode(CAN_CONTROLLER1, CAN_NORMAL);
-	CAN_DualTransceiverSetMode(CAN_CONTROLLER2, CAN_NORMAL);
-}
-
-void DualCanTransceiverSleep(void) {
-	CAN_DualTransceiverSetMode(CAN_CONTROLLER1, CAN_SLEEP);
-	CAN_DualTransceiverSetMode(CAN_CONTROLLER2, CAN_SLEEP);
-}
-
-void CAN_DualTransceiverSetMode(unsigned char CAN_Controller, unsigned char mode) {
-	if(CAN_Controller == CAN_CONTROLLER1) {
-		if(mode == CAN_NORMAL) {
-			PortB_Off(CAN1_Mode0_Pin); // low = normal
-		} else {
-			PortB_On(CAN1_Mode0_Pin); // high = sleep
-		}
-	} else if(CAN_Controller == CAN_CONTROLLER2) {
-		if(mode == CAN_NORMAL) {
-			PortB_Off(CAN2_Mode0_Pin); // low = normal
-		} else {
-			PortB_On(CAN2_Mode0_Pin); // high = sleep
-		}
-	}
-}
-
-#endif // USE_CAN_BUFFER_2
 
 #endif // USE_CAN_TRANSCEIVER_MS
-
-/*
- *
- * older board. Just keep in case we need for later
-void CAN_DualTransceiverSetMode(unsigned char CAN_Controller, unsigned char mode) {
-	if(CAN_Controller == CAN_CONTROLLER1) {
-		if(mode == CAN_NORMAL) {
-			PortA_Off(CAN_RS_Pin); // low = normal // CR4000 uses PortA
-			PortA_Off(Data_Enable_Pin); // low = enabled // CR4000 has buffer chip that needs to be enabled on PortA
-		} else {
-			PortA_On(CAN_RS_Pin); // high = sleep
-			PortA_On(Data_Enable_Pin);// high = disabled
-		}
-	} else if(CAN_Controller == CAN_CONTROLLER2) {
-		if(mode == CAN_NORMAL) {
-			PortA_Off(CAN_RS_Pin); // low = normal
-			PortA_Off(Data_Enable_Pin); // low = enabled
-		} else {
-			PortA_On(CAN_RS_Pin); // high = sleep
-			PortA_On(Data_Enable_Pin); // high disabled
-		}
-	}
-}
-*/
-
-
 

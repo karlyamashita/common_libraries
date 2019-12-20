@@ -3,10 +3,6 @@
 #ifndef CAN_TRANSCEIVER_MS_H
 #define CAN_TRANSCEIVER_MS_H
 
-#ifdef __STM32F1xx_HAL_CAN_H
-#include "can.h"
-#endif
-
 #define CAN_CONTROLLER1         1       // CAN Controller number
 #define CAN_CONTROLLER2			2
 
@@ -14,17 +10,7 @@
 #define CAN_SLEEP 0
 #define CAN_NORMAL 1
 
-#ifdef USE_CAN_BUFFER_1
-void InitCAN_Transceiver(void);
-void CAN_TransceiverSleep(void);
 void CAN_TransceiverSetMode(unsigned char CAN_Controller, unsigned char mode);
-#endif // USE_1_BUFFERS
-#ifdef USE_CAN_BUFFER_2
-void InitDualCanTransceiver(void);
-void DualCanTransceiverSleep(void);
-void CAN_DualTransceiverSetMode(unsigned char CAN_Controller, unsigned char mode);
-#endif // USE_2_BUFFERS
-
 
 #endif // CAN_TRANSCEIVER_MS_H
 #endif // USE_CAN_BUFFER_MS
