@@ -105,11 +105,11 @@ int SendCanTxMessage2(CAN_HandleTypeDef *hcan) {
 // add to Tx buffer
 void AddCanTxBuffer2(CanTxMsgTypeDef *canMsg) {
 	unsigned char i;
-	TxMessageBuffer1[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.ExtId = canMsg->CAN_TxHeaderTypeDef.ExtId;
-	TxMessageBuffer1[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.StdId = canMsg->CAN_TxHeaderTypeDef.StdId;
-	TxMessageBuffer1[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.RTR = canMsg->CAN_TxHeaderTypeDef.RTR;
-	TxMessageBuffer1[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.IDE = canMsg->CAN_TxHeaderTypeDef.IDE;
-	TxMessageBuffer1[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.DLC = canMsg->CAN_TxHeaderTypeDef.DLC;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.ExtId = canMsg->CAN_TxHeaderTypeDef.ExtId;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.StdId = canMsg->CAN_TxHeaderTypeDef.StdId;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.RTR = canMsg->CAN_TxHeaderTypeDef.RTR;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.IDE = canMsg->CAN_TxHeaderTypeDef.IDE;
+	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.DLC = canMsg->CAN_TxHeaderTypeDef.DLC;
 	for(i = 0; i < TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.DLC; i++) {
 		TxMessageBuffer2[TxMessagePtr2.iIndexIN].Data[i] = canMsg->Data[i];
 	}
@@ -139,13 +139,13 @@ uint8_t Can2DataAvailable(CanRxMsgTypeDef *canMsg)
 {
 	uint8_t i, canMsgAvailable = 0;
 	if(RxMessagePtr2.iCnt_Handle) {
-		canMsg->CAN_RxHeaderTypeDef.ExtId = RxMessageBuffer1[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.ExtId;
-		canMsg->CAN_RxHeaderTypeDef.StdId = RxMessageBuffer1[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.StdId;
-		canMsg->CAN_RxHeaderTypeDef.RTR = RxMessageBuffer1[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.RTR;
-		canMsg->CAN_RxHeaderTypeDef.IDE = RxMessageBuffer1[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.IDE;
-		canMsg->CAN_RxHeaderTypeDef.DLC = RxMessageBuffer1[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.DLC;
-		for(i = 0; i < RxMessageBuffer1[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.DLC; i++) {
-			canMsg->Data[i] = RxMessageBuffer1[RxMessagePtr2.iIndexOUT].Data[i];
+		canMsg->CAN_RxHeaderTypeDef.ExtId = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.ExtId;
+		canMsg->CAN_RxHeaderTypeDef.StdId = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.StdId;
+		canMsg->CAN_RxHeaderTypeDef.RTR = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.RTR;
+		canMsg->CAN_RxHeaderTypeDef.IDE = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.IDE;
+		canMsg->CAN_RxHeaderTypeDef.DLC = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.DLC;
+		for(i = 0; i < RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.DLC; i++) {
+			canMsg->Data[i] = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].Data[i];
 		}
 		DRV_RingBuffPtr__Output(&RxMessagePtr2, CAN_MAX_RX_BUFF); // increment output buffer ptr
 		canMsgAvailable = 1;

@@ -79,25 +79,26 @@ input: CanHandle
 output: none
 note: Use CallbackTimer to clear sleep timer for "GotoSleepCallbackFunc()"
 */
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 #if defined STM32F042x6
-	//ClearTimerCallbackTimer(GotoSleepCallbackFunc); // make a function in polling routine
 	if(hcan->Instance == CAN) {
-		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessage1.CAN_RxHeaderTypeDef, RxMessage1.Data); // enable CAN reception again
 #else
 	if(hcan->Instance == CAN1) {
-		HAL_CAN_GetRxMessage(&hcan1, (uint32_t) CAN_RX_FIFO0, &RxMessage1.CAN_RxHeaderTypeDef, RxMessage1.Data); // enable CAN reception again
-#endif
+#endif//
+		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessage1.CAN_RxHeaderTypeDef, RxMessage1.Data); // enable CAN reception again
 		AddCanRxBuffer1(&RxMessage1);
 	}
 	
 #ifdef USE_CAN_BUFFER_2
 	else if(hcan->Instance == CAN2) {
-		HAL_CAN_GetRxMessage(&hcan2, (uint32_t) CAN_RX_FIFO0, &RxMessage2.CAN_RxHeaderTypeDef, RxMessage2.Data); // enable CAN reception again
+		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessage2.CAN_RxHeaderTypeDef, RxMessage2.Data); // enable CAN reception again
 		AddCanRxBuffer2(&RxMessage2);
 	}
 #endif
+#include "PollingRoutines.h"
+	CanBusActivityStatus(1); // include header file where you placed this function
 }
 
 // We should never need this callback as the CAN buffer should take care of messages received.

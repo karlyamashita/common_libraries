@@ -8,7 +8,7 @@
 #ifdef USE_USB_CAN_CONVERT
 
 #include "main.h"
-#include "ConvertUsbAndCan.h"
+#include "UsbAndCanConvert.h"
 #include "CAN_Buffer.h"
 #include "USB_Buffer.h"
 #include "protocolCommands.h"
@@ -52,7 +52,7 @@ void SendUsbDataToCanBus(uint8_t canChannel, uint8_t *data) {
 }
 
 // just the opposite, copy CAN to USB data
-void SendCanDataToUsb(CanRxMsgTypeDef *msg) {
+void SendCanDataToUsb(CanRxMsgTypeDef *msg, uint8_t node) {
 	uint8_t i = 0;
 	UsbCanStruct usbCanStruct = {0};
 
@@ -67,6 +67,7 @@ void SendCanDataToUsb(CanRxMsgTypeDef *msg) {
 	}
 
 	usbCanStruct.msgBytes.RTR = msg->CAN_RxHeaderTypeDef.RTR & 0x0F;
+	usbCanStruct.msgBytes.Node = node;
 	usbCanStruct.msgBytes.DLC = msg->CAN_RxHeaderTypeDef.DLC & 0x0F;
 
 	for(i = 0; i < 8; i++) {

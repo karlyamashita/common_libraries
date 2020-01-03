@@ -26,23 +26,30 @@ int8_t PortC_Off (uint32_t pin);
 
 int8_t PortC_Toggle (uint32_t pin);
 
-#if defined(STM32F407xx) || defined(__STM32F1xx_HAL_CAN_H)
+#if defined(__STM32F1xx_HAL_CAN_H)
 // port D
 int8_t PortD_On (uint32_t pin);
 
 int8_t PortD_Off (uint32_t pin);
 
 int8_t PortD_Toggle (uint32_t pin);
-#endif
+#endif // __STM32F1xx_HAL_CAN_H
 
 #ifdef STM32F407xx
-int8_t PortG_On (uint32_t pin);
+// port D
+int8_t PortD_On (uint32_t pin);
 
-int8_t PortG_Off (uint32_t pin);
+int8_t PortD_Off (uint32_t pin);
 
-int8_t PortG_Toggle (uint32_t pin);
+int8_t PortD_Toggle (uint32_t pin);
 
-#endif // STM32F4xx_HAL_CAN_H
+// Port E
+int8_t PortE_On (uint32_t pin);
+
+int8_t PortE_Off (uint32_t pin);
+
+int8_t PortE_Toggle (uint32_t pin);
+#endif // STM32F407xx
 
 
 // read pins
@@ -52,6 +59,13 @@ int8_t ReadPortA(uint16_t pin);
 int8_t ReadPortB(uint16_t pin);
 
 int8_t ReadPortC(uint16_t pin);
+
+#ifdef STM32F407xx
+int8_t ReadPortD(uint16_t pin);
+
+int8_t ReadPortE(uint16_t pin);
+#endif
+
 #ifdef __STM32F1xx_HAL_CAN_H
 int8_t ReadPortD(uint16_t pin);
 #endif

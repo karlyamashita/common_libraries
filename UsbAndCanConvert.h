@@ -23,7 +23,7 @@ typedef	union UsbCanStruct {
 		uint8_t Command; // command
 		uint8_t IDE; // ide
 		uint8_t RTR;// rtr
-		uint8_t na; // n/a
+		uint8_t na; // node
 		uint32_t ArbID; // ArbID
 
 		uint8_t DLC; // dlc
@@ -32,8 +32,8 @@ typedef	union UsbCanStruct {
 	struct  {
 		uint8_t Command;
 		uint8_t IDE; // byte1
-		// RTR, ERR, Node byte6
-		unsigned RTR:1; // byte2
+
+		unsigned RTR:1; // RTR, ERR, byte2
 		unsigned Err:1; // not implemented
 		unsigned :6;
 		unsigned Node:4; // byte3, see Node defines
@@ -55,7 +55,7 @@ typedef	union UsbCanStruct {
 }UsbCanStruct;
 
 void SendUsbDataToCanBus(uint8_t canChannel, uint8_t *data);
-void SendCanDataToUsb(CanRxMsgTypeDef *msg);
+void SendCanDataToUsb(CanRxMsgTypeDef *msg, uint8_t node);
 uint8_t GetNode(uint8_t *data);
 
 #endif // CONVERT_USB_AND_CAN_H

@@ -44,6 +44,7 @@
 //#define USE_BRAKE
 //#define USE_CAN_AUTOBAUD
 #define USE_CAN_BUFFER
+//#define USE_CAN_BUFFER_1
 //#define USE_CAN_BUFFER_2
 #define USE_CAN_FILTER
 //#define USE_CAN_MESSAGE_DELAYED
@@ -76,6 +77,7 @@
 //#define USE_MCP2517FD
 //#define USE_MERCEDES_CAN_ID
 //#define USE_MIRROR_MOVEMENT_REQUEST
+//#define USE_MPU_9250
 //#define USE_MTIMERS
 #define USE_MTIMER_CALLBACK
 //#define USE_NCA_FROM_SDAR
