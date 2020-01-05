@@ -24,8 +24,8 @@
 #define XG_OFFSET_L_ADDR 0x14
 #define YG_OFFSET_H_ADDR 0x15
 #define YG_OFFSET_L_ADDR 0x16
-#define ZG_OFFSET_H 0x17
-#define ZG_OFFSET_L 0x18
+#define ZG_OFFSET_H_ADDR 0x17
+#define ZG_OFFSET_L_ADDR 0x18
 #define SMPLRT_DIV_ADDR 0x19
 
 #define CONFIG_ADDR 0x1A
@@ -117,10 +117,35 @@
 #define ZA_OFFSET_H_ADDR 0x7D
 #define ZA_OFFSET_L_ADDR 0x7E
 
-
 #define FS_SEL 1
 #define OFF_SET_LSB 0
 #define OFF_SET_DPS 1
+
+// custom defines
+#define X_REG 0
+#define Y_REG 1
+#define Z_REG 2
+#define ACCEL_DATA_RDY 0
+#define GRYO_DATA_RDY 1
+#define MAG_DATA_RDY 2
+
+// Set initial input parameters
+#define  AFS_2G  0
+#define  AFS_4G  1
+#define  AFS_8G  2
+#define  AFS_16G 3
+
+#define  GFS_250DPS  0
+#define  GFS_500DPS  1
+#define  GFS_1000DPS 2
+#define  GFS_2000DPS 3
+
+#define  MFS_14BITS  0 // 0.6 mG per LSB
+#define  MFS_16BITS  1    // 0.15 mG per LSB
+
+#define M_8Hz   0x02
+#define M_100Hz 0x06
+
 
 typedef union{
     struct{
@@ -153,7 +178,7 @@ typedef union{
     	unsigned fChoiceB:2;
     	unsigned :1;
     	unsigned gyroFsSel:2;
-    	unsigned zgyroCten:1;
+    	unsigned zGyroCten:1;
     	unsigned yGyroCten:1;
     	unsigned xGyroCten:1;
     }Status;
@@ -184,7 +209,6 @@ typedef union{
         unsigned :4;
     }Status;
 }AccelConfig2;
-
 
 typedef union {
 	struct {
@@ -255,16 +279,38 @@ typedef union {
 	}Status;
 }InterruptStatus;
 
+typedef union {
+	struct {
+		uint16_t value;
+	}Data;
+	struct {
+		uint8_t lowByte;
+		uint8_t highByte;
+	}Status;
+}GyroOut;
+
 
 //prototypes
-int32_t GetOffSetGyro(GyroOffsUsr gyroValue, int8_t type);
-void SendConfig_MPU(I2C_HandleTypeDef *hi2c, Config_MPU config_MPU) ;
-void SendGyroConfig(I2C_HandleTypeDef *hi2c, GyroConfig gyroConfig);
-void SendAccelConfig(I2C_HandleTypeDef *hi2c, AccelConfig accelConfig);
-void SendAccelConfig2(I2C_HandleTypeDef *hi2c, AccelConfig2 accelConfig2);
-void SendFIFO_Enable(I2C_HandleTypeDef *hi2c , FIFO_Enable fifo_Enable);
-void Sendi2cMasterControl(I2C_HandleTypeDef *hi2c, I2c_MasterControl i2cMasterControl);
-void SendInterruptEnable(I2C_HandleTypeDef *hi2c, InterruptEnable interruptEnable);
+int32_t OffSetGyroGet(GyroOffsUsr gyroValue, int8_t type);
+void Config_MPUSend(Config_MPU *configMPU) ;
+void GyroConfigSend(GyroConfig *gyroConfig);
+void AccelConfigSend(AccelConfig *accelConfig);
+void AccelConfig2Send(AccelConfig2 *accelConfig2);
+void FIFO_EnableSend(FIFO_Enable *fifoEnable);
+void I2C_MasterControlSend(I2c_MasterControl *i2cMasterControl);
+void InterruptEnableSend(InterruptEnable *interruptEnable);
+int GyroOutGet(uint8_t regAddr, uint8_t size);
+int AccelOutGet(uint8_t regAddr, uint8_t size);
+
+// these were ported over from a C++ project from https://github.com/kriswiner/MPU9250/blob/master/Dual_MPU9250/MPU9250.cpp
+void InitMPU9250(uint8_t devAddr, uint8_t Ascale, uint8_t Gscale, uint8_t sampleRate);
+void calibrateMPU9250(uint8_t devAddr, float * dest1, float * dest2);
+float GetGres(uint8_t Gscale);
+float GetAres(uint8_t Ascale);
+
+// place these 2 function calls where needed
+int MPU_WriteByte(uint8_t devAddr, uint8_t regAddr, uint8_t data);
+int MPU_ReadBytes(uint8_t devAddr, uint8_t regAddr, uint8_t *data, uint8_t size);
 
 
 #endif // MPU_9250_H
