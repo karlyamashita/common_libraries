@@ -82,6 +82,11 @@ note: Use CallbackTimer to clear sleep timer for "GotoSleepCallbackFunc()"
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
+#ifdef USE_MTIMER_CALLBACK
+	// you should have already defined a callback using "GotoSleep" variable or create your own variable and replace in function in next line.
+	ClearTimerCallbackTimer(GotoSleep);
+#endif// USE_MTIMER_CALLBACK
+
 #if defined STM32F042x6
 	if(hcan->Instance == CAN) {
 #else
@@ -97,8 +102,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		AddCanRxBuffer2(&RxMessage2);
 	}
 #endif
-#include "PollingRoutines.h"
+#ifdef USE_CAN_BUS_ACTIVITY_STATUS
+#include "CanBusActivity.h"
 	CanBusActivityStatus(1); // include header file where you placed this function
+#endif// USE_CAN_BUS_ACTIVITY_STATUS
 }
 
 // We should never need this callback as the CAN buffer should take care of messages received.

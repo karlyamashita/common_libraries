@@ -1,6 +1,8 @@
 /*
 Creates a timer and will callback a function when timer reaches threshold value.
 
+
+Create a callback "CreateTimerCallback(<function to callback>, <time in ms>, <repeat = 1, no repeat = 0>);"
 Call this function "IncrementTimerCallback()" from SysTick_Handler() in stm32f1xx_it.c 
 Call this function "CheckTimerCallback()" from polling routine.
 
