@@ -160,7 +160,7 @@ function:	Sets timer value to the callback
 input: the callback, the timer value. 
 output: return 0 if successful
 */
-uint8_t SetCallbackTimerValue(TimerCallback callback, uint32_t timerValue) {
+uint8_t SetTimerCallbackTimerValue(TimerCallback callback, uint32_t timerValue) {
 	uint8_t i = 0;
 	while(timerCallback[i].callback != callback) {
 		if( i == timerCallbackLastIndex) {
