@@ -10,6 +10,8 @@ enum TIMER_CALLBACK_RATE{
 	REPEAT_TIMER
 };
 
+typedef void (*TimerCallback)(void);// no data is passed
+
 typedef struct TimerCallbackStruct{
     TimerCallback callback;// what function to callback
     uint8_t timerRepeat; // repeat or disable after callback
@@ -18,7 +20,7 @@ typedef struct TimerCallbackStruct{
     uint32_t timerCount; // the current timer count
 }TimerCallbackStruct;
 
-typedef void (*TimerCallback)(void);// no data is passed
+
 
 int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerCountThreshold, uint8_t repeat);
 uint8_t TimerCallbackClearTimer(TimerCallback callback);
