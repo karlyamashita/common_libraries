@@ -2,9 +2,12 @@
 Creates a timer and will callback a function when timer reaches threshold value.
 
 
-Create a callback "TimerCallbackRegister(<function to callback>, <time in ms>, <repeat = 1, no repeat = 0>);"
+Create a callback "TimerCallbackRegister(<function to callback>, <time in ms>, <repeat = 1, no repeat = 0>, <shut down timer value>);"
 Call this function "TimerCallbackIncrement()" from SysTick_Handler() in stm32f1xx_it.c
 Call this function "TimerCallbackCheck()" from polling routine.
+
+Call TimerCallbackEnable() to  enable/disable callback
+Call TimerCallbackShutDownEnable() to enable/disable shutdown of callback.
 
 */
 
@@ -14,12 +17,14 @@ Call this function "TimerCallbackCheck()" from polling routine.
 TimerCallbackStruct timerCallback[MAX_TIMER_CALLBACK] = {0}; // init array
 uint8_t timerCallbackLastIndex = 0;// the number of callback timers used
 
+static void TimerCallbackSort(void);
+
 /*
-function: Register a callback function. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array.
-input: the function to callback, the timer value, and if it needs to repeat or disables itself after function is called.
+function: Register a callback function. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
+input: the function to callback, the timer value, and if it needs to repeat or disables itself after function is called. The timerShutDownValue for disabling the callback after set time.
 output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
-int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, uint8_t repeat) {
+int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue) {
 	int i = 0;
 	if(callback == 0) return -2; // null callback
 	while(timerCallback[i].callback != 0) {
@@ -31,13 +36,46 @@ int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, uint8_
 		}	
 		i++;// next
 	};
+
+	if(timerShutDownValue < timerValue){ // timerShutDownValue should not be less than timerValue
+	    timerShutDownValue = timerValue + 1;
+	}
 	timerCallback[i].timerCount = 0;// clear the timer
 	timerCallback[i].timerValue = timerValue;
 	timerCallback[i].callback = callback;
 	timerCallback[i].timerRepeat = repeat;
 	timerCallback[i].timerEnabled = 1;
+	timerCallback[i].timerShutDownEnable = false;
+	timerCallback[i].timerShutDownValue = timerShutDownValue;
+	timerCallback[i].timerShutDownCount = 0; // clear shutdown timer
 	timerCallbackLastIndex = i + 1;// number of timers created
 	return i;
+}
+
+int8_t TimerCallbackShutDownEnable(TimerCallback callback, uint8_t enable) {
+    uint8_t i = 0;
+    while (timerCallback[i].callback != callback)
+    {
+        if (i == timerCallbackLastIndex)
+        {
+            return 1; // callback not found
+        }
+        i++;
+    };
+    timerCallback[i].timerShutDownEnable = enable;
+    return 0;
+}
+
+uint8_t TimerCallbackClearShutDownTimer(TimerCallback callback) {
+    uint8_t i = 0;
+    while(timerCallback[i].callback != callback) {
+        if(i == timerCallbackLastIndex) {
+            return 1;// callback not found
+        }
+        i++;
+    };
+    timerCallback[i].timerShutDownCount = 0; // clear timerShutDownCount
+    return 0;
 }
 
 /*
@@ -170,9 +208,18 @@ output: none
 void TimerCallbackIncrement(void) {
 	int i = 0;
 	while(i != timerCallbackLastIndex) { // iterate through all arrays
-		if(timerCallback[i].timerEnabled && timerCallback[i].callback != 0) { // check if callback is enabled.
-			timerCallback[i].timerCount += 1; // increment the timerCount
-		}
+        if (timerCallback[i].callback != 0)
+        {
+            if (timerCallback[i].timerShutDownEnable) // check if shutdown is enabled
+            {
+                timerCallback[i].timerShutDownCount += 1; // increment the timerShutDownCount
+            }
+
+            if (timerCallback[i].timerEnabled) // check if callback is enabled.
+            {
+                timerCallback[i].timerCount += 1; // increment the timerCount
+            }
+        }
 		i++;
 	}
 }
@@ -187,6 +234,14 @@ output: none
 void TimerCallbackCheck(void) {
 	int i = 0; // the array pointer
 	while(i != timerCallbackLastIndex) { 
+
+	    if(timerCallback[i].timerShutDownEnable == 1) { // check for shutdown first
+	        if(timerCallback[i].timerShutDownCount >= timerCallback[i].timerShutDownValue) {
+	            timerCallback[i].timerShutDownCount = 0;
+	            timerCallback[i].timerEnabled = 0; // disable timer
+	        }
+	    }
+
 		if(timerCallback[i].timerEnabled == 1) {// timer is enable so now check if time is reached
 			if(timerCallback[i].timerCount >= timerCallback[i].timerValue) {
 				timerCallback[i].timerCount = 0;// clear timer
