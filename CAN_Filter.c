@@ -3,12 +3,10 @@
 #include "main.h"
 #include "CAN_Filter.h"
 
-// this file needs to include CAN_Buffer.h to save Rx messages to ring buffer
-#include "CAN_Buffer.h"
+static CanRxMsgTypeDef	RxMessageFifo_0_Buffer1; // CAN message header and data
+static CanRxMsgTypeDef	RxMessageFifo_1_Buffer1; // CAN message header and data
 
-static CanRxMsgTypeDef	RxMessage1;
-
-#if defined STM32F042x6 // STM32F042x6 only has one CAN controller defined as hcan not hcan1
+#if defined STM32F042x6 || defined STM32F1 // STM32F042x6 only has one CAN controller defined as hcan not hcan1
 extern CAN_HandleTypeDef hcan;
 #else
 extern CAN_HandleTypeDef hcan1;
@@ -16,7 +14,8 @@ extern CAN_HandleTypeDef hcan1;
 
 
 #ifdef USE_CAN_BUFFER_2
-static CanRxMsgTypeDef	RxMessage2;
+static CanRxMsgTypeDef	RxMessageFifo_0_Buffer2;
+static CanRxMsgTypeDef	RxMessageFifo_1_Buffer2;
 extern CAN_HandleTypeDef hcan2;
 #endif // USE_CAN_BUFFER_2
 
@@ -43,7 +42,7 @@ void SetCanFilter(void) {
 	sFilterConfig.FilterMaskIdLow        = 0x0000;
 	sFilterConfig.FilterFIFOAssignment   = 0;
 	sFilterConfig.FilterActivation       = ENABLE;
-#if defined STM32F042x6 // this device defines the single CAN controller as hcan, not hcan1
+#if defined STM32F042x6 || defined STM32F1 // this device defines the single CAN controller as hcan, not hcan1
 	HAL_CAN_ConfigFilter(&hcan,&sFilterConfig);
 	HAL_CAN_Start(&hcan);
 	if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) // enables CAN notification. This is not the same as enabling CAN reception.
@@ -82,31 +81,51 @@ note: Use CallbackTimer to clear sleep timer for "GotoSleepCallbackFunc()"
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-#ifdef USE_MTIMER_CALLBACK
-	// you should have already defined a callback using "GotoSleep" variable or create your own variable and replace in function in next line.
-	ClearTimerCallbackTimer(GotoSleep);
-#endif// USE_MTIMER_CALLBACK
-
+#ifdef USE_CAN_BUS_ACTIVITY_STATUS
+	CanBusActivityStatus(1); // include CAN_Activity.h
+#endif// USE_CAN_BUS_ACTIVITY_STATUS
 #if defined STM32F042x6
 	if(hcan->Instance == CAN) {
 #else
 	if(hcan->Instance == CAN1) {
 #endif//
-		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessage1.CAN_RxHeaderTypeDef, RxMessage1.Data); // enable CAN reception again
-		AddCanRxBuffer1(&RxMessage1);
+		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessageFifo_0_Buffer1.CAN_RxHeaderTypeDef, RxMessageFifo_0_Buffer1.Data); // enable CAN reception again
+		AddCanRxBuffer1(&RxMessageFifo_0_Buffer1);
 	}
 	
 #ifdef USE_CAN_BUFFER_2
 	else if(hcan->Instance == CAN2) {
-		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessage2.CAN_RxHeaderTypeDef, RxMessage2.Data); // enable CAN reception again
-		AddCanRxBuffer2(&RxMessage2);
+		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessageFifo_0_Buffer2.CAN_RxHeaderTypeDef, RxMessageFifo_0_Buffer2.Data); // enable CAN reception again
+		AddCanRxBuffer2(&RxMessageFifo_0_Buffer2);
 	}
 #endif
-#ifdef USE_CAN_BUS_ACTIVITY_STATUS
-#include "CanBusActivity.h"
-	CanBusActivityStatus(1); // include header file where you placed this function
-#endif// USE_CAN_BUS_ACTIVITY_STATUS
 }
+
+/*
+function: Callback when message is available. Devices with 1 CAN controller is defined as CAN instead of CAN1.
+input: CanHandle
+output: none
+note: Use CallbackTimer to clear sleep timer for "GotoSleepCallbackFunc()"
+*/
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+#if defined STM32F042x6
+	if(hcan->Instance == CAN) {
+#else
+	if(hcan->Instance == CAN1) {
+#endif//
+		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessageFifo_1_Buffer1.CAN_RxHeaderTypeDef, RxMessageFifo_1_Buffer1.Data); // enable CAN reception again
+		AddCanRxBuffer1(&RxMessageFifo_1_Buffer1);
+	}
+
+#ifdef USE_CAN_BUFFER_2
+	else if(hcan->Instance == CAN2) {
+		HAL_CAN_GetRxMessage(hcan, (uint32_t) CAN_RX_FIFO0, &RxMessageFifo_1_Buffer2.CAN_RxHeaderTypeDef, RxMessageFifo_1_Buffer2.Data); // enable CAN reception again
+		AddCanRxBuffer2(&RxMessageFifo_1_Buffer2);
+	}
+#endif
+}
+
 
 // We should never need this callback as the CAN buffer should take care of messages received.
 // void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
