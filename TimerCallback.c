@@ -11,6 +11,10 @@ Call TimerCallbackShutDownEnable() to enable/disable shutdown of callback.
 
 */
 
+#include "LSP.h"
+
+#if defined USE_MTIMER_CALLBACK
+
 #include "main.h"
 #include "TimerCallback.h"
 
@@ -276,4 +280,4 @@ static void TimerCallbackSort(void) {
 	}
 }
 
-
+#endif // end USE_MTIMER_CALLBACK
