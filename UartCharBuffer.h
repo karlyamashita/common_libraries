@@ -10,6 +10,11 @@
 
 #include "main.h"
 
+/*
+ * Because different MCU's uses Uart port defines differently, we're going to use generic uart port names.
+ * For your MCU you will convert the generic port names to the actual instance name when writing to the specific uart port.
+ *
+ */
 typedef struct{
 	uint8_t uartPort;
 	uint8_t data[MAX_UART_RX_CHAR_BUFFER];
