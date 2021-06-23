@@ -26,9 +26,9 @@ bool ValidateChkSum(uint8_t *data, uint8_t len){
 }
 
 /*
- * Description: Calculate checksum using modulo 256
+ * Description: Calculate checksum using modulo 256 and adds checksum to array at last index + 1
  * Input: The data array and the length of array minus the checksum index
- * Output: The checksum value. Return true if successful.
+ * Output:
  *
  */
 void CalculateChkSum(uint8_t *data, uint8_t len){

@@ -4,11 +4,13 @@
 #ifndef RINGBUFF_H
 #define RINGBUFF_H
 
+#include <stdint.h>
+
 typedef struct {
-	unsigned int iIndexIN;
-	unsigned int iIndexOUT;
-	unsigned int iCnt_Handle;
-	unsigned int iCnt_OverFlow;
+	uint16_t iIndexIN; // change all these if need more than 16bits.
+	uint16_t iIndexOUT;
+	uint16_t iCnt_Handle;
+	uint16_t iCnt_OverFlow;
 }RING_BUFF_INFO;
 
 
