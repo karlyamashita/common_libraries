@@ -25,7 +25,7 @@
  *
  *      Note1: Add these defines to new/existing UartIncludes.h file and adjust value accordingly.
         #define MAX_UART_RX_CHAR_BUFFER_SINGLE 1
-        #define MAX_UART_RX_CHAR_BUFFER 192
+        #define MAX_UART_RX_CHAR_BUFFER 192 // this should be double the size of data you are receiving up to '\r' character.
         #define MAX_UART_TX_CHAR_BUFFER 192
         #define MAX_UART_RX_MESSAGE_BUFFER 3
         #define MAX_UART_TX_MESSAGE_BUFFER 3
@@ -104,29 +104,58 @@ void UartAddTxMessageBuffer(UartCharBufferTxStruct *uartBufferPointer_IN){
  *              UartTxMessage() should be part of your code for your specific MCU.
  *
  *              ********* Example function defined for STM32 *********
- *              HAL_StatusTypeDef UartTxMessage(UART_HandleTypeDef *huart, char *data)
-                {
-                    HAL_StatusTypeDef HAL_Status;
-                    uint8_t count;
-                    count = strlen((char*) data);
+ *              HAL_StatusTypeDef UartTxMessage(UartCharBufferTxStruct *uartBufferPointer)
+ *              {
+					HAL_StatusTypeDef HAL_Status;
+					UART_HandleTypeDef huart;
+					uint8_t count = strlen((char*) uartBufferPointer->data);
 
-                #if defined HAL_DMA_MODULE_ENABLED
-                    HAL_Status = HAL_UART_Transmit_DMA(huart, (uint8_t*) data, count);
-                #else
-                    HAL_Status = HAL_UART_Transmit_IT(huart, (uint8_t*) data, count);
-                #endif
-                    return HAL_Status;
-                }
+					switch(uartBufferPointer->uartPort){
+					case UART_PORT_1:
+						huart = huart1;
+						break;
+					}
+
+				#if defined HAL_DMA_MODULE_ENABLED
+					HAL_Status = HAL_UART_Transmit_DMA(&huart, (uint8_t*) uartBufferPointer->data, count);
+				#else
+					HAL_Status = HAL_UART_Transmit_IT(&huart, (uint8_t*) uartBufferPointer->data, count);
+				#endif
+					return HAL_Status;
+				}
 
                 ********* Example function defined for TM4C123 ********
-                HAL_StatusTypeDef HAL_UART_Transmit(uint32_t uart_base, uint8_t *pData, uint16_t size)
+                HAL_StatusTypeDef UartTxMessage(UartCharBufferTxStruct *uartBufferPointer)
                 {
-                    while(size--)
-                    {
-                        UARTCharPut(uart_base, *pData++);
-                    }
-                    return HAL_OK;
-                }
+					uint32_t uart_base;
+					uint8_t *pData = uartBufferPointer->data;
+					uint8_t count = strlen((char*) pData);
+
+					switch(uartBufferPointer->uartPort){
+					case 1:
+						uart_base = UART1_BASE;
+						break;
+					case 3:
+						uart_base = UART3_BASE;
+						break;
+					}
+					while(count--){
+						UARTCharPut(uart_base, *pData++);
+					}
+					return HAL_OK;
+				}
+
+                ********* Example function defined for MicroBlaze ********
+                HAL_StatusTypeDef UartTxMessage(UartCharBufferTxStruct *uartBufferPointer)
+                {
+					uint8_t *pData = uartBufferPointer->data;
+					while (*pData != '\0') {
+						OutbyteUart1(*pData);
+						pData++;
+					}
+					return HAL_OK;
+				}
+
  *
  * Input: none
  * Output: none
@@ -148,15 +177,16 @@ void UartSendMessage(void){
  * Description: add one character to the character buffer.
  *
  * Input: reference to char array
- * Output: none
+ * Output: HAL Status
  */
-void UartAddCharToBuffer(uint8_t uartPort, char *_char_IN){
+HAL_StatusTypeDef UartAddCharToBuffer(uint8_t uartPort, char *_char_IN){
     if(uartRxCharBufferPointer.iCnt_OverFlow){
         // character buffer is full, return and let UartParseRxCharBuffer() routine parse character buffer to free some space.
-        return;
+        return HAL_BUSY;
     }
     uartRxCharBuffer[uartRxCharBufferPointer.iIndexIN] = *_char_IN;
     DRV_RingBuffPtr__Input(&uartRxCharBufferPointer, MAX_UART_RX_CHAR_BUFFER);
+    return HAL_OK;
 }
 
 /*
@@ -195,19 +225,19 @@ void ParseUartRxMessageBuffer(void){
 
         if(strncmp((char*)message, "CMD0", 4) == 0){
             strcpy(str, "I received CMD0\r\n");
-            CopyToUartCharBufferTxStruct(UART_PORT_1 , &uartTx, str);
+            UartCopyStrToCharBufferTxStruct(UART_PORT_1 , &uartTx, str);
             UartAddTxMessageBuffer(&uartTx);
             TimerCallbackEnable(SendUart_Message, DISABLE);
         }
         else if(strncmp((char*)message, "CMD1", 4) == 0){
             strcpy(str, "I received CMD1\r\n");
-            CopyToUartCharBufferTxStruct(UART_PORT_1 , &uartTx, str);
+            UartCopyStrToCharBufferTxStruct(UART_PORT_1 , &uartTx, str);
             UartAddTxMessageBuffer(&uartTx);
             TimerCallbackEnable(SendUart_Message, ENABLE);
         }
         else
         {
-            errorCode = CopyToUartCharBufferTxStruct(UART_PORT_1 , &uartTx, (char*)message);
+            errorCode = UartCopyStrToCharBufferTxStruct(UART_PORT_1 , &uartTx, (char*)message);
             if(errorCode != 0){
                 return;
             }

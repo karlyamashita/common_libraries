@@ -32,7 +32,7 @@ typedef struct{
 void UartParseRxCharBuffer(void);
 void UartAddTxMessageBuffer(UartCharBufferTxStruct *uartBufferPointer);
 void UartSendMessage(void);
-void UartAddCharToBuffer(uint8_t uartPort, char *_char);
+HAL_StatusTypeDef UartAddCharToBuffer(uint8_t uartPort, char *_char);
 int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, UartCharBufferTxStruct *uartTx_OUT, char *str);
 void UartClearRxCharBuffer(void);
 
