@@ -62,6 +62,10 @@ RING_BUFF_INFO uartTxMsgBufferPointer;
 void UartParseRxCharBuffer(void){
     static uint32_t idxPtr = 0;
     if (uartRxCharBufferPointer.iCnt_Handle) {
+        if(uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT] == '\n'){
+            DRV_RingBuffPtr__Output(&uartRxCharBufferPointer, MAX_UART_RX_CHAR_BUFFER); // Don't care about new line so go to next character in buffer
+            return;
+        }
         uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].data[idxPtr++] = uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT]; // save character
         if(uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT] == '\r'){ // check if carriage return
             idxPtr = 0;  // reset pointer

@@ -1,6 +1,12 @@
 #include "main.h"
 #include "TCA9546A.h"
 
+/*
+*   For TI TM4Cxxx I2C drivers.
+*
+*
+*/
+
 
 /*
  * Description: Write to TCA9546A the channel to select 

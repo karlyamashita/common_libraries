@@ -1,6 +1,5 @@
 #include "LSP.h"
 #ifdef USE_MPU_9250
-
 #ifndef MPU_9250_H
 #define MPU_9250_H
 
@@ -301,10 +300,11 @@ void I2C_MasterControlSend(I2c_MasterControl *i2cMasterControl);
 void InterruptEnableSend(InterruptEnable *interruptEnable);
 int GyroOutGet(uint8_t regAddr, uint8_t size);
 int AccelOutGet(uint8_t regAddr, uint8_t size);
+int MPU9250Init(void);
 
 // these were ported over from a C++ project from https://github.com/kriswiner/MPU9250/blob/master/Dual_MPU9250/MPU9250.cpp
-void InitMPU9250(uint8_t devAddr, uint8_t Ascale, uint8_t Gscale, uint8_t sampleRate);
-void calibrateMPU9250(uint8_t devAddr, float * dest1, float * dest2);
+int InitMPU9250(uint8_t devAddr, uint8_t Ascale, uint8_t Gscale, uint8_t sampleRate);
+int CalibrateMPU9250(uint8_t devAddr, float * dest1, float * dest2);
 float GetGres(uint8_t Gscale);
 float GetAres(uint8_t Ascale);
 
