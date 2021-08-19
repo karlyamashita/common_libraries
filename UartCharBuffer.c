@@ -7,19 +7,19 @@
  *      06-16-2021 Rev. 1.0.1 - Changed code to make more universal.
  *
  *      // Basic Info
- *      � This is a universal uart message buffer for ASCII characters. It has a ring buffer for individual characters and a ring buffer for messages.
- *      � Do not use this for 8bit data. Receiving 8bit data requires a different type of buffer and parser.
- *      � This file shouldn't need any modifications except for bug fixes.
+ *      • This is a universal uart message buffer for ASCII characters. It has a ring buffer for individual characters and a ring buffer for messages.
+ *      • Do not use this for 8bit data. Receiving 8bit data requires a different type of buffer and parser.
+ *      • This file shouldn't need any modifications except for bug fixes.
  *
  *      // Receive info
- *      � Use AddUartCharBuffer() to add single characters to a character buffer. You would usually call this from a uart IRQ.
- *      � Call UartParseRxCharBuffer() from a polling routine.
- *          This will parse the character buffer, looking for a '\r' to then save the characters to a message buffer.
- *      � Use ParseUartRxMessageBuffer() as an example to parse the message buffer. Write you own code inside the function.
+ *      • Use AddUartCharBuffer() to add single characters to a character buffer. You would usually call this from a uart IRQ.
+ *      • Call UartParseRxCharBuffer() from a polling routine.
+ *         This will parse the character buffer, looking for a '\r' to then save the characters to a message buffer.
+ *      • Use ParseUartRxMessageBuffer() as an example to parse the message buffer. Write you own code inside the function.
  *
  *      // Transmit info
- *      � Use UartAddTxMessageBuffer() to add a message to a Tx message buffer.
- *      � Call UartSendMessage() from a polling routine. This will send any messages in the transmit message buffer.
+ *      • Use UartAddTxMessageBuffer() to add a message to a Tx message buffer.
+ *      • Call UartSendMessage() from a polling routine. This will send any messages in the transmit message buffer.
  *
  *
  *
