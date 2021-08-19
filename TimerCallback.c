@@ -24,11 +24,11 @@ uint8_t timerCallbackLastIndex = 0;// the number of callback timers used
 static void TimerCallbackSort(void);
 
 /*
-function: Register a callback function. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
-input: the function to callback, the timer value, and if it needs to repeat or disables itself after function is called. The timerShutDownValue for disabling the callback after set time.
+function: Register a callback function. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array.
+input: the function to callback, the timer value, and if it needs to repeat or disables itself after function is called.
 output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
-int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue) {
+int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool repeat) {
 	int i = 0;
 	if(callback == 0) return -2; // null callback
 	while(timerCallback[i].callback != 0) {
@@ -38,6 +38,36 @@ int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool r
 		if(i == MAX_TIMER_CALLBACK) {
 			return 0;// Maximum timers reached
 		}	
+		i++;// next
+	};
+
+	timerCallback[i].timerCount = 0;// clear the timer
+	timerCallback[i].timerValue = timerValue;
+	timerCallback[i].callback = callback;
+	timerCallback[i].timerRepeat = repeat;
+	timerCallback[i].timerEnabled = 1;
+	timerCallback[i].timerShutDownEnable = false;
+	timerCallback[i].timerShutDownValue = 0xFFFFFFFF;
+	timerCallback[i].timerShutDownCount = 0; // clear shutdown timer
+	timerCallbackLastIndex = i + 1;// number of timers created
+	return i;
+}
+
+/*
+function: Register a callback function. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
+input: the function to callback, the timer value, and if it needs to repeat or disables itself after function is called. The timerShutDownValue for disabling the callback after set time.
+output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
+*/
+int8_t TimerCallbackShutDownRegister(TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue) {
+	int i = 0;
+	if(callback == 0) return -2; // null callback
+	while(timerCallback[i].callback != 0) {
+		if(timerCallback[i].callback == callback) {
+			return -1;// Callback already defined
+		}
+		if(i == MAX_TIMER_CALLBACK) {
+			return 0;// Maximum timers reached
+		}
 		i++;// next
 	};
 
@@ -205,6 +235,25 @@ uint8_t TimerCallbackSetTimerRepeat(TimerCallback callback, uint32_t timerValue,
 }
 
 /*
+function:	Updates shut down value. Shut down enable is false by default
+input: the callback, the shut down value.
+output: return 0 if successful
+*/
+uint8_t TimerCallbackSetShutDownValue(TimerCallback callback, uint32_t shutDownValue) {
+	uint8_t i = 0;
+	while(timerCallback[i].callback != callback) {
+		if( i == timerCallbackLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+	timerCallback[i].timerShutDownEnable = false;
+	timerCallback[i].timerShutDownValue = shutDownValue;
+	timerCallback[i].timerShutDownCount = 0; // clear shutdown timer
+	return 0;
+}
+
+/*
 function: Call this function from SysTick_Handler() in stm32f1xx_it.c
 input: none
 output: none
@@ -281,3 +330,4 @@ static void TimerCallbackSort(void) {
 }
 
 #endif // end USE_MTIMER_CALLBACK
+

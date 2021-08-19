@@ -29,7 +29,8 @@ typedef struct TimerCallbackStruct{
 }TimerCallbackStruct;
 
 
-int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue);
+int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool repeat);
+int8_t TimerCallbackShutDownRegister(TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue);
 int8_t TimerCallbackShutDownEnable(TimerCallback callback, uint8_t enable);
 uint8_t TimerCallbackClearShutDownTimer(TimerCallback callback);
 uint8_t TimerCallbackClearTimer(TimerCallback callback);
@@ -38,6 +39,7 @@ uint8_t TimerCallbackEnable(TimerCallback callback, uint8_t enable);
 uint8_t TimerCallbackEnableStatus(TimerCallback callback, uint8_t *status);
 uint8_t TimerCallbackGetCurrentTimerValue(TimerCallback callback, uint32_t *timerValue);
 uint8_t TimerCallbackSetTimerRepeat(TimerCallback callback, uint32_t timerValue, uint8_t repeat);
+uint8_t TimerCallbackSetShutDownValue(TimerCallback callback, uint32_t shutDownValue);
 uint8_t TimerCallbackExists(TimerCallback callback);
 void TimerCallbackIncrement(void);
 void TimerCallbackCheck(void);
