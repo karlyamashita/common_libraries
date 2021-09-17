@@ -5,16 +5,16 @@
  *      Author: karl.yamashita
  */
 
-
 #include "main.h"
-#include "StringToFloat.h"
+#include "CharArrayToFloat.h"
+
 
 /*
  * Description: Convert char array to float value
  * Input: char array must be a number with no Alpha numeric characters. Currently only for x.x digits or max 9.x in the ones place with one decimal number.
  * Output: return 0 if no errors.
  */
-int StringToFloat(char *array, float *value_OUT){
+int CharArrayToFloat(char *array, float *value_OUT){
 	float value = 0;
 
 	value = GetASCII_ByteValue(*array);
