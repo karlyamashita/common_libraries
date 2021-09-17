@@ -9,32 +9,34 @@
 #define INC_INA3221_H_
 
 
-#define INA3221_SLAVE_ADDRESS 0b1000000
+#define INA3221_SLAVE_ADDRESS 0x40
 // register addresses
-#define CONFIG_REG_ADDR 0
-#define CHAN1_SHUNT_VOLTAGE_ADDR 1
-#define CHAN1_BUS_VOLTAGE_ADDR 2
-#define CHAN2_SHUNT_VOLTAGE_ADDR 3
-#define CHAN2_BUS_VOLTAGE_ADDR 4
-#define CHAN3_SHUNT_VOLTAGE_ADDR 5
-#define CHAN3_BUS_VOLTAGE_ADDR 6
-#define CHAN1_CRITICAL_ALERT_ADDR 7
-#define CHAN1_WARNING_ALART_ADDR 8
-#define CHAN2_CRITICAL_ALERT_ADDR 9
-#define CHAN2_WARNING_ALART_ADDR 0xA
-#define CHAN3_CRITICAL_ALERT_ADDR 0xB
-#define CHAN3_WARNING_ALART_ADDR 0XC
-#define SHUNT_VOLTAGE_SUM_ADDR 0xD
-#define SHUNT_VOLTAGE_SUM_LIMIT_ADDR 0xE
-#define MASK_ENABLE_ADDR 0xF
-#define POWER_VALID_UPPER_LIMIT_ADDR 0x10
-#define POWER_VALID_LOWER_LIMIT_ADDR 0x11
-#define MANUFACTURER_ID_ADDR 0xFE
-#define DIE_ID_ADDR	0xFF
-
-
-#define SHUNT_SEL 0 // shunt selected
-#define BUS_SEL 1
+enum{
+	CONFIG_REG_ADDR,
+	CHAN1_SHUNT_VOLTAGE_ADDR,
+	CHAN1_BUS_VOLTAGE_ADDR,
+	CHAN2_SHUNT_VOLTAGE_ADDR,
+	CHAN2_BUS_VOLTAGE_ADDR,
+	CHAN3_SHUNT_VOLTAGE_ADDR,
+	CHAN3_BUS_VOLTAGE_ADDR,
+	CHAN1_CRITICAL_ALERT_ADDR,
+	CHAN1_WARNING_ALART_ADDR,
+	CHAN2_CRITICAL_ALERT_ADDR,
+	CHAN2_WARNING_ALART_ADDR,
+	CHAN3_CRITICAL_ALERT_ADDR,
+	CHAN3_WARNING_ALART_ADDR,
+	SHUNT_VOLTAGE_SUM_ADDR,
+	SHUNT_VOLTAGE_SUM_LIMIT_ADDR,
+	MASK_ENABLE_ADDR,
+	POWER_VALID_UPPER_LIMIT_ADDR,
+	POWER_VALID_LOWER_LIMIT_ADDR,
+	MANUFACTURER_ID_ADDR = 0xFE,
+	DIE_ID_ADDR
+};
+ enum{
+	 SHUNT_SEL,
+	 BUS_SEL
+ };
 
 // Configuration register defines
 #define avg2_0_sample_1 0
@@ -87,19 +89,26 @@ typedef union{
 #define SHUNT_VOLTAGE_LSB  0.00004 // uV
 #define BUS_VOLTAGE_FULL  32.76 // volts
 #define BUS_VOLTAGE_LSB  0.008 // mV
+// when reading from device
 typedef struct{
 	uint8_t channel;
 	uint8_t shuntOrBus; // shunt = 0, bus = 1
-	float voltage;
-}ShuntBusVoltage;
+}ShuntBusVoltage_struct;
 
+// storing voltage value
+typedef struct{
+	uint8_t channel;
+	uint16_t voltage;
+}INA3221_Voltage;
 
 // prototypes
 int INA3221_Init(void);
 
 int INA3221_SetConfigReg(INA3221_ConfigRegStruct *config);
-int INA3221_ChannelShuntBusVoltage(ShuntBusVoltage *shuntBusVoltage);
-int INA3221_Read(ShuntBusVoltage *shuntBusVoltage, uint16_t *value_OUT);
-
+int INA3221_ChannelShuntBusVoltage(ShuntBusVoltage_struct *shuntBusVoltage);
+int INA3221_ReadVoltage(ShuntBusVoltage_struct *shuntBusVoltage, uint16_t *value_OUT);
+int INA3221_GetManufacturerID(uint8_t id, uint8_t *value_OUT);
+void INA3221_Reset(void);
+int INA3221_ReadConfigData(void);
 
 #endif /* INC_INA3221_H_ */

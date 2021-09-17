@@ -7,23 +7,23 @@
  *      06-16-2021 Rev. 1.0.1 - Changed code to make more universal.
  *
  *      // Basic Info
- *      â€¢ This is a universal uart message buffer for ASCII characters. It has a ring buffer for individual characters and a ring buffer for messages.
- *      â€¢ Do not use this for 8bit data. Receiving 8bit data requires a different type of buffer and parser.
- *      â€¢ This file shouldn't need any modifications except for bug fixes.
+ *      • This is a universal uart message buffer for ASCII characters. It has a ring buffer for individual characters and a ring buffer for messages.
+ *      • Do not use this for 8bit data. Receiving 8bit data requires a different type of buffer and parser.
+ *      • This file shouldn't need any modifications except for bug fixes.
  *
  *      // Receive info
- *      â€¢ Use AddUartCharBuffer() to add single characters to a character buffer. You would usually call this from a uart IRQ.
- *      â€¢ Call UartParseRxCharBuffer() from a polling routine.
+ *      • Use AddUartCharBuffer() to add single characters to a character buffer. You would usually call this from a uart IRQ.
+ *      • Call UartParseRxCharBuffer() from a polling routine.
  *         This will parse the character buffer, looking for a '\r' to then save the characters to a message buffer.
- *      â€¢ Use ParseUartRxMessageBuffer() as an example to parse the message buffer. Write you own code inside the function.
+ *      • Use ParseUartRxMessageBuffer() as an example to parse the message buffer. Write you own code inside the function.
  *
  *      // Transmit info
- *      â€¢ Use UartAddTxMessageBuffer() to add a message to a Tx message buffer.
- *      â€¢ Call UartSendMessage() from a polling routine. This will send any messages in the transmit message buffer.
+ *      • Use UartAddTxMessageBuffer() to add a message to a Tx message buffer.
+ *      • Call UartSendMessage() from a polling routine. This will send any messages in the transmit message buffer.
  *
  *
  *
- *      Note1: Add these defines to new/existing UartIncludes.h file and adjust value accordingly.
+ *      Note1: Adjust value in UartCharBuffer.h file accordingly.
         #define MAX_UART_RX_CHAR_BUFFER_SINGLE 1
         #define MAX_UART_RX_CHAR_BUFFER 192 // this should be double the size of data you are receiving up to '\r' character.
         #define MAX_UART_TX_CHAR_BUFFER 192
@@ -62,12 +62,14 @@ RING_BUFF_INFO uartTxMsgBufferPointer;
 void UartParseRxCharBuffer(void){
     static uint32_t idxPtr = 0;
     if (uartRxCharBufferPointer.iCnt_Handle) {
-        if(uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT] == '\n'){
-            DRV_RingBuffPtr__Output(&uartRxCharBufferPointer, MAX_UART_RX_CHAR_BUFFER); // Don't care about new line so go to next character in buffer
-            return;
-        }
+    	/*
+    	if(uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT] == '\n'){
+			DRV_RingBuffPtr__Output(&uartRxCharBufferPointer, MAX_UART_RX_CHAR_BUFFER); // Don't care about new line so go to next character in buffer
+			return;
+		}
+		*/
         uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].data[idxPtr++] = uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT]; // save character
-        if(uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT] == '\r'){ // check if carriage return
+        if(uartRxCharBuffer[uartRxCharBufferPointer.iIndexOUT] == '\n'){ // check if carriage return
             idxPtr = 0;  // reset pointer
             DRV_RingBuffPtr__Input(&uartRxMsgBufferPointer, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
         }
@@ -201,7 +203,7 @@ HAL_StatusTypeDef UartAddCharToBuffer(uint8_t uartPort, char *_char_IN){
  * Description: Helper to copy the uart port and data to a buffer structure
  *
  * Input: The Port number, the transmit data structure, the string to copy to array
- * Ouput: none
+ * Output: none
  *
  */
 int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, UartCharBufferTxStruct *uartTx_OUT, char *str_IN){
@@ -217,8 +219,8 @@ int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, UartCharBufferTxStruct *ua
  * This is an example on how to parse a message from the message buffer. Copy this to a file and call this function from polling routine.
  *
  * You will need to define two extern variables where ever you have this function
- * ï¿½ extern UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
- * ï¿½ extern RING_BUFF_INFO uartRxMsgBufferPointer;
+ * • extern UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
+ * • extern RING_BUFF_INFO uartRxMsgBufferPointer;
  *
  */
 /*

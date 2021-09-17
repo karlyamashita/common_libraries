@@ -11,9 +11,6 @@ Call TimerCallbackShutDownEnable() to enable/disable shutdown of callback.
 
 */
 
-#include "LSP.h"
-
-#if defined USE_MTIMER_CALLBACK
 
 #include "main.h"
 #include "TimerCallback.h"
@@ -54,7 +51,7 @@ int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool r
 }
 
 /*
-function: Register a callback function. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
+function: Register a callback function with a timer shut down value. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
 input: the function to callback, the timer value, and if it needs to repeat or disables itself after function is called. The timerShutDownValue for disabling the callback after set time.
 output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
@@ -86,6 +83,11 @@ int8_t TimerCallbackShutDownRegister(TimerCallback callback, uint32_t timerValue
 	return i;
 }
 
+/*
+ * Description: Enable/Disable the timer shutdown
+ *
+ *
+ */
 int8_t TimerCallbackShutDownEnable(TimerCallback callback, uint8_t enable) {
     uint8_t i = 0;
     while (timerCallback[i].callback != callback)
@@ -100,6 +102,10 @@ int8_t TimerCallbackShutDownEnable(TimerCallback callback, uint8_t enable) {
     return 0;
 }
 
+/*
+ * Description: Clears the timer shutdown timer count
+ *
+ */
 uint8_t TimerCallbackClearShutDownTimer(TimerCallback callback) {
     uint8_t i = 0;
     while(timerCallback[i].callback != callback) {
@@ -216,7 +222,7 @@ uint8_t TimerCallbackExists(TimerCallback callback) {
 }
 
 /*
-function:	Updates timer value to the callback and if repeats
+function:	Updates the callback timer value and if repeats
 input: the callback, the timerThreshold value. 
 output: return 0 if successful
 */
@@ -235,7 +241,7 @@ uint8_t TimerCallbackSetTimerRepeat(TimerCallback callback, uint32_t timerValue,
 }
 
 /*
-function:	Updates shut down value. Shut down enable is false by default
+function:	Updates shut down value. Shut down enable is false by default. Use TimerCallbackShutDownEnable() to enable.
 input: the callback, the shut down value.
 output: return 0 if successful
 */
@@ -279,7 +285,7 @@ void TimerCallbackIncrement(void) {
 
 /*
 function: Checks if timer is reached and jumps to callback function. 
-				Will enter and exit on each array pointer increment to reduce doing multiple callback functions in one run.
+				Will enter and exit on each array pointer increment. This is to reduce doing multiple callback functions in one call.
 				Call this function from polling routine.
 input: none
 output: none
@@ -308,11 +314,11 @@ void TimerCallbackCheck(void) {
 		}
 		i++; // iterate until no more array.
 	}
-	i = 0;// start at beginning of array
+	i = 0;// resets to beginning of array
 }
 
 /*
-function: Sorts and removes any blank callbacks in between other callbacks in timerCallback array.
+function: When a callback is deleted, this will sort and remove any blank callback in between other callbacks in timerCallback array.
 input: none
 output: none
 */
@@ -329,5 +335,4 @@ static void TimerCallbackSort(void) {
 	}
 }
 
-#endif // end USE_MTIMER_CALLBACK
 

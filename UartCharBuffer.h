@@ -10,6 +10,12 @@
 
 #include "main.h"
 
+#define MAX_UART_RX_CHAR_BUFFER_SINGLE 1 // this is for the uart IRQ array reference. For STM32 we are receiving one character at a time.
+#define MAX_UART_RX_CHAR_BUFFER 192
+#define MAX_UART_TX_CHAR_BUFFER 192
+#define MAX_UART_RX_MESSAGE_BUFFER 3
+#define MAX_UART_TX_MESSAGE_BUFFER 3
+
 /*
  * Because different MCU's uses Uart port defines differently, we're going to use generic uart port names.
  * For your MCU you will convert the generic port names to the actual instance name when writing to the specific uart port.

@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-#define MAX_TIMER_CALLBACK 12 // increase if more callbacks are needed
+#define MAX_TIMER_CALLBACK 6 // increase if more callbacks are needed
 
 typedef void (*TimerCallback)(void);// no data is passed
 
@@ -20,8 +20,8 @@ enum TIMER_CALLBACK_ENABLE{
 typedef struct TimerCallbackStruct{
     TimerCallback callback;// what function to callback
     bool timerShutDownEnable; // shut down after a certain time
-    uint32_t timerShutDownCount; // the current repeat timer
     uint32_t timerShutDownValue; // the repeat timer to reach;
+    uint32_t timerShutDownCount; // the current shut down timer
     bool timerRepeat; // repeat or disable after callback
     bool timerEnabled; // enable/disable callback
     uint32_t timerValue; // the time to reach
