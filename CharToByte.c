@@ -17,7 +17,7 @@
  * Output: integer value of character
  *
  */
-int GetASCII_ByteValue(char chr){
+int GetCharToByteValue(char chr){
     int msgPointer = 0;
     if(chr >= 0x30 && chr <= 0x39){
         msgPointer = chr - 0x30;

@@ -9,7 +9,7 @@
 #define ASCII_TO_BYTEVALUE_H_
 
 
-int GetASCII_ByteValue(char chr);
+int GetCharToByteValue(char chr);
 
 
 #endif /* ASCII_TO_BYTEVALUE_H_ */
