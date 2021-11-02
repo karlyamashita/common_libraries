@@ -1,9 +1,9 @@
-#include "LSP.h"
-#ifdef USE_RING_BUFF
+
 
 #ifndef RINGBUFF_H
 #define RINGBUFF_H
 
+#include "main.h"
 #include <stdint.h>
 
 typedef struct {
@@ -25,5 +25,5 @@ void DRV_RingBuffPtr__Input(RING_BUFF_INFO *ptr, unsigned int iBufferSize);
 void DRV_RingBuffPtr__Output(RING_BUFF_INFO *ptr, unsigned int iBufferSize);
 void DRV_RingBuffPtr__Output_JumpToNew(RING_BUFF_INFO *ptr, unsigned int iBufferSize);
 
+
 #endif // RINGBUFF_H
-#endif // USE_RING_BUFF
