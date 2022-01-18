@@ -5,11 +5,13 @@
  *      Author: karl.yamashita
  */
 
-#ifndef FLOATTOASCII_H_
-#define FLOATTOASCII_H_
+#ifndef FLOATTOSTRING_H_
+#define FLOATTOSTRING_H_
+
+#include "main.h"
 
 
 void Float_to_string(float f, uint8_t places, char strOut[]);
 
 
-#endif /* FLOATTOASCII_H_ */
+#endif /* FLOATTOSTRING_H_ */

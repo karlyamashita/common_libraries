@@ -1,0 +1,279 @@
+/*
+ * LTM4675.h
+ *
+ *  Created on: Nov 12, 2021
+ *      Author: karl.yamashita
+ */
+
+#ifndef LTM4675_H_
+#define LTM4675_H_
+
+#define LTM4675_SLAVE_ADDRESS 0x4F // see page 22 and 26 of data sheet
+
+
+// commands register address
+enum{
+    PAGE,
+    OPERATION_paged, // paged
+    ON_OFF_CONFIG_paged, // paged
+    CLEAR_DEFAULTS,
+    PAGE_PLUS_WRITE = 0x05,
+    PAGE_PLUS_READ,
+    WRITE_PROTECT  = 0x10,
+    STORE_USER_ALL = 0x15,
+    RESTORE_USER_ALL,
+    CAPABILITY = 0x19,
+    SMBALERT_MASK_paged = 0x1B, // paged
+    VOUT_MODE_paged = 0x20, // paged
+    VOUT_COMMAND_paged, // paged
+    VOUT_MAX_paged = 0x24, // paged
+    VOUT_MARGIN_HIGH_paged, // paged
+    VOUT_MARGIN_LOW_paged, // paged
+    VOUT_TRANSITION_RATE_paged, // paged
+    FREQUENCY_SWITCH = 0x33,
+    VIN_ON = 0x35,
+    VIN_OFF,
+    IOUT_CAL_GAIN = 0x38,
+    IOUT_CAL_GAIN_paged = 0x3B, // paged
+    VOUT_OV_FAULT_LIMIT_paged = 0x40, // paged
+    VOUT_OV_FAULT_RESPONSE,
+    VOUT_OV_WARN_LIMIT_paged, // paged
+    VOUT_UV_WARN_LIMIT_paged, // paged
+    VOUT_UV_FAULT_LIMIT_paged, // paged
+    VOUT_UV_FAULT_RESPONSE,
+    IOUT_OC_FAULT_LIMIT_paged, // paged
+    IOUT_OC_FAULT_RESPONSE_paged, // paged
+    IOUT_OC_WARN_LIMIT_paged = 0x4A, // paged
+    OT_FAULT_LIMIT_paged = 0x4F, // paged
+    OT_FAULT_RESPONSE_paged, // paged
+    OT_WARN_LIMIT_paged, // paged
+    UT_FAULT_LIMIT_paged = 0x53, // paged
+    UT_FAULT_RESPONSE_paged, // paged
+    VIN_OV_FAULT_LIMIT,
+    VIN_OV_FAULT_RESPONSE,
+    VIN_UV_WARN_LIMIT = 0x58,
+    IIN_OC_WARN_LIMIT = 0x5D,
+    TON_DELAY_paged = 0x60, // paged
+    TON_RISE_paged, // paged
+    TON_MAX_FAULT_LIMIT_paged, // paged
+    TON_MAX_FAULT_RESPONSE,
+    TOFF_DELAY_paged, // paged
+    TOFF_FALL_paged, // paged
+    TOFF_MAX_WARN_LIMIT_paged, // paged
+    STATUS_BYTE_paged = 0x78, // paged
+    STATUS_WORD_paged, // paged
+    STATUS_VOUT_paged, // paged
+    STATUS_IOUT_paged, // paged
+    STATUS_INPUT,
+    STATUS_TEMPERATURE_paged, // paged
+    STATUS_CML,
+    STATUS_MFR_SPECIFIC = 0x80, // paged
+    READ_VIN = 0x88,
+    READ_IIN,
+    READ_VOUT_paged = 0x8B, // paged
+    READ_IOUT_paged, // paged
+    READ_TEMPERATURE1_paged, // paged
+    READ_TEMPERATURE2,
+    READ_DUTY_CYCLE_paged = 0x94, // paged
+    READ_FREQUENCY, // not in data sheet but is in LTPowerPlay software
+    READ_POUT_paged = 0x96, // paged
+    PMBUS_REVISION = 0x98,
+    MFR_ID = 0x99,
+    MFR_MODEL,
+    MFR_SERIAL = 0x9E,
+    MFR_VOUT_MAX_paged = 0xA5, // paged
+    USER_DATA_00 = 0xB0,
+    USER_DATA_01_paged, // paged
+    USER_DATA_02,
+    USER_DATA_03_paged, // paged
+    USER_DATA_04,
+    MFR_INFO = 0xB6,
+    MFR_EE_UNLOCK = 0xBD,
+    MFR_EE_ERASE,
+    MFR_EE_DATA,
+    MFR_CHAN_CONFIG_paged = 0xD0, // paged
+    MFR_CONFIG_ALL,
+    MFR_GPIO_PROPAGATE_paged, // paged
+    MFR_PWM_MODE_paged = 0xD4, // paged
+    MFR_GPIO_RESPONSE_paged, // paged
+    MFR_OT_FAULT_RESPONSE,
+    MFR_IOUT_PEAK_paged, // paged
+    MFR_ADC_CONTROL,
+    MFR_ADC_TELEMETRY_STATUS = 0xDA,
+    MFR_RETRY_DELAY_paged, // paged
+    MFR_RESTART_DELAY_paged, // paged
+    MFR_VOUT_PEAK_paged, // paged
+    MFR_VIN_PEAK,
+    MFR_TEMPERATURE_1_PEAK_paged, // paged
+    MFR_CLEAR__PEAKS = 0xE3,
+    MFR_PADS = 0xE5,
+    MFR_ADDRESS,
+    MFR_SPECIAL_ID,
+    MFR_IIN_OFFSET_paged = 0xE9, // paged
+    MFR_FAULT_LOG_STORE,
+    MFR_FAULT_LOG_CLEAR = 0xEC,
+    MFR_READ_IIN_paged, // paged
+    MFR_FAULT_LOG,
+    MFR_COMMON,
+    MFR_COMPARE_USER_ALL = 0xF0,
+    MFR_TEMPERATURE_2_PEAK = 0xF4,
+    MFR_PPWM_CONFIG,
+    MFR_IOUT_CAL_GAIN_TC_paged, // paged
+    MFR_TEMP_1_GAIN_paged = 0xF8, // paged
+    MFR_TEMP1_OFFSET_paged, // paged
+    MFR_RAIL_ADDRESS_paged, // paged
+    MFR_RESET = 0xFD
+}Commands;
+
+/*
+ * Description: Use for parsing message to get Register address, data, paging and data length
+ *
+ *
+ */
+typedef union{
+    struct{
+        uint8_t data[4];
+    }Byte;
+    struct{
+        unsigned page:2;
+        unsigned dataLen:2;
+        unsigned :4;
+        uint8_t regAddress;
+        uint16_t regData;
+    }Status;
+}DirectRegisterInfoType;
+
+// default 0x1f
+typedef union{
+    struct
+    {
+        uint8_t data;
+    } Byte;
+    struct
+    {
+        unsigned voutDisable :1;
+        unsigned gpioAlert :1;
+        unsigned shareClkControl :1;
+        unsigned shortCycle :1;
+        unsigned runDisable :1;
+        unsigned :3;
+    } Status;
+}LTM4675_MfrChanConfig;
+
+// default 0x09
+typedef union{
+    struct
+    {
+        uint8_t data;
+    }Byte;
+    struct
+    {
+        unsigned runPinClearFaults :1;
+        unsigned enablePMBusClkStretching :1;
+        unsigned validPEC :1;
+        unsigned enable255msTimeout :1;
+        unsigned disableSyncOut :1;
+        unsigned disableCmlFault :1;
+        unsigned ignoreResistorConfigPins :1;
+        unsigned enableFaultLogging :1;
+    } Status;
+}LTM4675_MfrConfigAll;
+
+// ON/OFF/MARGIN
+enum{
+    ON_OFF_CONFIG_OPERATION_Immediate = 0x1F,
+    ON_OFF_CONFIG_OPERATION_Toff = 0x1E,
+    ON_OFF_CONFIG_RUN_Immediate = 0x17,
+    ON_OFF_CONFIG_RUN_Toff = 0x16
+}OnOffMargin;
+
+enum{
+    TURN_OFF_IMMEDIATELY,
+    TURN_ON = 0x80,
+    //MARGIN_LOW = 0x98,
+    //MARGIN_HIGH = 0xA8,
+    SEQUENCE_OFF = 0x40
+}OperationCommand;
+
+// default 0xC1
+typedef union{
+    struct
+    {
+        uint8_t data;
+    } Byte;
+    struct
+    {
+        unsigned enableContinuousMode :1;
+        unsigned voltageRange :1;
+        unsigned :2;
+        unsigned tempSensedExternal :1;
+        unsigned :1;
+        unsigned enableServoMode:1;
+        unsigned rangeOfCurrentLimit:1;
+    } Status;
+}LTM4675_MFR_PWM_mode;
+
+// default 0x10
+typedef union{
+    struct
+    {
+        uint8_t data;
+    } Byte;
+    struct
+    {
+        unsigned degreesCH0Ch1 :3;
+        unsigned :1;
+        unsigned enableShareClk:1;
+        unsigned :2;
+        unsigned eaConnection:1;
+    } Status;
+}LTM4675_MfrPWM_Config;
+
+typedef union{
+    struct
+    {
+        uint8_t data;
+    } Byte;
+    struct
+    {
+        unsigned delayTime :3;
+        unsigned retrySetting:3;
+        unsigned response:2;
+    } Status;
+}LTM4675_IOUT_OC_FAULT_RESPONSE;
+
+typedef union {
+    struct
+    {
+        uint8_t data;
+    } Byte;
+    struct
+    {
+        unsigned wpPinStatus :1;
+        unsigned shareClkTimeout:1;
+        unsigned :1;
+        unsigned nvmInitialized:1;
+        unsigned outputNotInTransistion:1;
+        unsigned calculationsNotPending:1;
+        unsigned moduleNotBusy:1;
+        unsigned moduleNotDrivingAlertLow:1;
+    } Status;
+}LTM4675_MfrCommon;
+
+
+// prototypes
+int LTM4675Init(void);
+HAL_StatusTypeDef LTM4675_Write(uint8_t *data, uint8_t writeSize);
+HAL_StatusTypeDef LTM4675_Read(uint8_t *data, uint8_t readSize);
+
+int GetMFR_COMMON(LTM4675_MfrCommon *ltm4675_MfrCommon);
+
+int GetPwrMod(char *msg, char *retStr);
+int SetPwrMod(char *msg);
+
+int SetVBAT_En(char *msg);
+int SetLTM4675RegisterData(char *msg);
+int GetLTM4675RegisterData(char *msg, char *dataOut);
+
+
+#endif /* LTM4675_H_ */

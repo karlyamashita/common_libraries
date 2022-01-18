@@ -20,59 +20,198 @@
 #define MCDP6200_SLAVE_ID_17 0x17
 
 // defines for Retimer Tx and Rx Register arrays
-#define GEN2_HOST 0
-#define GEN2_DEVICE 1
-#define GEN1_HOST 2
-#define GEN1_DEVICE 3
+enum {
+	GEN2_HOST,
+	GEN2_DEVICE,
+	GEN1_HOST,
+	GEN1_DEVICE
+}GEN_Type;
+
+
+// RX base address / Eye Opening Monitor base address / RX Equalizer Status base address
+enum {
+	All_DP_RECEIVER_ADDR = 0x0100, // write only
+	ALL_USB_RX_BASE_ADDR = 0x1E00, // write only
+	UFP_USB_RX_BASE_ADDR = 0x1100,
+	UFP_DPRX_ML0_ADDR = 0x1200,
+	UFP_DPRX_ML1_ADDR = 0x1300,
+	UFP_DPRX_ML2_ADDR = 0x1400,
+	UFP_DPRX_ML3_ADDR = 0x1500,
+	DFP_USB_RX1_BASE_ADDR = 0x2000,
+	DFP_USB_RX2_BASE_ADDR = 0x2100
+}RX_Base_Address;
 
 // TX base address
-#define	UFP_USB_TX_BASE_ADDR 0x1000
-#define	DFP_USB_TX1_BASE_ADDR 0x2400
-#define	DFP_USB_TX2_BASE_ADDR 0x2500
-#define	ALL_USB_TX_BASE_ADDR 0x1F00 // write only
+enum {
+	All_DPTX_ADDR = 0x0200, // write only
+	ALL_USB_TX_BASE_ADDR = 0x1F00, // write only
+	DFP_DPTX_ML3_ADDR = 0x2200,
+	DFP_DPTX_ML0_ADDR = 0x2300,
+	DFP_DPTX_ML2_ADDR = 0x2400,
+	DFP_DPTX_ML1_ADDR = 0x2500,
+	UFP_USB_TX_BASE_ADDR = 0x1000,
+	DFP_USB_TX1_BASE_ADDR = 0x2400,
+	DFP_USB_TX2_BASE_ADDR = 0x2500
+}TX_Base_Address;
 
-// RX base address
-#define	UFP_USB_RX_BASE_ADDR 0x1100
-#define	DFP_USB_RX1_BASE_ADDR 0x2000
-#define	DFP_USB_RX2_BASE_ADDR 0x2100
-#define	ALL_USB_RX_BASE_ADDR 0x1E00
 
-// TX registers
-#define	TXPHY_CTRL0_0x40 0x40
-#define TX_GC_CTRL1_0x4C 0x4C
-#define	TX_CONF_WINDOW_0_0x54 0x54
-#define	TX_CONF_WINDOW_1_0x58 0x58
-#define	TX_CONF_CTRL_0x5C 0x5C
-#define	TX_CONF_MONITOR_0_0x60 0x60
-#define	TX_CONF_MONITOR_1_0x64 0x64
+// IC Status / Configurations Registers
+enum {
+	IC_RT_CONFIG_ADDR = 0x30C,
+	DP_RT_CONFIG_ADDR = 0x350,
+	OPMODE_CONF_ADDR = 0x504,
+	IC_REV_ADDR = 0x510,
+	RO_TUNE_MANUAL_ADDR = 0x281C,
+	RO_CTUNE_STATUS_ADDR = 0x283C,
+	USB_RTSSM_STATUS0_ADDR = 0x320,
+	USB_RTSSM_STATUS1_ADDR = 0x324,
+	USB_RTSSM_STATUS2_ADDR = 0x328,
+	USB_RTSSM_STATUS3_ADDR = 0x32C,
+	USB_RTSSM_STATUS4_ADDR = 0x330,
+	USB_RTSSM_STATUS5_ADDR = 0x334,
+	USB_RTSSM_STATUS6_ADDR = 0x338
+}IC_Status_Config_Registers;
 
-// RX registers
-#define	RX_CTLE_TERM_SB_CTRL_0x18 0x18
-#define	RX_PGA_CTRL_0x1C 0x1C
-#define	RX_DFE_TAP_CTRL_0x24 0x24
-#define	RX_DFE_CTRL_0x28 0x28
-#define	RX_Gen1_RX_Manual_EN_0x80 0x80
-#define	RX_Gen2_RX_Manual_EN_0x84 0x84
-#define	RX_DFE_ADAPT_CTRL_0x88 0x88
-#define	RX_CTLE_ADAPT_MODE_0x8C 0x8C
-#define	RX_THR_ADAPT_MODE_0x90 0x90
-#define	RX_PHYD_CTRL0_0xB4 0xB4
-#define	RX_PHYD_MISC_CNTRL0_0xC0 0xC0
+
+// DisplayPort Receiver Logic Register
+enum{
+	DPRX_ERR_CNT_CTRL_ADDR = 0x61C,
+	DP_LT_STATUS_ADDR = 0x62C,
+	DPRX_CONTROL_ADDR = 0x660,
+	DP_FIFO_CTRL_ADDR = 0x67C
+}DisplayPortReceiverLogicRegister;
+
+
+// DPCD_SNOOP
+enum {
+	DPCD_SNOOP_0_ADDR = 0x700,
+	DPCD_SNOOP_1_ADDR = 0x704,
+	DPCD_SNOOP_2_ADDR = 0x708,
+	DPCD_SNOOP_3_ADDR = 0x720,
+	DPCD_SNOOP_4_ADDR = 0x724,
+	DPCD_SNOOP_5_ADDR = 0x728,
+	DPCD_SNOOP_6_ADDR = 0x72C,
+	DPCD_SNOOP_7_ADDR = 0x750,
+	DPCD_SNOOP_8_ADDR = 0x754
+}DPCD_SNOOP;
+
+
+// LT_CONFIG
+enum{
+	LT_CONFIG_0_ADDR = 0x900,
+	LT_CONFIG_1_ADDR = 0x904,
+	LT_CONFIG_2_ADDR = 0x908,
+	LT_CONFIG_3_ADDR = 0x90C,
+	LT_CONFIG_4_ADDR = 0x910,
+	LT_CONFIG_5_ADDR = 0x914,
+	LT_CONFIG_6_ADDR = 0x918,
+	LT_CONFIG_7_ADDR = 0x91C,
+	LT_CONFIG_8_ADDR = 0x920,
+	LT_CONFIG_9_ADDR = 0x924,
+	LT_CONFIG_A_ADDR = 0x928,
+	LT_CONFIG_B_ADDR = 0x92C
+}LT_CONFIG;
+
+
+// DPCD_LTTPR_CAP_ID
+enum{
+	DPCD_LTTPR_CAP_ID_0_ADDR = 0xA00,
+	DPCD_LTTPR_CAP_ID_1_ADDR = 0xA04,
+	DPCD_LTTPR_CONF_STATUS_13_10_ADDR = 0xB00,
+	DPCD_LTTPR_CONF_STATUS_17_14_ADDR = 0xB04,
+	DPCD_LTTPR_CONF_STATUS_1B_18_ADDR = 0xB08,
+	DPCD_LTTPR_CONF_STATUS_23_20_ADDR = 0xB10,
+	DPCD_LTTPR_CONF_STATUS_33_30_ADDR = 0xB20,
+	DPCD_LTTPR_CONF_STATUS_37_34_ADDR = 0xB24,
+	DPCD_LTTPR_CONF_STATUS_3B_38_ADDR = 0xB28,
+	DPCD_LTTPR_CONF_STATUS_3F_3C_ADDR = 0xB2C
+}DPCD_LTTPR_CAP_ID;
+
+
+// RX Configuration registers
+enum{
+	RX_CTLE_TERM_SB_CTRL_ADDR = 0x18,
+	RX_PGA_CTRL_ADDR = 0x1C,
+	RX_DFE_TAP_CTRL_ADDR = 0x24,
+	RX_DFE_CTR_ADDR = 0x28,
+	RX_RBR_RX_Manual_EN_ADDR = 0x70,
+	RX_HBR_RX_Manual_EN_ADDR = 0x74,
+	RX_HBR2_RX_Manual_EN_ADDR = 0x78,
+	RX_HBR3_RX_Manual_EN_ADDR = 0x7C,
+	RX_Gen1_RX_Manual_EN_ADDR = 0x80,
+	RX_Gen2_RX_Manual_EN_ADDR = 0x84,
+	RX_DFE_ADAPT_CTRL_ADDR = 0x88,
+	RX_CTLE_ADAPT_MODE_ADDR = 0x8C,
+	RX_THR_ADAPT_MODE_ADDR = 0x90,
+	RX_EQ_ADAPT_WAIT0_ADDR = 0xA0,
+	RX_EQ_ADAPT_WAIT1_ADDR = 0xA4,
+	RX_PHYD_CTRL0_ADDR = 0xB4,
+	RX_PHYD_MISC_CNTRL0_ADDR = 0xC0,
+	RX_CDR_RESET_CTRL_ADDR = 0xD8
+};
+/*
+#define	RX_CTLE_TERM_SB_CTRL_ADDR 0x18
+#define	RX_PGA_CTRL_ADDR 0x1C
+#define	RX_DFE_TAP_CTRL_ADDR 0x24
+#define	RX_DFE_CTR_ADDR 0x28
+#define RX_RBR_RX_Manual_EN_ADDR 0x70 // 5
+#define RX_HBR_RX_Manual_EN_ADDR 0x74
+#define RX_HBR2_RX_Manual_EN_ADDR 0x78
+#define RX_HBR3_RX_Manual_EN_ADDR 0x7C
+#define	RX_Gen1_RX_Manual_EN_ADDR 0x80
+#define	RX_Gen2_RX_Manual_EN_ADDR 0x84 // 10
+#define	RX_DFE_ADAPT_CTRL_ADDR 0x88
+#define	RX_CTLE_ADAPT_MODE_ADDR 0x8C
+#define	RX_THR_ADAPT_MODE_ADDR 0x90
+#define RX_EQ_ADAPT_WAIT0_ADDR 0xA0
+#define RX_EQ_ADAPT_WAIT1_ADDR 0xA4 // 15
+#define	RX_PHYD_CTRL0_ADDR 0xB4
+#define	RX_PHYD_MISC_CNTRL0_ADDR 0xC0
+#define RX_CDR_RESET_CTRL_ADDR 0xD8
+*/
 
 // Receiver Equalizer Status monitor registers
-#define	RX_ADAPT_MONITOR0_0x94 0x94
-#define	RX_CTLE_ADAPT_CONF_0xB4 0xB4
-#define	RX_ADAPT_MONITOR1_0xBC 0xBC
-#define	RX_ADAPT_MONITOR2_0xE4 0xE4
+enum{
+	RX_ADAPT_MONITOR0_ADDR = 0x94,
+	RX_CTLE_ADAPT_CONF_ADDR = 0xB4,
+	RX_ADAPT_MONITOR1_ADDR = 0xBC,
+	RX_ADAPT_MONITOR2_ADDR = 0xE4
+}ReceiverEqualizerStatusMonitorRegisters;
+/*
+#define	RX_ADAPT_MONITOR0_ADDR 0x94
+#define	RX_CTLE_ADAPT_CONF_ADDR 0xB4
+#define	RX_ADAPT_MONITOR1_ADDR 0xBC
+#define	RX_ADAPT_MONITOR2_ADDR 0xE4
+*/
 
 // Eye opening Monitor Registers
-#define	RXPHY_CTRL0_0x50 0x50
-#define RX_EOM_ACCUM_INTERVAL_0x54 0x54
-#define RX_EOM_START_VAL_0x58 0x58
-#define RX_EOM_CTRL_0xB8 0xB8
-#define RX_PHYD_EOM_DAT_0xC8 0xC8
-#define RX_EOM_CONFIG_0xD4 0xD4
+enum{
+	RXPHY_CTRL0_ADDR = 0x50,
+	RX_EOM_ACCUM_INTERVAL_ADDR = 0x54,
+	RX_EOM_START_VAL_ADDR = 0x58,
+	RX_EOM_CTRL_ADDR = 0xB8,
+	RX_PHYD_EOM_DAT_ADDR = 0xC8,
+	RX_EOM_CONFIG_ADDR = 0xD4
+}EyeOpeningMonitorRegisters;
+/*
+#define	RXPHY_CTRL0_ADDR 0x50
+#define RX_EOM_ACCUM_INTERVAL_ADDR 0x54
+#define RX_EOM_START_VAL_ADDR 0x58
+#define RX_EOM_CTRL_ADDR 0xB8
+#define RX_PHYD_EOM_DAT_ADDR 0xC8 // 5
+#define RX_EOM_CONFIG_ADDR 0xD4
+*/
 
+// TX Configuration registers
+enum{
+	TXPHY_CTRL0_ADDR = 0x40,
+	TX_GC_CTRL1_ADDR = 0x4C,
+	TX_CONF_WINDOW_0_ADDR = 0x54,
+	TX_CONF_WINDOW_1_ADDR = 0x58,
+	TX_CONF_CTRL_ADDR = 0x5C,
+	TX_CONF_MONITOR_0_ADDR = 0x60,
+	TX_CONF_MONITOR_1_ADDR = 0x64
+}TXConfigurationRegisters;
 // end defines
 
 typedef struct{
@@ -310,6 +449,8 @@ typedef union {
 	} Status;
 } USB_RTSSM_STATUS6_338_CRO;
 
+
+// ****** DisplayPort Receiver Logic Register
 typedef union {
 	struct {
 		uint8_t data[4];
@@ -325,9 +466,9 @@ typedef union {
 		uint8_t data[4];
 	} RegDataArray;
 	struct {
-		unsigned DPRX_FINAL_LINL_BW :6;
+		unsigned DPRX_FINAL_LINK_BW :6;
 		unsigned :2;
-		unsigned DPRX_FINALLANE_COUNT:3;
+		unsigned DPRX_FINAL_LANE_COUNT:3;
 		unsigned :2;
 		unsigned DPRX_FINAL_ENH_EN:1;
 		unsigned DPRX_CURR_LT_PATRN:3;
@@ -695,23 +836,23 @@ typedef union{
 	} RegDataArray;
 	struct {
 		unsigned trainingPatternSelection :4;
-		unsigned recoveredClockOutEN:1;
-		unsigned scramblingDisable:1;
-		unsigned symbolErrorCountSel:2;
-		unsigned voltageSwingSetLane0:2;
-		unsigned maxSwingReachedLane0:1;
-		unsigned preEmphasisSetLane0:2;
-		unsigned maxPreEmphasisReachedLane0:1;
+		unsigned recoveredClockOutEN:1; // >> 4
+		unsigned scramblingDisable:1; // >> 5
+		unsigned symbolErrorCountSel:2; // > 6
+		unsigned voltageSwingSetLane0:2; // >> 8
+		unsigned maxSwingReachedLane0:1; // >> 10
+		unsigned preEmphasisSetLane0:2; // >> 11
+		unsigned maxPreEmphasisReachedLane0:1; // >> 13
 		unsigned :2;
-		unsigned voltageSwingSetLane1:2;
-		unsigned maxSwingReachedLane1:1;
-		unsigned preEmphasisSetLane1:2;
-		unsigned maxPreEmphasisReachedLane1:1;
+		unsigned voltageSwingSetLane1:2; // >> 16
+		unsigned maxSwingReachedLane1:1; // >> 18
+		unsigned preEmphasisSetLane1:2; // >> 19
+		unsigned maxPreEmphasisReachedLane1:1; // >> 21
 		unsigned :2;
-		unsigned voltageSwingSetLane2:2;
-		unsigned maxSwingReachedLane2:1;
-		unsigned preEmphasisSetLane2:2;
-		unsigned maxPreEmphasisReachedLane2:1;
+		unsigned voltageSwingSetLane2:2; // >> 24
+		unsigned maxSwingReachedLane2:1; // >> 26
+		unsigned preEmphasisSetLane2:2; // >> 27
+		unsigned maxPreEmphasisReachedLane2:1; // > 29
 		unsigned :2;
 	} Status;
 } DPCD_LTTPR_CONF_STATUS_13_10_B00_RW;
@@ -725,13 +866,7 @@ typedef union{
 		unsigned maxSwingReachedLane3:1;
 		unsigned preEmphasisSetLane3:2;
 		unsigned maxPreEmphasisReachedLane3:1;
-		unsigned :2;
-		unsigned linkQualPatternSetLane0:3;
-		unsigned :5;
-		unsigned linkQualPatternSetLane1:3;
-		unsigned :5;
-		unsigned linkQualPatternSetLane2:3;
-		unsigned :5;
+		unsigned :26;
 	} Status;
 } DPCD_LTTPR_CONF_STATUS_17_14_B04_RW;
 
@@ -1227,7 +1362,7 @@ typedef union {
 		unsigned EOM_EN : 1;
 		unsigned EOM_START : 1;
 		unsigned EOM_MODE : 3;
-		unsigned reserved :2;
+		unsigned :2;
 		unsigned EQ_ADAPT_STOP : 1;
 		unsigned :24;
 	} Status;
@@ -1273,7 +1408,7 @@ typedef union {
 		unsigned TX_INVERT : 1;
 		unsigned : 1;
 		unsigned FIFO_AUTO_RESET_EN : 1;
-		unsigned reserved2 : 21;
+		unsigned : 21;
 	} Status;
 } TX_PHY_CTRL0_40_RW;
 
@@ -1387,10 +1522,11 @@ typedef union {
 // end register structures
 
 // prototypes
-void MCDP6200_Init(void);
-void MCDP6200_SetTxConfigWindow(uint8_t retimerAddress, uint16_t _txRegister, uint8_t rdWr, uint8_t gen);
-int RetimerWriteRxRegister(uint8_t address, uint8_t siteNumber, RetimerStatus *retimerStatus);
-int RetimerWriteTxRegister(uint8_t address, uint8_t siteNumber, RetimerStatus *retimerStatus);
+int MCDP6200_Init(void);
+int SetMCDP6200Register(char *message);
+int GetMCDP6200Register(char *message, char *str);
 
-
+void GPIO_Pin_RTMR_DIS_N_Enable(void);
+void GPIO_Pin_RTMR_DIS_N_Disable(void);
+void GPIO_Pin_RTMR_DIS_N_StartPulse(void);
 #endif /* REGISTERSWRITE_H_ */

@@ -9,8 +9,9 @@
  *
  */
 
+#include <FloatToString.h>
 #include "main.h"
-#include "FloatToString.h"
+
 
 static int n_tu(int number, int count);
 
@@ -32,8 +33,7 @@ static int n_tu(int number, int count)
  */
 void Float_to_string(float f, uint8_t places, char strOut[])
 {
-    long long int length, length2, number;
-    int position, sign, i;
+    long long int length, length2, i, number, position, sign;
     float number2;
 
     sign = -1;   // -1 == positive number
@@ -85,3 +85,4 @@ void Float_to_string(float f, uint8_t places, char strOut[])
         }
     }
 }
+
