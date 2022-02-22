@@ -3,18 +3,22 @@
 
 #include "main.h"
 
-#define MAX_TIMER_CALLBACK 6 // increase if more callbacks are needed
+// user defines
+#define MAX_TIMER_CALLBACK 10 // increase if more callbacks are needed
+#define MAX_TIMER_INSTANCE 2 // the number of timer instances. Default is 1 for milli seconds. Increase for each timer instances needed.
+
+
 
 typedef void (*TimerCallback)(void);// no data is passed
 
 enum TIMER_CALLBACK_RATE{
-	NO_REPEAT_TIMER,
-	REPEAT_TIMER
+	TIMER_NO_REPEAT,
+	TIMER_REPEAT
 };
 
 enum TIMER_CALLBACK_ENABLE{
-    T_DISABLED,
-    T_ENABLED
+    TIMER_DISABLED,
+    TIMER_ENABLED
 };
 
 typedef struct TimerCallbackStruct{
@@ -26,23 +30,24 @@ typedef struct TimerCallbackStruct{
     bool timerEnabled; // enable/disable callback
     uint32_t timerValue; // the time to reach
     uint32_t timerCount; // the current timer count
+    uint32_t timerLastIndex; // this holds the amount of callback amounts registered. The first callback registered should never get deleted as it holds this index value.
 }TimerCallbackStruct;
 
 
-int8_t TimerCallbackRegister(TimerCallback callback, uint32_t timerValue, bool repeat);
-int8_t TimerCallbackShutDownRegister(TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue);
-int8_t TimerCallbackShutDownEnable(TimerCallback callback, uint8_t enable);
-uint8_t TimerCallbackClearShutDownTimer(TimerCallback callback);
-uint8_t TimerCallbackClearTimer(TimerCallback callback);
-uint8_t TimerCallbackDelete(TimerCallback callback);
-uint8_t TimerCallbackEnable(TimerCallback callback, uint8_t enable);
-uint8_t TimerCallbackEnableStatus(TimerCallback callback, uint8_t *status);
-uint8_t TimerCallbackGetCurrentTimerValue(TimerCallback callback, uint32_t *timerValue);
-uint8_t TimerCallbackSetTimerRepeat(TimerCallback callback, uint32_t timerValue, uint8_t repeat);
-uint8_t TimerCallbackSetShutDownValue(TimerCallback callback, uint32_t shutDownValue);
-uint8_t TimerCallbackExists(TimerCallback callback);
-void TimerCallbackIncrement(void);
-void TimerCallbackCheck(void);
+int TimerCallbackRegister(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, bool repeat);
+int TimerCallbackShutDownRegister(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue);
+int TimerCallbackShutDownEnable(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t enable);
+int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
+int TimerCallbackClearTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
+int TimerCallbackDelete(TimerCallbackStruct *timerCallback, TimerCallback callback);
+int TimerCallbackEnable(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t enable);
+int TimerCallbackEnableStatus(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t *status);
+int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t *timerValue);
+int TimerCallbackSetTimerRepeat(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, uint8_t repeat);
+int TimerCallbackSetShutDownValue(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t shutDownValue);
+int TimerCallbackExists(TimerCallbackStruct *timerCallback, TimerCallback callback);
+void TimerCallbackIncrement(TimerCallbackStruct *timerCallback);
+void TimerCallbackCheck(TimerCallbackStruct *timerCallback);
 
 
 #endif // TIMER_CALLBACK_H
