@@ -8,7 +8,6 @@
 #ifndef UARTBUFFER_H_
 #define UARTBUFFER_H_
 
-#include "main.h"
 
 #define MAX_UART_RX_CHAR_BUFFER_SINGLE 1 // this is for the uart IRQ array reference. For STM32 we are receiving one character at a time.
 #define MAX_UART_RX_CHAR_BUFFER 192
@@ -43,7 +42,7 @@ typedef struct{
 void UartParseRxCharBuffer(void);
 void UartAddTxMessageBuffer(UartCharBufferTxStruct *uartBufferPointer);
 void UartSendMessage(void);
-HAL_StatusTypeDef UartAddCharToBuffer(uint8_t uartPort, char *_char);
+int UartAddCharToBuffer(uint8_t uartPort, char *_char);
 int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, UartCharBufferTxStruct *uartTx_OUT, char *str);
 void UartClearRxCharBuffer(void);
 

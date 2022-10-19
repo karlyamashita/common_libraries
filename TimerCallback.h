@@ -46,7 +46,7 @@ int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timerCallback, TimerC
 int TimerCallbackSetTimerRepeat(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, uint8_t repeat);
 int TimerCallbackSetShutDownValue(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t shutDownValue);
 int TimerCallbackExists(TimerCallbackStruct *timerCallback, TimerCallback callback);
-void TimerCallbackIncrement(TimerCallbackStruct *timerCallback);
+void TimerCallbackTick(TimerCallbackStruct *timerCallback);
 void TimerCallbackCheck(TimerCallbackStruct *timerCallback);
 
 

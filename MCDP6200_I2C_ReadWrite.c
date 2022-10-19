@@ -19,6 +19,7 @@
 static int Get_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *regAddr, uint32_t regSize, uint8_t *RxMsgPtr, uint32_t byteCount);
 static int Set_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *TxMsgPtr, uint32_t byteCount);
 
+extern uint16_t advantestDebug;
 
 /*
  * Description: Reads register data
@@ -30,13 +31,22 @@ static int Set_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *TxMsgPtr, uint32
 int MCDP6200_Read_Register_Data(uint8_t devAddr, uint32_t regAddr, uint8_t *data)
 {
 	int status = NO_ERROR;
-	uint8_t regAddrArray[2];
+	uint8_t regAddrArray[2] = {0};
+	uint32_t tmp = 0;;
+    UartCharBufferTxStruct uartBufferPointer = { 0 };
 
 	regAddrArray[0] = (uint8_t) regAddr; // lower address
 	regAddrArray[1] = (uint8_t) (regAddr >> 8); // upper address
 
 	status = Get_MCDP6200_Register_Data(devAddr, regAddrArray, REG_SIZE, data, 4);
 
+    if (advantestDebug)
+    {
+        memcpy(&tmp, data, sizeof(uint32_t));
+        sprintf((char*) uartBufferPointer.data, "Debug Read: 0x%X, 0x%X\r\n",
+                regAddr, tmp);
+        UartTxMessage(&uartBufferPointer); //debug
+    }
 	return status;
 }
 
@@ -49,7 +59,17 @@ int MCDP6200_Read_Register_Data(uint8_t devAddr, uint32_t regAddr, uint8_t *data
 int MCDP6200_Write_Register(uint8_t devAddr, uint32_t regAddr, uint8_t *data)
 {
 	int status = NO_ERROR;
-    uint8_t regData[6];
+    uint8_t regData[6] = {0};
+    uint32_t tmp = 0;
+
+    if (advantestDebug)
+    {
+        UartCharBufferTxStruct uartBufferPointer = { 0 };
+        memcpy(&tmp, data, sizeof(uint32_t));
+        sprintf((char*) uartBufferPointer.data, "Debug Write: 0x%X, 0x%X\r\n",
+                regAddr, tmp);
+        UartTxMessage(&uartBufferPointer); //debug
+    }
 
     regData[0] = (uint8_t) regAddr; // lower address
     regData[1] = (uint8_t) (regAddr >> 8); // upper address
@@ -74,7 +94,7 @@ int MCDP6200_Write_Register(uint8_t devAddr, uint32_t regAddr, uint8_t *data)
 static int Get_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *regAddr, uint32_t regSize, uint8_t *RxMsgPtr, uint32_t byteCount)
 {
 	int status = NO_ERROR;
-	uint32_t i2c_base = I2C0_BASE;
+	uint32_t i2c_base = I2C1_BASE;
 
 	status = I2C_Master_ReadRegister(i2c_base, devAddr, regAddr, regSize, RxMsgPtr, byteCount);
 
@@ -89,7 +109,7 @@ static int Get_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *regAddr, uint32_
 static int Set_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *TxMsgPtr, uint32_t byteCount)
 {
 	int status = NO_ERROR;
-	uint32_t i2c_base = I2C0_BASE;
+	uint32_t i2c_base = I2C1_BASE;
 
 	status = I2C_Master_Transmit(i2c_base, devAddr, TxMsgPtr, byteCount);
 
@@ -110,22 +130,22 @@ static int Get_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *regAddr, uint8_t
     int status = NO_ERROR;
     uint32_t bytesRecvd = 0;
     uint32_t bytesSent = 0;
-//  XIic i2c_instance;
+  XIic i2c_instance;
     uint32_t tickCount;
 
-//  status = XIic_SetAddress(&i2c_instance, XII_ADDR_TO_SEND_TYPE, devAddr);
+  status = XIic_SetAddress(&i2c_instance, XII_ADDR_TO_SEND_TYPE, devAddr);
     if(status != 0){
         return I2C_ERROR;
     }
 
     tickCount = HAL_GetTick();
-//  while(XIic_WaitBusFree(IIC_RETIMER_BASE_ADDRESS) != XST_SUCCESS){
+  while(XIic_WaitBusFree(IIC_RETIMER_BASE_ADDRESS) != XST_SUCCESS){
         if((HAL_GetTick() - tickCount) >= I2C_TIMEOUT){
             return TIMEOUT;
         }
-//  }
+  }
 
-//  bytesSent = XIic_Send(IIC_RETIMER_BASE_ADDRESS, devAddr, regAddr, 2, XIIC_REPEATED_START);
+  bytesSent = XIic_Send(IIC_RETIMER_BASE_ADDRESS, devAddr, regAddr, 2, XIIC_REPEATED_START);
     if(bytesSent != 2){
         return I2C_ERROR;
     }
@@ -135,7 +155,7 @@ static int Get_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *regAddr, uint8_t
         if((HAL_GetTick() - tickCount) >= I2C_TIMEOUT){
             return TIMEOUT;
         }
-//      bytesRecvd = XIic_Recv(IIC_RETIMER_BASE_ADDRESS, devAddr, RxMsgPtr, byteCount, XIIC_STOP);
+      bytesRecvd = XIic_Recv(IIC_RETIMER_BASE_ADDRESS, devAddr, RxMsgPtr, byteCount, XIIC_STOP);
     }
     return NO_ERROR;
 }
@@ -150,22 +170,22 @@ static int Set_MCDP6200_Register_Data(uint8_t devAddr, uint8_t *TxMsgPtr, uint32
     int status = NO_ERROR;
     uint32_t byteSent = 0;
 
-//  XIic i2c_instance;
+  XIic i2c_instance;
     uint32_t tickCount = HAL_GetTick();
 
-//  status = XIic_SetAddress(&i2c_instance, XII_ADDR_TO_SEND_TYPE, devAddr);
+  status = XIic_SetAddress(&i2c_instance, XII_ADDR_TO_SEND_TYPE, devAddr);
     if(status != 0){
         return I2C_ERROR;
     }
 
     tickCount = HAL_GetTick();
-//  while(XIic_WaitBusFree(IIC_RETIMER_BASE_ADDRESS) != XST_SUCCESS){
+  while(XIic_WaitBusFree(IIC_RETIMER_BASE_ADDRESS) != XST_SUCCESS){
         if((HAL_GetTick() - tickCount) >= I2C_TIMEOUT){
             return TIMEOUT;
         }
-//  }
+  }
 
-//  byteSent = XIic_Send(IIC_RETIMER_BASE_ADDRESS, devAddr, TxMsgPtr, byteCount, XIIC_STOP);
+  byteSent = XIic_Send(IIC_RETIMER_BASE_ADDRESS, devAddr, TxMsgPtr, byteCount, XIIC_STOP);
     if(byteSent != byteCount){
         status = I2C_ERROR;
     }

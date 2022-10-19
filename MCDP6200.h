@@ -339,6 +339,23 @@ typedef union {
 
 //****** USB Status Monitor
 typedef union {
+    struct {
+        uint32_t u32data;
+    } u32RegData;
+    struct {
+     uint8_t data[4];
+    } RegDataArray;
+    struct {
+        unsigned RO_CTUNE_DONE : 1;
+        unsigned RO_LD_LOCK : 1;
+        unsigned RO_CTUNEF_MON : 2;
+        unsigned RO_CTUNEC_MON : 2;
+        unsigned :26;
+    } Status;
+} USB_RTSSM_STATUS_31C;
+
+
+typedef union {
 	 struct {
 		 uint8_t data[4];
 	 } RegDataArray;
@@ -449,6 +466,16 @@ typedef union {
 	} Status;
 } USB_RTSSM_STATUS6_338_CRO;
 
+typedef union {
+     struct {
+         uint8_t data[4];
+     } RegDataArray;
+    struct {
+        unsigned : 17;
+        unsigned TheBit: 1;
+        unsigned : 14;
+    } Status;
+} USB_RTSSM_STATUS_34C;
 
 // ****** DisplayPort Receiver Logic Register
 typedef union {
@@ -1317,6 +1344,34 @@ typedef union {
 } RX_ADAPT_MONITOR2_E4_RO;
 
 // ****** Eye Opening Monitor Registers
+
+typedef union {
+    struct {
+             uint8_t data[4];
+         } RegDataArray;
+        struct {
+             unsigned RX_OFFSET_DTH_EVEN_SPI : 6;
+             unsigned RX_OFFSET_DTH_EVEN_DBGEN : 1;
+             unsigned :1;
+             unsigned RX_OFFSET_DTH_ODD_SPI : 6;
+             unsigned RX_OFFSET_DTH_ODD_DBGEN : 1;
+             unsigned : 18;
+        } Status;
+} RX_ETH_SLICER_CTRL_2C_RW;
+
+typedef union {
+    struct {
+             uint8_t data[4];
+         } RegDataArray;
+        struct {
+             unsigned RX_EYESCAN_EN:1;
+             unsigned RX_CDR_FCOUNT_MNTR_EN:1;
+             unsigned : 6;
+             unsigned RX_PCODE_EYESCANOOFFSET : 7;
+             unsigned : 17;
+        } Status;
+} RX_CDR_OFFSET_CTRL_34_RW;
+
 typedef union {
 	 struct {
 		 uint8_t data[4];
@@ -1355,6 +1410,27 @@ typedef union {
 } RX_EOM_START_VAL_58_RW;
 
 typedef union {
+     struct {
+         uint8_t data[4];
+     } RegDataArray;
+    struct {
+        unsigned : 4;
+        unsigned ERDD_PATSEL_XG: 3;
+        unsigned : 5;
+        unsigned ERDD_RSLT_CLR_XG:1;
+    } Status;
+} RX_XG_ERDD_CTRL0_6C_RW;
+
+typedef union {
+    struct {
+        uint8_t data[4];
+    } RegDataArray;
+   struct {
+       uint32_t ERDE_DAT_ERRCNT_BER_XG;
+   } Status;
+} RX_XG_ERDE_STATUS1_AC_RO;
+
+typedef union {
 	 struct {
 		 uint8_t data[4];
 	 } RegDataArray;
@@ -1362,8 +1438,25 @@ typedef union {
 		unsigned EOM_EN : 1;
 		unsigned EOM_START : 1;
 		unsigned EOM_MODE : 3;
-		unsigned :2;
+		unsigned PCODE_EOMOFFSET_DBG:1;
+		unsigned OFSET_EOM_DBG:1;
 		unsigned EQ_ADAPT_STOP : 1;
+		unsigned :6;
+		unsigned MODE_SW_OVER:1;
+		unsigned FIFO32T20_CLR:1;
+		unsigned EQ_EN_OVR_THR:1;
+		unsigned EQ_EN_OVR_TAP:1;
+		unsigned EQ_EN_OVR_CTLE:1;
+		unsigned :3;
+		unsigned EQ_RST_THR:1;
+		unsigned EQ_RST_TAP:1;
+		unsigned EQ_RST_CTLE:1;
+		unsigned EQ_POLSW:1;
+		unsigned OFFCAL_EN:1;
+		unsigned OFFCAL_STRST:1;
+		unsigned OFFCAL_IB_CTRL:1;
+		unsigned OFFCAL_CTLE_PDZ:2;
+		unsigned OFFCAL_CTLE_PDZ_OVR:1;
 		unsigned :24;
 	} Status;
 } RX_EOM_CTRL_B8_RW;
@@ -1390,10 +1483,17 @@ typedef union {
 	    unsigned EOM_EYELIM : 17; // TODO - make structure
 		unsigned EOM_HSTEP : 3;
 		unsigned EOM_VSTEP : 3;
-		unsigned EOM_OVR : 1;
+		unsigned EOM_OVR : 1; // bit 23
+
 		unsigned ERDE_EN_OVR : 1;
 		unsigned ERDE_RSLT_CLR_OVR : 1;
-		unsigned : 6;
+		unsigned DBG_DIVCLK_EN :1;
+		unsigned CG_ERD_EN : 1;
+
+		unsigned CG_EQ_EN_OVR :1;
+		unsigned CG_OFFCAL_EN_OVR :1;
+		unsigned CG_OEM_EN :1;
+		unsigned RATEMUX_RSTZ_OVR:1;
 	} Status;
 } RX_EOM_CONFIG_D4_RW;
 
@@ -1523,10 +1623,19 @@ typedef union {
 
 // prototypes
 int MCDP6200_Init(void);
-int SetMCDP6200Register(char *message);
-int GetMCDP6200Register(char *message, char *str);
+int SetMCDP6200Register(char *msg);
+int GetMCDP6200Register(char *msg, char *str);
 
-void GPIO_Pin_RTMR_DIS_N_Enable(void);
-void GPIO_Pin_RTMR_DIS_N_Disable(void);
-void GPIO_Pin_RTMR_DIS_N_StartPulse(void);
+int SetMCDP6200_RTMR_P_POL(char *msg);
+int SetMCDP6200_RTMR_DIS_N(char *msg);
+
+void MCDP6200_GPIO_Pin_RTMR_DIS_N_Enable(void);
+void MCDP6200_GPIO_Pin_RTMR_DIS_N_Disable(void);
+
+void MCDP6200_GPIO_Pin_RTMR_P_POL_Enable(void);
+void MCDP6200_GPIO_Pin_RTMR_P_POL_Disable(void);
+
+void MCDP6200_GPIO_Pin_RTMR_DIS_N_StartPulse(void);
+
+
 #endif /* REGISTERSWRITE_H_ */

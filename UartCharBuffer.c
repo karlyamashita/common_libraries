@@ -7,19 +7,19 @@
  *      06-16-2021 Rev. 1.0.1 - Changed code to make more universal.
  *
  *      // Basic Info
- *      • This is a universal uart message buffer for ASCII characters. It has a ring buffer for individual characters and a ring buffer for messages.
- *      • Do not use this for 8bit data. Receiving 8bit data requires a different type of buffer and parser.
- *      • This file shouldn't need any modifications except for bug fixes.
+ *      â€¢ This is a universal uart message buffer for ASCII characters. It has a ring buffer for individual characters and a ring buffer for messages.
+ *      â€¢ Do not use this for 8bit data. Receiving 8bit data requires a different type of buffer and parser.
+ *      â€¢ This file shouldn't need any modifications except for bug fixes.
  *
  *      // Receive info
- *      • Use AddUartCharBuffer() to add single characters to a character buffer. You would usually call this from a uart IRQ.
- *      • Call UartParseRxCharBuffer() from a polling routine.
+ *      â€¢ Use AddUartCharBuffer() to add single characters to a character buffer. You would usually call this from a uart IRQ.
+ *      â€¢ Call UartParseRxCharBuffer() from a polling routine.
  *         This will parse the character buffer, looking for a '\r' to then save the characters to a message buffer.
- *      • Use ParseUartRxMessageBuffer() as an example to parse the message buffer. Write you own code inside the function.
+ *      â€¢ Use ParseUartRxMessageBuffer() as an example to parse the message buffer. Write you own code inside the function.
  *
  *      // Transmit info
- *      • Use UartAddTxMessageBuffer() to add a message to a Tx message buffer.
- *      • Call UartSendMessage() from a polling routine. This will send any messages in the transmit message buffer.
+ *      â€¢ Use UartAddTxMessageBuffer() to add a message to a Tx message buffer.
+ *      â€¢ Call UartSendMessage() from a polling routine. This will send any messages in the transmit message buffer.
  *
  *
  *
@@ -32,13 +32,11 @@
 
         Note2: These includes should be defined in main.h in these order
         #include "RingBuff.h"
-        #include "UartIncludes.h" // see Note1
         #include "UartCharBuffer.h"
  */
 
 #include "main.h"
 #include "UartCharBuffer.h"
-
 
 // Rx character buffer. The array for the Uart IRQ.
 uint8_t uartRxCharBuffer[MAX_UART_RX_CHAR_BUFFER];
@@ -172,11 +170,11 @@ void UartAddTxMessageBuffer(UartCharBufferTxStruct *uartBufferPointer_IN){
  *
  */
 void UartSendMessage(void){
-    HAL_StatusTypeDef HAL_Status;
+    int status;
     if (uartTxMsgBufferPointer.iCnt_Handle) {
         // TODO - pass argument which uart port to send on
-        HAL_Status = UartTxMessage(&uartTxMessageBuffer[uartTxMsgBufferPointer.iIndexOUT]);
-        if (HAL_Status == HAL_OK) {
+        status = UartTxMessage(&uartTxMessageBuffer[uartTxMsgBufferPointer.iIndexOUT]);
+        if (status == NO_ERROR) {
             DRV_RingBuffPtr__Output(&uartTxMsgBufferPointer, MAX_UART_TX_MESSAGE_BUFFER);
         }
     }
@@ -186,17 +184,17 @@ void UartSendMessage(void){
 /*
  * Description: add one character to the character buffer.
  *
- * Input: reference to char array
+ * Input: reference to char array. uartPort not currently used 
  * Output: HAL Status
  */
-HAL_StatusTypeDef UartAddCharToBuffer(uint8_t uartPort, char *_char_IN){
+int UartAddCharToBuffer(uint8_t uartPort, char *_char_IN){
     if(uartRxCharBufferPointer.iCnt_OverFlow){
         // character buffer is full, return and let UartParseRxCharBuffer() routine parse character buffer to free some space.
-        return HAL_BUSY;
+        return BUSY;
     }
     uartRxCharBuffer[uartRxCharBufferPointer.iIndexIN] = *_char_IN;
     DRV_RingBuffPtr__Input(&uartRxCharBufferPointer, MAX_UART_RX_CHAR_BUFFER);
-    return HAL_OK;
+    return NO_ERROR;
 }
 
 /*
@@ -219,8 +217,8 @@ int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, UartCharBufferTxStruct *ua
  * This is an example on how to parse a message from the message buffer. Copy this to a file and call this function from polling routine.
  *
  * You will need to define two extern variables where ever you have this function
- * • extern UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
- * • extern RING_BUFF_INFO uartRxMsgBufferPointer;
+ * â€¢ extern UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
+ * â€¢ extern RING_BUFF_INFO uartRxMsgBufferPointer;
  *
  */
 /*

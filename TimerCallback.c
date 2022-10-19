@@ -284,7 +284,7 @@ function: Call this function from SysTick_Handler() in stm32f1xx_it.c
 input: none
 output: none
 */
-void TimerCallbackIncrement(TimerCallbackStruct *timerInstance) {
+void TimerCallbackTick(TimerCallbackStruct *timerInstance) {
 	int i = 0;
 
 	while(i != timerInstance[0].timerLastIndex) { // iterate through all arrays

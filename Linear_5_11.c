@@ -6,6 +6,7 @@
  *
  *
  *      Conversion of Linear 5_11 and Linear 16
+ *      See Linear's Application note AN135
  *
  *
  */
@@ -85,7 +86,7 @@ float L16_to_Float(int exp, uint16_t input_val)
      if( exponent > 0x0F ) exponent |= 0xE0;
 
      // sign extend mantissa
-     // if( mantissa > 0x03FF ) mantissa |= 0xF800;
+     // if( mantissa > 0x03FF ) mantissa |= 0xF800; // this causes an invalid value, so commenting out
 
      return mantissa * pow(2,exponent); // compute value as mantissa * 2^(exponent)
 }
