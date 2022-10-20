@@ -15,6 +15,14 @@
 #define MAX_UART_RX_MESSAGE_BUFFER 3
 #define MAX_UART_TX_MESSAGE_BUFFER 3
 
+
+#ifndef ERRORSTATUS_H_
+#define NO_ERROR 0
+#define UART_BUSY 1
+#endif
+
+
+
 /*
  * Because different MCU's uses Uart port defines differently, we're going to use generic uart port names.
  * For your MCU you will convert the generic port names to the actual instance name when writing to the specific uart port.
@@ -23,11 +31,13 @@
 typedef struct{
 	uint8_t uartPort;
 	uint8_t data[MAX_UART_RX_CHAR_BUFFER];
+	uint32_t dataLength;
 }UartCharBufferRxStruct;
 
 typedef struct{
 	uint8_t uartPort;
 	uint8_t data[MAX_UART_TX_CHAR_BUFFER];
+	uint32_t dataLength;
 }UartCharBufferTxStruct;
 
 #define UART_PORT_0 0
@@ -40,10 +50,13 @@ typedef struct{
 #define UART_PORT_7 7
 
 void UartParseRxCharBuffer(void);
+void UartParseRxByteBuffer(void);
+
 void UartAddTxMessageBuffer(UartCharBufferTxStruct *uartBufferPointer);
 void UartSendMessage(void);
-int UartAddCharToBuffer(uint8_t uartPort, char *_char);
-int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, UartCharBufferTxStruct *uartTx_OUT, char *str);
+int UartAddCharToBuffer(uint8_t uartPort, uint8_t *_char);
+int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, char *str_IN, UartCharBufferTxStruct *uartTx_OUT);
+int UartCopyDataToDataBufferTxStruct(uint8_t uartPort, uint8_t *data_IN, uint32_t dataLen, UartCharBufferTxStruct *uartTx_OUT);
 void UartClearRxCharBuffer(void);
 
 
