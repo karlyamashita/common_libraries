@@ -4,7 +4,7 @@
 #include "main.h"
 
 // user defines
-#define MAX_TIMER_CALLBACK 10 // increase if more callbacks are needed
+#define MAX_TIMER_CALLBACK 15 // increase if more callbacks are needed
 #define MAX_TIMER_INSTANCE 2 // the number of timer instances. Default is 1 for milli seconds. Increase for each timer instances needed.
 
 
@@ -43,7 +43,6 @@ typedef struct TimerCallbackStruct{
 
 
 int TimerCallbackRegister(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, bool repeat);
-int TimerCallbackShutDownRegister(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue);
 int TimerCallbackShutDownEnable(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t enable);
 int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
 

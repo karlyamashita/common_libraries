@@ -22,7 +22,7 @@ Rev 2.1 - 10/21/2022, Added callback repetition.
 #include "main.h"
 #include "TimerCallback.h"
 
-TimerCallbackStruct timerCallback; // default instance. Use extern where needed
+volatile TimerCallbackStruct timerCallback[MAX_TIMER_CALLBACK]; // default instance. Use extern where needed
 
 static void TimerCallbackSort(TimerCallbackStruct *timerCallback);
 
@@ -69,48 +69,6 @@ int TimerCallbackRegister(TimerCallbackStruct *timerInstance, TimerCallback call
 	return i;
 }
 
-/*
-function: Register a callback function with a timer shut down value. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
-input: timer instance, the function to callback, the timer value, and if it needs to repeat or disables itself after function is called. The timerShutDownValue for disabling the callback after set time.
-output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
-*/
-int TimerCallbackShutDownRegister(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue) {
-	int i = 0;
-
-	if(callback == 0) return -2; // null callback
-	while(timerInstance[i].callback != 0) {
-		if(timerInstance[i].callback == callback) {
-			return -1;// Callback already defined
-		}
-		if(i == MAX_TIMER_CALLBACK) {
-			return 0;// Maximum timers reached
-		}
-		i++;// next
-	};
-
-	if(timerShutDownValue < timerValue){ // timerShutDownValue should not be less than timerValue
-	    timerShutDownValue = timerValue + 1;
-	}
-
-    timerInstance[i].callback = callback;
-
-    timerInstance[i].timerEnabled = 1;
-	timerInstance[i].timerValue = timerValue;
-    timerInstance[i].timerCount = 0;// clear the timer
-
-	timerInstance[i].timerShutDownEnable = false;
-	timerInstance[i].timerShutDownValue = timerShutDownValue;
-	timerInstance[i].timerShutDownCount = 0; // clear shutdown timer
-
-    timerInstance[i].timerRepetitionEnable = false;
-    timerInstance[i].timerRepetitionValue = 0;
-    timerInstance[i].timerRepetitionCount = 0;
-
-    timerInstance[i].timerRepeat = repeat;
-
-	timerInstance[0].timerLastIndex = i + 1; // only stored in first callback, index 0.
-	return i;
-}
 
 /*
  * Description: Enable/Disable the timer shutdown
