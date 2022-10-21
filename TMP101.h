@@ -51,20 +51,26 @@ typedef union {
     }Status;
 }TMP101_Pointer_Register;
 
-HAL_StatusTypeDef InitTMP101(void);
-HAL_StatusTypeDef SetTMP101_00_High(uint16_t temp);
-HAL_StatusTypeDef SetTMP101_01_High(uint16_t temp);
-HAL_StatusTypeDef SetTMP101_00_Low(uint16_t temp);
-HAL_StatusTypeDef SetTMP101_01_Low(uint16_t temp);
-HAL_StatusTypeDef GetTMP101Limit00_High(void);
-HAL_StatusTypeDef GetTMP101Limit01_High(void);
-HAL_StatusTypeDef GetTMP101Limit00_Low(void);
-HAL_StatusTypeDef GetTMP101Limit01_Low(void);
-HAL_StatusTypeDef TMP101_ReadTempReg(uint8_t sensorSlaveAddress, uint8_t * value);
+int TMP101_Init(void);
+int TMP101_SetLimitHigh_00(uint16_t temp);
+int TMP101_SetLimitLow_00(uint16_t temp);
+int TMP101_SetLimitHigh_01(uint16_t temp);
+int TMP101_SetLimitLow_01(uint16_t temp);
 
-HAL_StatusTypeDef TMP101_WriteRegister(uint32_t i2c_base, uint8_t slaveAddress, uint8_t *data, uint8_t size);
-HAL_StatusTypeDef TMP101_ReadRegister(uint32_t i2c_base, uint8_t slaveAddress, uint8_t *data, uint8_t size);
+int TMP101_ReadTempReg(uint8_t sensorSlaveAddress, uint8_t * value);
+int TMP101_GetTemp_0(char *retStr);
+int TMP101_GetTemp_1(char *retStr);
 
 
-
+void TMP101_GetStringForTemp(uint16_t tmp101Value, char *str);
+int TMP101_SetHighLimits(char *msg);
+int TMP101_SetLowLimits(char *msg);
+int TMP101_SetComparatorMode(char *msg);
+int TMP101_SetInterruptMode(char *msg);
+int TMP101_GetLimitHigh_00(char *retStr);
+int TMP101_GetLimitHigh_01(char *retStr);
+int TMP101_GetLimitLow_00(char *retStr);
+int TMP101_GetLimitLow_01(char *retStr);
+void TMP101_SwapBytes(uint8_t *data);
+int TMP101_GetConfig(char *msg, char *retStr);
 #endif /* TMP101_H_ */

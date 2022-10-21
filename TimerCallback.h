@@ -23,13 +23,21 @@ enum TIMER_CALLBACK_ENABLE{
 
 typedef struct TimerCallbackStruct{
     TimerCallback callback;// what function to callback
+
     bool timerShutDownEnable; // shut down after a certain time
     uint32_t timerShutDownValue; // the repeat timer to reach;
-    uint32_t timerShutDownCount; // the current shut down timer
-    bool timerRepeat; // repeat or disable after callback
+    uint32_t timerShutDownCount; // the current repeat timer
+
+    bool timerRepetitionEnable;
+    uint32_t timerRepetitionValue; // number of repetitions
+    uint32_t timerRepetitionCount; // current number of repetitions
+
     bool timerEnabled; // enable/disable callback
     uint32_t timerValue; // the time to reach
     uint32_t timerCount; // the current timer count
+
+    bool timerRepeat; // repeat or disable after callback. This overrides timerShutDownEnable, timerRepetitionEnable, timerEnabled
+
     uint32_t timerLastIndex; // this holds the amount of callback amounts registered. The first callback registered should never get deleted as it holds this index value.
 }TimerCallbackStruct;
 
@@ -38,6 +46,9 @@ int TimerCallbackRegister(TimerCallbackStruct *timerCallback, TimerCallback call
 int TimerCallbackShutDownRegister(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue);
 int TimerCallbackShutDownEnable(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t enable);
 int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
+
+int TimerCallbackSetRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t rep);
+
 int TimerCallbackClearTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
 int TimerCallbackDelete(TimerCallbackStruct *timerCallback, TimerCallback callback);
 int TimerCallbackEnable(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t enable);

@@ -8,8 +8,9 @@
  *
  */
 
+#include <I2C_TM4C.h>
 #include "main.h"
-#include "I2C_ReadWrite.h"
+
 
 
 
@@ -31,9 +32,28 @@ RING_BUFF_INFO i2c1_RxMsgBufferPointer;
  * Input:
  * Output:
  */
-HAL_StatusTypeDef I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size){
-    HAL_StatusTypeDef errorCode;
+int I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size){
+    int status = NO_ERROR;
     uint8_t i;
+    uint32_t peripheral;
+
+    switch(i2c_base)
+    {
+    case I2C0_BASE:
+        peripheral = SYSCTL_PERIPH_I2C0;
+        break;
+    case I2C1_BASE:
+        peripheral = SYSCTL_PERIPH_I2C1;
+        break;
+    default:
+        return I2C_BASE_NOT_VALID;
+    }
+
+    if(!SysCtlPeripheralReady(peripheral))
+    {
+        return I2C_PERIPHERAL_NOT_INIT;
+    }
+
     if(I2CMasterBusy(i2c_base) == false){
         I2CMasterSlaveAddrSet(i2c_base, DevAddress, true);// // set slave address, read
 
@@ -44,9 +64,9 @@ HAL_StatusTypeDef I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uin
             pData[0] = I2CMasterDataGet(i2c_base);
 
             // check for error
-            errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-            if(errorCode != I2C_MASTER_ERR_NONE){
-                return HAL_ERROR;
+            status = I2CMasterErr(i2c_base);
+            if(status != I2C_MASTER_ERR_NONE){
+                return I2C_MCS_ERROR;
             }
         }
         else // receive in burst
@@ -60,9 +80,9 @@ HAL_StatusTypeDef I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uin
 
             // check for error
 
-            errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-            if(errorCode != I2C_MASTER_ERR_NONE){
-                return HAL_ERROR;
+            status = I2CMasterErr(i2c_base);
+            if(status != I2C_MASTER_ERR_NONE){
+                return I2C_MCS_ERROR;
             }
 
             i = 1;
@@ -79,9 +99,9 @@ HAL_StatusTypeDef I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uin
 
                 // check for error
 
-                errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-                if(errorCode != I2C_MASTER_ERR_NONE){
-                    return HAL_ERROR;
+                status = I2CMasterErr(i2c_base);
+                if(status != I2C_MASTER_ERR_NONE){
+                    return I2C_MCS_ERROR;
                 }
 
             }
@@ -96,18 +116,18 @@ HAL_StatusTypeDef I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uin
             pData[i] = I2CMasterDataGet(i2c_base);
 
             // check for error
-            errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-            if(errorCode != I2C_MASTER_ERR_NONE){
-                return HAL_ERROR;
+            status = I2CMasterErr(i2c_base);
+            if(status != I2C_MASTER_ERR_NONE){
+                return I2C_MCS_ERROR;
             }
 
         }
     }
     else
     {
-        return HAL_BUSY;
+        return I2C_BUSY;
     }
-    return HAL_OK;
+    return status;
 }
 
 /*
@@ -116,9 +136,27 @@ HAL_StatusTypeDef I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uin
  * Input:
  * Output:
  */
-HAL_StatusTypeDef I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size){
-    HAL_StatusTypeDef errorCode;
+int I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size){
+    int status = NO_ERROR;
     uint8_t i;
+    uint32_t peripheral;
+
+    switch(i2c_base)
+    {
+    case I2C0_BASE:
+        peripheral = SYSCTL_PERIPH_I2C0;
+        break;
+    case I2C1_BASE:
+        peripheral = SYSCTL_PERIPH_I2C1;
+        break;
+    default:
+        return I2C_BASE_NOT_VALID;
+    }
+
+    if(!SysCtlPeripheralReady(peripheral))
+    {
+        return I2C_PERIPHERAL_NOT_INIT;
+    }
 
     if (I2CMasterBusy(i2c_base) == false)
     {
@@ -134,9 +172,9 @@ HAL_StatusTypeDef I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, ui
             while(I2CMasterBusy(i2c_base));
 
             // check for error
-            errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-            if(errorCode != I2C_MASTER_ERR_NONE){
-                return HAL_ERROR;
+            status = I2CMasterErr(i2c_base);
+            if(status != I2C_MASTER_ERR_NONE){
+                return I2C_MCS_ERROR;
             }
         }
         else // burst send
@@ -147,9 +185,9 @@ HAL_StatusTypeDef I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, ui
             while(I2CMasterBusy(i2c_base));
 
             // check for error
-            errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-            if(errorCode != I2C_MASTER_ERR_NONE){
-                return HAL_ERROR;
+            status = I2CMasterErr(i2c_base);
+            if(status != I2C_MASTER_ERR_NONE){
+                return I2C_MCS_ERROR;
             }
 
             i = 1;
@@ -164,9 +202,9 @@ HAL_StatusTypeDef I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, ui
                 while(I2CMasterBusy(i2c_base));
 
                 // check for error
-                errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-                if(errorCode != I2C_MASTER_ERR_NONE){
-                    return HAL_ERROR;
+                status = I2CMasterErr(i2c_base);
+                if(status != I2C_MASTER_ERR_NONE){
+                    return I2C_MCS_ERROR;
                 }
             }
 
@@ -180,17 +218,17 @@ HAL_StatusTypeDef I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, ui
             while(I2CMasterBusy(i2c_base));
 
             // check for error
-            errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-            if(errorCode != I2C_MASTER_ERR_NONE){
-                return HAL_ERROR;
+            status = I2CMasterErr(i2c_base);
+            if(status != I2C_MASTER_ERR_NONE){
+                return I2C_MCS_ERROR;
             }
         }
     }
     else
     {
-        return HAL_BUSY;
+        return I2C_BUSY;
     }
-    return HAL_OK;
+    return status;
 }
 
 /*
@@ -199,9 +237,28 @@ HAL_StatusTypeDef I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, ui
  * Output: Register data
  * Return: Error Status
  */
-HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress, uint8_t *regAddress, uint32_t regSize, uint8_t *pData_OUT, uint32_t readSize){
-    HAL_StatusTypeDef errorCode;
+int I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress, uint8_t *regAddress, uint32_t regSize, uint8_t *pData_OUT, uint32_t readSize){
+    int status = NO_ERROR;
     uint8_t i;
+    uint32_t peripheral;
+
+    switch(i2c_base)
+    {
+    case I2C0_BASE:
+        peripheral = SYSCTL_PERIPH_I2C0;
+        break;
+    case I2C1_BASE:
+        peripheral = SYSCTL_PERIPH_I2C1;
+        break;
+    default:
+        return I2C_BASE_NOT_VALID;
+
+    }
+
+    if(!SysCtlPeripheralReady(peripheral))
+    {
+        return I2C_PERIPHERAL_NOT_INIT;
+    }
 
     if (I2CMasterBusy(i2c_base) == false)
     {
@@ -218,10 +275,10 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
             while (I2CMasterBusy(i2c_base));
 
             // check for error
-            errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-            if (errorCode != I2C_MASTER_ERR_NONE)
+            status = I2CMasterErr(i2c_base);
+            if (status != I2C_MASTER_ERR_NONE)
             {
-                return HAL_ERROR;
+                return I2C_MCS_ERROR;
             }
         }
         else // burst send
@@ -232,9 +289,9 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
             while(I2CMasterBusy(i2c_base));
 
             // check for error
-            errorCode = (HAL_StatusTypeDef)I2CMasterErr(i2c_base);
-            if(errorCode != I2C_MASTER_ERR_NONE){
-                return HAL_ERROR;
+            status = I2CMasterErr(i2c_base);
+            if(status != I2C_MASTER_ERR_NONE){
+                return I2C_MCS_ERROR;
             }
 
             i = 1;
@@ -249,10 +306,10 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
                 while (I2CMasterBusy(i2c_base));
 
                 // check for error
-                errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-                if (errorCode != I2C_MASTER_ERR_NONE)
+                status = I2CMasterErr(i2c_base);
+                if (status != I2C_MASTER_ERR_NONE)
                 {
-                    return HAL_ERROR;
+                    return I2C_MCS_ERROR;
                 }
             }
 
@@ -266,10 +323,10 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
             while (I2CMasterBusy(i2c_base));
 
             // check for error
-            errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-            if (errorCode != I2C_MASTER_ERR_NONE)
+            status = I2CMasterErr(i2c_base);
+            if (status != I2C_MASTER_ERR_NONE)
             {
-                return HAL_ERROR;
+                return I2C_MCS_ERROR;
             }
         }
 
@@ -277,10 +334,10 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
         while (I2CMasterBusy(i2c_base));
 
         // check for error
-        errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-        if (errorCode != HAL_OK)
+        status = I2CMasterErr(i2c_base);
+        if (status != I2C_MASTER_ERR_NONE)
         {
-            return HAL_ERROR;
+            return I2C_MCS_ERROR;
         }
 
         // now read data from register
@@ -295,10 +352,10 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
             pData_OUT[0] = I2CMasterDataGet(i2c_base);
 
             // check for error
-            errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-            if (errorCode != I2C_MASTER_ERR_NONE)
+            status = I2CMasterErr(i2c_base);
+            if (status != I2C_MASTER_ERR_NONE)
             {
-                return HAL_ERROR;
+                return I2C_MCS_ERROR;
             }
         }
         else // receive in burst
@@ -311,10 +368,10 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
             pData_OUT[0] = I2CMasterDataGet(i2c_base);
 
             // check for error
-            errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-            if (errorCode != I2C_MASTER_ERR_NONE)
+            status = I2CMasterErr(i2c_base);
+            if (status != I2C_MASTER_ERR_NONE)
             {
-                return errorCode;
+                return status;
             }
 
             i = 1;
@@ -330,10 +387,10 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
                 pData_OUT[i++] = I2CMasterDataGet(i2c_base);
 
                 // check for error
-                errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-                if (errorCode != I2C_MASTER_ERR_NONE)
+                status = I2CMasterErr(i2c_base);
+                if (status != I2C_MASTER_ERR_NONE)
                 {
-                    return HAL_ERROR;
+                    return I2C_MCS_ERROR;
                 }
             }
 
@@ -347,18 +404,18 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
             pData_OUT[i] = I2CMasterDataGet(i2c_base);
 
             // check for error
-            errorCode = (HAL_StatusTypeDef) I2CMasterErr(i2c_base);
-            if (errorCode != I2C_MASTER_ERR_NONE)
+            status = I2CMasterErr(i2c_base);
+            if (status != I2C_MASTER_ERR_NONE)
             {
-                return HAL_ERROR;
+                return I2C_MCS_ERROR;
             }
         }
     }
     else
     {
-        return HAL_BUSY;
+        return I2C_BUSY;
     }
-    return HAL_OK;
+    return status;
 }
 
 
@@ -369,7 +426,8 @@ HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress
  * Input:
  * Output:
  */
-HAL_StatusTypeDef I2C_EV_IRQHandler(uint32_t i2c_base){
+int I2C_EV_IRQHandler(uint32_t i2c_base){
+    int status = NO_ERROR;
     bool bMasked = true;
 
     uint8_t i;
@@ -388,6 +446,8 @@ HAL_StatusTypeDef I2C_EV_IRQHandler(uint32_t i2c_base){
         }
     }
 
-    return HAL_OK;
+    return status;
 }
+
+
 

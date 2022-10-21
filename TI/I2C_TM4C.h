@@ -32,10 +32,10 @@ typedef union {
 }I2C_DataStruct;
 
 
-HAL_StatusTypeDef I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size);
-HAL_StatusTypeDef I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size);
-HAL_StatusTypeDef I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress, uint8_t *regAddress, uint32_t regSize, uint8_t *pData_OUT, uint32_t size);
-HAL_StatusTypeDef I2C_EV_IRQHandler(uint32_t i2c_base);
+int I2C_Master_Receive(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size);
+int I2C_Master_Transmit(uint32_t i2c_base, uint16_t DevAddress, uint8_t *pData, uint32_t size);
+int I2C_Master_ReadRegister(uint32_t i2c_base, uint16_t DevAddress, uint8_t *regAddress, uint32_t regSize, uint8_t *pData_OUT, uint32_t size);
+int I2C_EV_IRQHandler(uint32_t i2c_base);
 
 
 #endif /* I2C_HAL_H_ */

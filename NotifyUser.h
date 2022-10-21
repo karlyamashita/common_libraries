@@ -1,17 +1,24 @@
-/*
- * NotifyUser.h
+/* 
+ * File:   NotifyUser.h
+ * Author: karl.yamashita
  *
- *  Created on: Sep 15, 2021
- *      Author: karl.yamashita
+ * Created on June 10, 2022, 12:01 PM
  */
 
-#ifndef NOTIFYUSER_H_
-#define NOTIFYUSER_H_
+#ifndef NOTIFYUSER_H
+#define	NOTIFYUSER_H
 
-void NotifyErrorStatus(uint8_t error);
-void NotifyFPGA_Addr_0x22_Value(uint8_t value);
-void NotifyAck(void);
-void NotifyNack(void);
-void NotifyResetCause(void);
+#ifdef	__cplusplus
+extern "C" {
+#endif
 
-#endif /* NOTIFYUSER_H_ */
+
+void NotifyUser(uint8_t uartPort, char *str, bool lineFeed);
+
+
+#ifdef	__cplusplus
+}
+#endif
+
+#endif	/* NOTIFYUSER_H */
+
