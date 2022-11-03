@@ -50,15 +50,17 @@ int UartTxMessage(UartCharBufferTxStruct * msg)
 
 #ifdef ccs // TI Code Composer Studio
 
-static int UartTxData(uint32_t uartBase, uint8_t *data, uint8_t size);
+bool echoMode = 0;
 
 // this function should be registered when initializing the UART, UARTIntRegister(UART0_BASE, USART0_IRQHandler);
-void USART0_IRQHandler(void){
+void USART0_IRQHandler(void)
+{
     Uart_Receive(UART0_BASE);
 }
 
-void Uart_Receive(uint32_t uart_base){
-    HAL_StatusTypeDef HAL_Status;
+void Uart_Receive(uint32_t uart_base)
+{
+    int status;
     uint8_t _char;
     uint32_t interruptStatus;
 
@@ -72,8 +74,8 @@ void Uart_Receive(uint32_t uart_base){
             UARTCharPut(UART0_BASE, _char); // echo character
         }
 
-        HAL_Status = UartAddCharToBuffer(uart_base, (char*)&_char); // save character to char buffer
-        if(HAL_Status != HAL_OK){
+        status = UartAddCharToBuffer(uart_base, &_char); // save character to char buffer
+        if(status != NO_ERROR){
             // TODO - check HAL Status and act accordingly.
             // For now we're going to lose a character if buffer is full. Try increasing MAX_UART_RX_CHAR_BUFFER size .
         }
@@ -87,15 +89,14 @@ void Uart_Receive(uint32_t uart_base){
  * Output: HAL status
  *
  */
-static HAL_StatusTypeDef UartTxData(uint32_t uartBase, uint8_t *data, uint8_t size){
+static int UartTxData(uint32_t uartBase, uint8_t *data, uint8_t size){
     while(size)
     {
        UARTCharPut(uartBase, *data++);
        size--;
     }
-    return HAL_OK;
+    return NO_ERROR;
 }
-
 
 /*
  * Description: Sends string
@@ -103,7 +104,8 @@ static HAL_StatusTypeDef UartTxData(uint32_t uartBase, uint8_t *data, uint8_t si
  * Input: Character buffer structure. The structure holds the uart base and the char array.
  * Output: HAL status
  */
-int UartTxMessage(UartCharBufferTxStruct *uartBufferPointer){
+int UartTxMessage(UartCharBufferTxStruct *uartBufferPointer)
+{
     uint32_t uart_base;
     uint8_t *pData = uartBufferPointer->data;
     uint8_t count = strlen((char*) pData);
@@ -126,15 +128,25 @@ int UartTxMessage(UartCharBufferTxStruct *uartBufferPointer){
     return NO_ERROR;
 }
 
+void SetEchoMode(bool mode)
+{
+    echoMode = mode;
+}
+
+bool GetEchoMode(void)
+{
+    return echoMode;
+}
+
 #endif // end css
 
 #ifdef _XC_H
 void UART1_Receive_CallBack(void)
 {
-    char chr[1] = {0};
+    uint8_t chr[1] = {0};
 
-    chr[0] = (char)U1RXREG;
-    UartAddCharToBuffer(1, chr);
+    chr[0] = U1RXREG;
+    UartAddCharToBuffer(UART_PORT_1, chr);
 }
 
 /*
@@ -143,7 +155,8 @@ void UART1_Receive_CallBack(void)
  * Input: Character buffer structure. The structure holds the UART base and the char array.
  * Output: HAL status
  */
-int UartTxMessage(UartCharBufferTxStruct *msg){
+int UartTxMessage(UartCharBufferTxStruct *msg)
+{
     uint16_t count = 0;
     uint8_t i = 0;
     uint8_t uartPort;
@@ -181,15 +194,16 @@ static void OutbyteUart1(char c);
  * Input:
  * Output:
  */
-void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData){
-	HAL_StatusTypeDef HAL_Status;
+void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData)
+{
+	int status;
 	uint8_t buffer[32] = {0};
 
 	if(!XUartLite_IsReceiveEmpty(XPAR_UARTLITE_0_BASEADDR)){
 		XUartLite_Recv(&UartLite , buffer, 1);
 
-		HAL_Status = UartAddCharToBuffer(UART_PORT_0, (char*)buffer);
-		if(HAL_Status != HAL_OK){
+		status = UartAddCharToBuffer(UART_PORT_0, (char*)buffer);
+		if(status != NO_ERROR){
 			// TODO - check HAL Status and act accordingly. If buffer overflows then try to increase character buffer size.
 		}
 	}
@@ -202,7 +216,8 @@ void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData){
  * Output: HAL status
  *
  */
-HAL_StatusTypeDef UartTxMessage(UartCharBufferTxStruct *uartBufferPointer){
+int UartTxMessage(UartCharBufferTxStruct *uartBufferPointer)
+{
 	uint8_t *pData = uartBufferPointer->data;
 	while (*pData != '\0') {
 		switch (uartBufferPointer->uartPort) {
@@ -213,12 +228,12 @@ HAL_StatusTypeDef UartTxMessage(UartCharBufferTxStruct *uartBufferPointer){
 			OutbyteUart1(*pData);
 			break;
 		default:
-			return HAL_ERROR; // unknown port
+			return ERROR; // unknown port
 			break;
 		}
 		pData++;
 	}
-	return HAL_OK;
+	return NO_ERROR;
 }
 
 /*
@@ -227,7 +242,8 @@ HAL_StatusTypeDef UartTxMessage(UartCharBufferTxStruct *uartBufferPointer){
  * Input: the character to send
  *
  */
-static void OutbyteUart1(char c) {
+static void OutbyteUart1(char c)
+{
 	 XUartLite_SendByte(XPAR_AXI_UARTLITE_0_BASEADDR, c);
 }
 
