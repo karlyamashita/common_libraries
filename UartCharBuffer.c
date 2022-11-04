@@ -44,14 +44,14 @@ uint8_t uartDataBuffer[MAX_UART_RX_CHAR_BUFFER_SINGLE] = {0};
 
 // Rx character buffer. The array for the Uart IRQ.
 uint8_t uartRxCharBuffer[MAX_UART_RX_CHAR_BUFFER];
-RING_BUFF_INFO uartRxCharBufferPointer;
+RING_BUFF_INFO uartRxCharBufferPointer = {0};
 
 // Rx message buffer
 UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
-RING_BUFF_INFO uartRxMsgBufferPointer;
+RING_BUFF_INFO uartRxMsgBufferPointer = {0};
 // Tx message buffer
 UartCharBufferTxStruct uartTxMessageBuffer[MAX_UART_TX_MESSAGE_BUFFER];
-RING_BUFF_INFO uartTxMsgBufferPointer;
+RING_BUFF_INFO uartTxMsgBufferPointer = {0};
 
 
 /*
@@ -252,6 +252,16 @@ int UartCopyDataToDataBufferTxStruct(uint8_t uartPort, uint8_t *data_IN, uint32_
 	return 0;
 }
 
+/*
+ * Description: Sometimes the UART buffer may cause an interrupt on POR
+ *              and receive a character(s) which will corrupt the first message.
+ *              Call this prior to running main.
+ *
+ *
+ */
+void UartRxBuffer_DRV_RingBuffPtr__Clean(void) {
+    DRV_RingBuffPtr__Clean(&uartRxCharBufferPointer);
+}
 
 /*
  * This is an example on how to parse a message from the message buffer. Copy this to a file and call this function from polling routine.

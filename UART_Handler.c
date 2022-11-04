@@ -83,22 +83,6 @@ void Uart_Receive(uint32_t uart_base)
 }
 
 /*
- * Description: Transmit 8bit data over uart .
- *
- * Input: The uart base, reference to data, the size of data
- * Output: HAL status
- *
- */
-static int UartTxData(uint32_t uartBase, uint8_t *data, uint8_t size){
-    while(size)
-    {
-       UARTCharPut(uartBase, *data++);
-       size--;
-    }
-    return NO_ERROR;
-}
-
-/*
  * Description: Sends string
  *
  * Input: Character buffer structure. The structure holds the uart base and the char array.

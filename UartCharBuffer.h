@@ -40,15 +40,6 @@ typedef struct{
 	uint32_t dataLength;
 }UartCharBufferTxStruct;
 
-#define UART_PORT_0 0
-#define UART_PORT_1 1
-#define UART_PORT_2 2
-#define UART_PORT_3 3
-#define UART_PORT_4 4
-#define UART_PORT_5 5
-#define UART_PORT_6 6
-#define UART_PORT_7 7
-
 void UartParseRxCharBuffer(void);
 void UartParseRxByteBuffer(void);
 
@@ -57,7 +48,6 @@ void UartSendMessage(void);
 int UartAddCharToBuffer(uint8_t uartPort, uint8_t *_char);
 int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, char *str_IN, UartCharBufferTxStruct *uartTx_OUT);
 int UartCopyDataToDataBufferTxStruct(uint8_t uartPort, uint8_t *data_IN, uint32_t dataLen, UartCharBufferTxStruct *uartTx_OUT);
-void UartClearRxCharBuffer(void);
-
+void UartRxBuffer_DRV_RingBuffPtr__Clean(void);
 
 #endif /* UARTBUFFER_H_ */
