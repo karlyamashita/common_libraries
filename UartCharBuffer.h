@@ -87,10 +87,14 @@ typedef struct
 void UartParseRx_CHAR_Buffer(uint8_t index);
 void UartParseRx_BINARY_Buffer(uint8_t index, uint32_t packetSize);
 
-void UartAddTxMessageBuffer(UartTxMsgBufferStruct *uartBufferPointer);
+void UartAddMessageToTxMessageBuffer(UartTxMsgBufferStruct *uartBufferPointer);
 void UartSendMessage(void);
+
 int UartAddByteToBuffer(uint8_t uartPort, uint8_t *_char, uint32_t sizeOfData);
-int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, UartTxMsgBufferStruct *uartTx_OUT, char *str);
+
+int UartCopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStruct *uartTx_OUT);
+int UartCopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t sizeOfData, UartTxMsgBufferStruct *uartTx_OUT);
+
 void UartClearRxCharBuffer(void);
 
 
