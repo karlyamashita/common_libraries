@@ -79,6 +79,7 @@ typedef struct
 typedef struct
 {
 	uint8_t uartPort;
+<<<<<<< HEAD
 	uint8_t data[MAX_UART_TX_BYTE_BUFFER];
 	uint8_t dataSize; // used mainly for binary data
 }UartTxMsgBufferStruct;
@@ -97,5 +98,20 @@ int UartCopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t siz
 
 void UartClearRxCharBuffer(void);
 
+=======
+	uint8_t data[MAX_UART_TX_CHAR_BUFFER];
+	uint32_t dataLength;
+}UartCharBufferTxStruct;
+
+void UartParseRxCharBuffer(void);
+void UartParseRxByteBuffer(void);
+
+void UartAddTxMessageBuffer(UartCharBufferTxStruct *uartBufferPointer);
+void UartSendMessage(void);
+int UartAddCharToBuffer(uint8_t uartPort, uint8_t *_char);
+int UartCopyStrToCharBufferTxStruct(uint8_t uartPort, char *str_IN, UartCharBufferTxStruct *uartTx_OUT);
+int UartCopyDataToDataBufferTxStruct(uint8_t uartPort, uint8_t *data_IN, uint32_t dataLen, UartCharBufferTxStruct *uartTx_OUT);
+void UartRxBuffer_DRV_RingBuffPtr__Clean(void);
+>>>>>>> 2deaf86b4f3d091b55c9460ed19d632064830b35
 
 #endif /* UARTBUFFER_H_ */

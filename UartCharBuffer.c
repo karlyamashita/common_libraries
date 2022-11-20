@@ -40,6 +40,7 @@
 #include "UartCharBuffer.h"
 
 
+<<<<<<< HEAD
 // the array for the UART IRQ data received.
 uint8_t uartIRQ_ByteBuffer[MAX_UART_RX_IRQ_BYTE_LENGTH];
 
@@ -62,6 +63,18 @@ RING_BUFF_INFO uartRxMsgBufferPointer;
 // Tx message buffer
 UartTxMsgBufferStruct uartTxMessageBuffer[MAX_UART_TX_MESSAGE_BUFFER];
 RING_BUFF_INFO uartTxMsgBufferPointer;
+=======
+// Rx character buffer. The array for the Uart IRQ.
+uint8_t uartRxCharBuffer[MAX_UART_RX_CHAR_BUFFER];
+RING_BUFF_INFO uartRxCharBufferPointer = {0};
+
+// Rx message buffer
+UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
+RING_BUFF_INFO uartRxMsgBufferPointer = {0};
+// Tx message buffer
+UartCharBufferTxStruct uartTxMessageBuffer[MAX_UART_TX_MESSAGE_BUFFER];
+RING_BUFF_INFO uartTxMsgBufferPointer = {0};
+>>>>>>> 2deaf86b4f3d091b55c9460ed19d632064830b35
 
 
 /*
@@ -277,9 +290,60 @@ int UartCopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t siz
 {
     uint8_t *pData = uartTx_OUT->data; // pointer to data
 
+<<<<<<< HEAD
     uartTx_OUT->uartPort = uartPort; // save uart port
     uartTx_OUT->dataSize = sizeOfData;
     memcpy(pData, (uint8_t*)dataIN, sizeOfData); // copy binary data to structure array.
+=======
+	return 0;
+}
+
+/*
+ * Description: Sometimes the UART buffer may cause an interrupt on POR
+ *              and receive a character(s) which will corrupt the first message.
+ *              Call this prior to running main.
+ *
+ *
+ */
+void UartRxBuffer_DRV_RingBuffPtr__Clean(void) {
+    DRV_RingBuffPtr__Clean(&uartRxCharBufferPointer);
+}
+
+/*
+ * This is an example on how to parse a message from the message buffer. Copy this to a file and call this function from polling routine.
+ *
+ * You will need to define two extern variables where ever you have this function
+ * • extern UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
+ * • extern RING_BUFF_INFO uartRxMsgBufferPointer;
+ *
+ */
+/*
+void ParseUartRxMessageBuffer(void){
+    uint8_t message[MAX_UART_RX_CHAR_BUFFER] = {0};
+	uint8_t *ptr = message;
+
+	if(uartRxMsgBufferPointer.iCnt_Handle)
+	{
+		//copy buffer contents to array
+		memcpy(&message, &uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexOUT].data, sizeof(message));
+
+		// Example, if message was "get mcu fw version"
+		RemoveSpaces((char*)ptr);
+		// now message is "getmcufwversion"
+
+		// look for keyword "get"
+		if(strncmp((char*)message, "get", strlen("get")) == 0)
+		{
+			ptr += strlen("get"); // removes "get"
+			GetMessage(ptr); // pass message "mcufwversion"
+		}
+		// if message is "set led green: on"
+		else if(strncmp((char*)message, "set", strlen("set")) == 0)
+		{
+			ptr += strlen("set"); // removes "set"
+			SetMessage(ptr); // pass message "ledgreen:on"
+		}
+>>>>>>> 2deaf86b4f3d091b55c9460ed19d632064830b35
 
     return 0;
 }
