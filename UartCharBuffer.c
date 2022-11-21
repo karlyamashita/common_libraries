@@ -40,7 +40,6 @@
 #include "UartCharBuffer.h"
 
 
-<<<<<<< HEAD
 // the array for the UART IRQ data received.
 uint8_t uartIRQ_ByteBuffer[MAX_UART_RX_IRQ_BYTE_LENGTH];
 
@@ -52,108 +51,75 @@ uint8_t uartIRQ_ByteBuffer[MAX_UART_RX_IRQ_BYTE_LENGTH];
  * 				User will need to know which Parsing routine to use for that index, UartParseRx_BINARY_Buffer() or UartParseRx_CHAR_Buffer()
  *
  */
-// Declare the data buffer for two ports to accept data in ASCII or binary.
-UartRxByteBufferStruct uartRxByteBuffer[NUMBER_OF_UART_PORTS] = {0};
-RING_BUFF_INFO uartRxByteBufferPointer[NUMBER_OF_UART_PORTS] = {0};
+
+UartRxByteBufferStruct uartRx_ASCII_Buf = {0};
+UartRxByteBufferStruct uartRx_BINARY_Buf = {0};
 
 
-// Rx message buffer
-UartRxMsgBufferStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
-RING_BUFF_INFO uartRxMsgBufferPointer;
-// Tx message buffer
-UartTxMsgBufferStruct uartTxMessageBuffer[MAX_UART_TX_MESSAGE_BUFFER];
-RING_BUFF_INFO uartTxMsgBufferPointer;
-=======
-// Rx character buffer. The array for the Uart IRQ.
-uint8_t uartRxCharBuffer[MAX_UART_RX_CHAR_BUFFER];
-RING_BUFF_INFO uartRxCharBufferPointer = {0};
+// Rx string buffer
+UartRxMsgBufferStruct uartRx_STR_Buf;
+// Tx string buffer
+UartTxMsgBufferStruct uartTx_STR_Buf;
 
-// Rx message buffer
-UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
-RING_BUFF_INFO uartRxMsgBufferPointer = {0};
-// Tx message buffer
-UartCharBufferTxStruct uartTxMessageBuffer[MAX_UART_TX_MESSAGE_BUFFER];
-RING_BUFF_INFO uartTxMsgBufferPointer = {0};
->>>>>>> 2deaf86b4f3d091b55c9460ed19d632064830b35
+
+// Rx binary buffer
+UartRxMsgBufferStruct uartRx_BINARY_Packet;
+// Tx binary buffer
+UartTxMsgBufferStruct uartTx_BINARY_Packet;
+
 
 
 /*
- * Description: Parse UART character buffer and save in message buffer. The string being received should have LF terminator
+ * Description: Sort UART character buffer and save string in message buffer. The string being received should have LF terminator
  *              This needs to be called from a polling routine.
  *
  * Input: Index pointer to which byte buffer to parse
  * Output: none
  */
-void UartParseRx_CHAR_Buffer(uint8_t index)
+void UartSortRx_CHAR_Buffer(void)
 {
     static uint32_t idxPtr = 0;
     uint32_t portNumber;
 
-    switch(index)
+    if (uartRx_ASCII_Buf.ringPtr.iCnt_Handle)
     {
-    case 0:
-    	portNumber = UART_INDEX_PTR_0;
-    	break;
-    case 1:
-    	portNumber = UART_INDEX_PTR_1;
-    	break;
-    	// add more if more than 2 UART ports
-    default:
-    	portNumber = UART_INDEX_PTR_0;
-    	break;
-    }
-
-    if (uartRxByteBufferPointer[index].iCnt_Handle) {
-        uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].data[idxPtr++] = uartRxByteBuffer[index].data[uartRxByteBufferPointer[index].iIndexOUT]; // save character
-        if(uartRxByteBuffer[uartRxMsgBufferPointer.iIndexIN].data[uartRxByteBufferPointer[index].iIndexOUT] == '\n'){ // check if line feed
+    	uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexIN].data[idxPtr++] = uartRx_ASCII_Buf.data[uartRx_ASCII_Buf.ringPtr.iIndexOUT];
+        if(uartRx_ASCII_Buf.data[uartRx_ASCII_Buf.ringPtr.iIndexOUT] == '\n'){ // check if line feed
             idxPtr = 0;  // reset pointer
-            uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].uartPort = portNumber;
-            uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].dataSize = idxPtr - 1;
-            DRV_RingBuffPtr__Input(&uartRxMsgBufferPointer, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
+            //uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexIN].uartPort = portNumber;
+            uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexIN].dataSize = idxPtr - 1;
+            DRV_RingBuffPtr__Input(&uartRx_STR_Buf.RingBuff.ringPtr, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
         }
-        DRV_RingBuffPtr__Output(&uartRxByteBufferPointer[index], MAX_UART_RX_BYTE_BUFFER); // next character
+        DRV_RingBuffPtr__Output(&uartRx_ASCII_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER); // next character
     }
 }
 
 /*
- * Description: Parse UART Binary buffer and save in message buffer.
+ * Description: Sort UART Binary buffer and save binary packet in message buffer.
  *              This needs to be called from a polling routine.
  *
  * Input: Index pointer to which UART buffer to parse, the size of bytes to receive for a complete packet
  * Output: none
  */
-void UartParseRx_BINARY_Buffer(uint8_t index, uint32_t packetSize)
+void UartSortRx_BINARY_Buffer(void)
 {
 	static uint32_t idxPtr = 0;
     uint32_t portNumber;
 
-    switch(index)
+    if (uartRx_BINARY_Buf.ringPtr.iCnt_Handle)
     {
-    case 0:
-    	portNumber = UART_INDEX_PTR_0;
-    	break;
-    case 1:
-    	portNumber = UART_INDEX_PTR_1;
-    	break;
-    	// add more if more than 2 UART ports
-    default:
-    	portNumber = UART_INDEX_PTR_0;
-    	break;
-    }
-
-    if (uartRxByteBufferPointer[index].iCnt_Handle)
-    {
-		uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].data[idxPtr++] = uartRxByteBuffer[index].data[uartRxByteBufferPointer[index].iIndexOUT]; // save character
-		if(idxPtr > packetSize)
+    	uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].data[idxPtr++] = uartRx_BINARY_Buf.data[uartRx_BINARY_Buf.ringPtr.iIndexOUT]; // save character
+		if(idxPtr >= UART_PACKET_SIZE)
 		{
-			if(ValidateChkSum(uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].data, packetSize)) // validate checksum
+			if(ValidateChkSum(uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].data, UART_PACKET_SIZE)) // validate checksum
 			{
-				DRV_RingBuffPtr__Input(&uartRxMsgBufferPointer, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
-				uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].uartPort = portNumber;
-				uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexIN].dataSize = packetSize;
+				//uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].uartPort = portNumber;
+				uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].dataSize = UART_PACKET_SIZE;
+				DRV_RingBuffPtr__Input(&uartRx_BINARY_Packet.RingBuff.ringPtr, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
 			}
+			idxPtr = 0;
 		}
-        DRV_RingBuffPtr__Output(&uartRxByteBufferPointer[index], MAX_UART_RX_BYTE_BUFFER); // next character
+        DRV_RingBuffPtr__Output(&uartRx_BINARY_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER); // next character
     }
 }
 
@@ -162,24 +128,25 @@ void UartParseRx_BINARY_Buffer(uint8_t index, uint32_t packetSize)
  *              Be sure to call UartSendMessage() in a polling routine
  *
  * Input: The message structure
+ * 6844
  * Output:
  *
  */
-void UartAddMessageToTxMessageBuffer(UartTxMsgBufferStruct *uartMsg)
+void UartAddMessageToTxBuffer(UartTxMsgBufferStruct *uartMsg)
 {
     uint8_t i = 0;
-    uint8_t *pData = uartMsg->data;
-    uint32_t dataSize = uartMsg->dataSize;
+    uint8_t *pData = uartMsg->BufStruct->data;
+    uint32_t dataSize = uartMsg->BufStruct->dataSize;
 
-    uartTxMessageBuffer[uartTxMsgBufferPointer.iIndexIN].uartPort = uartMsg->uartPort;
-    uartTxMessageBuffer[uartTxMsgBufferPointer.iIndexIN].dataSize = uartMsg->dataSize;
+    uartTx_STR_Buf.BufStruct[uartTx_STR_Buf.RingBuff.ringPtr.iIndexIN].uartPort = uartMsg->BufStruct->uartPort;
+    uartTx_STR_Buf.BufStruct[uartTx_STR_Buf.RingBuff.ringPtr.iIndexIN].dataSize = dataSize;
 
     for(i = 0; i < dataSize; i++)
     {
-        uartTxMessageBuffer[uartTxMsgBufferPointer.iIndexIN].data[i] = *pData++;
+        uartTx_STR_Buf.BufStruct[uartTx_STR_Buf.RingBuff.ringPtr.iIndexIN].data[i] = *pData++;
     }
 
-    DRV_RingBuffPtr__Input(&uartTxMsgBufferPointer, MAX_UART_TX_MESSAGE_BUFFER);
+    DRV_RingBuffPtr__Input(&uartTx_STR_Buf.RingBuff.ringPtr, MAX_UART_TX_MESSAGE_BUFFER);
 }
 
 /*
@@ -193,12 +160,12 @@ void UartAddMessageToTxMessageBuffer(UartTxMsgBufferStruct *uartMsg)
 void UartSendMessage(void){
     int status = NO_ERROR;
 
-    if (uartTxMsgBufferPointer.iCnt_Handle) {
-        status = UartTxMessage(&uartTxMessageBuffer[uartTxMsgBufferPointer.iIndexOUT]);
+    if (uartTx_STR_Buf.RingBuff.ringPtr.iCnt_Handle) {
+        status = UartTxMessage(&uartTx_STR_Buf.BufStruct[uartTx_STR_Buf.RingBuff.ringPtr.iIndexOUT]);
         // We need to monitor the return status for a failed transmit so not to increment the pointer yet
         // so on the next loop we can try to send again
         if (status == NO_ERROR) {
-            DRV_RingBuffPtr__Output(&uartTxMsgBufferPointer, MAX_UART_TX_MESSAGE_BUFFER);
+            DRV_RingBuffPtr__Output(&uartTx_STR_Buf.RingBuff.ringPtr, MAX_UART_TX_MESSAGE_BUFFER);
         }
     }
 }
@@ -243,21 +210,45 @@ int UartTxMessage(UartTxMsgBufferStruct *uartTxMessage)
  * Input: index to which data buffer to write to, the pointer to data array, the size/length of data
  * Output: No error or overflow
  */
-int UartAddByteToBuffer(uint8_t index, uint8_t *data, uint32_t sizeOfData){
+int UartAddCharToBuffer(uint8_t *data, uint32_t sizeOfData){
 	int i;
-    if(uartRxByteBufferPointer[index].iCnt_OverFlow){
+    if(uartRx_ASCII_Buf.ringPtr. iCnt_OverFlow){
         // byte buffer is full. You should monitor the return status during development and increase buffer size to if overflow;
         return UART_BUFFER_OVERFLOW;
     }
 
 	for(i = 0; i < sizeOfData; i++)
 	{
-		uartRxByteBuffer[index].data[uartRxByteBufferPointer[index].iIndexIN] = *data;
-		DRV_RingBuffPtr__Input(&uartRxByteBufferPointer[index], MAX_UART_RX_BYTE_BUFFER);
+		uartRx_ASCII_Buf.data[uartRx_ASCII_Buf.ringPtr.iIndexIN] = *data;
+		DRV_RingBuffPtr__Input(&uartRx_ASCII_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER);
 	}
 
     return NO_ERROR;
 }
+
+/*
+ * Description: Add one byte to the data buffer.
+ *
+ * Input: index to which data buffer to write to, the pointer to data array, the size/length of data
+ * Output: No error or overflow
+ */
+int UartAddByteToBuffer(uint8_t *data, uint32_t sizeOfData)
+{
+	int i;
+    if(uartRx_BINARY_Buf.ringPtr. iCnt_OverFlow){
+        // byte buffer is full. You should monitor the return status during development and increase buffer size to if overflow;
+        return UART_BUFFER_OVERFLOW;
+    }
+
+	for(i = 0; i < sizeOfData; i++)
+	{
+		uartRx_BINARY_Buf.data[uartRx_BINARY_Buf.ringPtr.iIndexIN] = *data;
+		DRV_RingBuffPtr__Input(&uartRx_BINARY_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER);
+	}
+
+    return NO_ERROR;
+}
+
 
 /*
  * Description: Helper to copy the UART port and characters to a buffer structure
@@ -268,12 +259,12 @@ int UartAddByteToBuffer(uint8_t index, uint8_t *data, uint32_t sizeOfData){
  */
 int UartCopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStruct *uartTx_OUT)
 {
-    uint8_t *pData = uartTx_OUT->data; // pointer to data
+    uint8_t *pData = uartTx_OUT->BufStruct->data; // pointer to data
 
     if(strlen(str_IN) == 0) return -1; // make sure there is some characters.
     memset(uartTx_OUT, 0, sizeof(*uartTx_OUT)); // clear variable
-    uartTx_OUT->uartPort = uartPort; // save uart port
-    uartTx_OUT->dataSize = strlen(str_IN);
+    uartTx_OUT->BufStruct->uartPort = uartPort; // save uart port
+    uartTx_OUT->BufStruct->dataSize = strlen(str_IN);
     memcpy(pData, (uint8_t*)str_IN, strlen(str_IN)); // copy str to data array.
 
     return 0;
@@ -288,62 +279,11 @@ int UartCopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStru
  */
 int UartCopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t sizeOfData, UartTxMsgBufferStruct *uartTx_OUT)
 {
-    uint8_t *pData = uartTx_OUT->data; // pointer to data
+    uint8_t *pData = uartTx_OUT->BufStruct->data; // pointer to data
 
-<<<<<<< HEAD
-    uartTx_OUT->uartPort = uartPort; // save uart port
-    uartTx_OUT->dataSize = sizeOfData;
+    uartTx_OUT->BufStruct->uartPort = uartPort; // save uart port
+    uartTx_OUT->BufStruct->dataSize = sizeOfData;
     memcpy(pData, (uint8_t*)dataIN, sizeOfData); // copy binary data to structure array.
-=======
-	return 0;
-}
-
-/*
- * Description: Sometimes the UART buffer may cause an interrupt on POR
- *              and receive a character(s) which will corrupt the first message.
- *              Call this prior to running main.
- *
- *
- */
-void UartRxBuffer_DRV_RingBuffPtr__Clean(void) {
-    DRV_RingBuffPtr__Clean(&uartRxCharBufferPointer);
-}
-
-/*
- * This is an example on how to parse a message from the message buffer. Copy this to a file and call this function from polling routine.
- *
- * You will need to define two extern variables where ever you have this function
- * • extern UartCharBufferRxStruct uartRxMessageBuffer[MAX_UART_RX_MESSAGE_BUFFER];
- * • extern RING_BUFF_INFO uartRxMsgBufferPointer;
- *
- */
-/*
-void ParseUartRxMessageBuffer(void){
-    uint8_t message[MAX_UART_RX_CHAR_BUFFER] = {0};
-	uint8_t *ptr = message;
-
-	if(uartRxMsgBufferPointer.iCnt_Handle)
-	{
-		//copy buffer contents to array
-		memcpy(&message, &uartRxMessageBuffer[uartRxMsgBufferPointer.iIndexOUT].data, sizeof(message));
-
-		// Example, if message was "get mcu fw version"
-		RemoveSpaces((char*)ptr);
-		// now message is "getmcufwversion"
-
-		// look for keyword "get"
-		if(strncmp((char*)message, "get", strlen("get")) == 0)
-		{
-			ptr += strlen("get"); // removes "get"
-			GetMessage(ptr); // pass message "mcufwversion"
-		}
-		// if message is "set led green: on"
-		else if(strncmp((char*)message, "set", strlen("set")) == 0)
-		{
-			ptr += strlen("set"); // removes "set"
-			SetMessage(ptr); // pass message "ledgreen:on"
-		}
->>>>>>> 2deaf86b4f3d091b55c9460ed19d632064830b35
 
     return 0;
 }
