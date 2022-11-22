@@ -146,22 +146,44 @@ void UartSortRx_BINARY_Buffer(void)
         {
             DRV_RingBuffPtr__Output(&uartRx_BINARY_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER ); // increment rx byte pointer
         }
-        /*
-    	uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].data[idxPtr++] = uartRx_BINARY_Buf.data[uartRx_BINARY_Buf.ringPtr.iIndexOUT]; // save character
-		if(idxPtr >= UART_PACKET_SIZE)
-		{
-			if(ValidateChkSum(uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].data, UART_PACKET_SIZE)) // validate checksum
-			{
-				uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].uartPort = portNumber;
-				uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].dataSize = UART_PACKET_SIZE;
-				DRV_RingBuffPtr__Input(&uartRx_BINARY_Packet.RingBuff.ringPtr, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
-			}
-			idxPtr = 0;
-		}
-        DRV_RingBuffPtr__Output(&uartRx_BINARY_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER); // next character
-         */
     }
 }
+
+bool UartStringMessagePending(void)
+{
+    if(uartRx_STR_Buf.RingBuff.ringPtr.iCnt_Handle != 0)
+    {
+        return true;
+    }
+    return false;
+}
+
+void UartStringMessageClear(void)
+{
+    memset(&uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexOUT].data, 0, MAX_UART_RX_BYTE_BUFFER); // clear data  
+}
+
+uint32_t UartStringMessageGetLength(void)
+{
+    return strlen((char*)uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexOUT].data);
+}
+
+void UartStringMessageIncPtr(void)
+{
+    DRV_RingBuffPtr__Output(&uartRx_STR_Buf.RingBuff.ringPtr, MAX_UART_RX_MESSAGE_BUFFER);
+}
+
+void UartStringMessageCopyNoCRLF(char *retStr)
+{
+    memcpy(retStr, (char*)&uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexOUT].data, UartStringMessageGetLength() - 2); // all except CR LF
+}
+
+void UartStringMessageCopy(char *retStr)
+{
+    memcpy(retStr, &uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexOUT].data, UartStringMessageGetLength());
+}
+
+
 
 /*
  * Description: Add message to message buffer to be sent. Use either UartCopyStringToTxStruct() or UartCopyBinaryDataToTxStruct() to build message first

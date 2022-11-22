@@ -28,8 +28,8 @@ enum
 
 #define MAX_UART_RX_BYTE_BUFFER 192 // this holds all the IRQ data
 #define MAX_UART_TX_BYTE_BUFFER 192
-#define MAX_UART_RX_MESSAGE_BUFFER 1 // buffer size of complete strings or packets.
-#define MAX_UART_TX_MESSAGE_BUFFER 1 // buffer size of complete strings or packets.
+#define MAX_UART_RX_MESSAGE_BUFFER 2 // buffer size of complete strings or packets.
+#define MAX_UART_TX_MESSAGE_BUFFER 2 // buffer size of complete strings or packets.
 
 #define UART_PACKET_SIZE 16 // The number of bytes for complete packet + checksum.
 
@@ -98,5 +98,11 @@ int UartCopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t siz
 
 void UartClearRxCharBuffer(void);
 
+bool UartStringMessagePending(void);
+void UartStringMessageClear(void);
+uint32_t UartStringMessageGetLength(void);
+void UartStringMessageIncPtr(void);
+void UartStringMessageCopyNoCRLF(char *retStr);
+void UartStringMessageCopy(char *retStr);
 
 #endif /* UARTBUFFER_H_ */
