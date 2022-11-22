@@ -43,6 +43,8 @@ typedef struct TimerCallbackStruct{
 
 
 int TimerCallbackRegister(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, bool repeat);
+int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance);
+int TimerCallbackShutDownRegister(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue);
 int TimerCallbackShutDownEnable(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t enable);
 int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
 

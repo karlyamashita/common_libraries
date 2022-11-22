@@ -2,19 +2,19 @@
 Creates a timer and will callback a function when timer reaches threshold value.
 
 
-• Define timer instance some where in main or polling file. // TimerCallbackStruct timerInstanceMilliSeconds[MAX_TIMER_CALLBACK] = {0};
-• Create a callback passing timer instance and parameters. // TimerCallbackRegister(timerInstanceMilliSeconds, <function to callback>, 100, TIMER_REPEAT);
+- Define timer instance some where in main or polling file. // TimerCallbackStruct timerInstanceMilliSeconds[MAX_TIMER_CALLBACK] = {0};
+- Create a callback passing timer instance and parameters. // TimerCallbackRegister(timerInstanceMilliSeconds, <function to callback>, 100, TIMER_REPEAT);
 					Note: The very first callback that is registered holds the timerLastIndex value. This callback should never be deleted or index value will be lost.
-• Call this function "TimerCallbackIncrement(&timerInstanceMilliSeconds)" from SysTick_Handler() in stm32f1xx_it.c
-• Call this function "TimerCallbackCheck(&timerInstanceMilliSeconds)" from polling routine.
-• Call TimerCallbackEnable(&timerInstanceMilliSeconds, <function to callback>, TIMER_ENABLED) to  enable/disable callback
-• Call TimerCallbackShutDownEnable(&timerInstanceMilliSeconds, <function to callback>, TIMER_ENABLED) to enable/disable shutdown of callback.
-• Make sure to adjust define values in header file accordingly to your needs.
+- Call this function "TimerCallbackIncrement(&timerInstanceMilliSeconds)" from SysTick_Handler() in stm32f1xx_it.c
+- Call this function "TimerCallbackCheck(&timerInstanceMilliSeconds)" from polling routine.
+- Call TimerCallbackEnable(&timerInstanceMilliSeconds, <function to callback>, TIMER_ENABLED) to  enable/disable callback
+- Call TimerCallbackShutDownEnable(&timerInstanceMilliSeconds, <function to callback>, TIMER_ENABLED) to enable/disable shutdown of callback.
+- Make sure to adjust define values in header file accordingly to your needs.
 
 
 Revision 2 - 02/17/2022, Added of passing TimerCallbackStruct Instance so that you can have more than one timer instance. One typically for Systick at 1ms and maybe another for micro seconds.
 Rev 2.1 - 10/21/2022, Added callback repetition.
-
+Rev 2.2 - 11/22/2022, Added TimerCallbackRegisterStruct function to pass structure data instead of individual arguments.
 
 */
 
@@ -22,13 +22,14 @@ Rev 2.1 - 10/21/2022, Added callback repetition.
 #include "main.h"
 #include "TimerCallback.h"
 
-volatile TimerCallbackStruct timerCallback[MAX_TIMER_CALLBACK]; // default instance. Use extern where needed
+TimerCallbackStruct timerCallback[MAX_TIMER_CALLBACK]; // default instance. Use extern where needed
 
 static void TimerCallbackSort(TimerCallbackStruct *timerCallback);
 
 
 /*
-function: Register a callback function. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array.
+function: Register a callback function. Iterates through TimerCallbackArray until a free spot is found in array, then copy callback and timerCount to array.
+            If a bunch of parameters need to be set, use the TimerCallbackRegisterStruct() instead.
 input: the timer instance, the function to callback, the timer value, and if it needs to repeat or not repeat after the function is called.
 output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
@@ -69,6 +70,84 @@ int TimerCallbackRegister(TimerCallbackStruct *timerInstance, TimerCallback call
 	return i;
 }
 
+/*
+ * Description: Uses a single structure to save all the parameters instead of passing a bunch of arguments. Be sure to initialize new instance to zero.
+ *              Note, has not been tested thoroughly.
+ */
+int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance)
+{
+    int i = 0;
+    
+    while(timerCallback[i].callback != 0) {
+		if(i == MAX_TIMER_CALLBACK) {
+			return 0;// Maximum timers reached
+		}	
+		i++;// next
+	};
+
+    timerCallback[i].callback = timerInstance->callback;
+    
+    timerCallback[i].timerShutDownEnable = timerInstance->timerShutDownEnable;
+	timerCallback[i].timerShutDownValue = timerInstance->timerShutDownValue;
+	timerCallback[i].timerShutDownCount = 0; // clear shutdown timer
+
+	timerCallback[i].timerRepetitionEnable = timerInstance->timerRepetitionEnable;
+    timerCallback[i].timerRepetitionValue = 0; // clear
+    timerCallback[i].timerRepetitionCount = 0; // clear
+
+    timerCallback[i].timerEnabled = timerInstance->timerEnabled;
+    timerCallback[i].timerValue = timerInstance->timerValue;
+    timerCallback[i].timerCount = 0;// clear the timer
+
+    timerCallback[i].timerRepeat = timerInstance->timerRepeat;
+
+	timerCallback[0].timerLastIndex = i + 1; // only stored in first callback, index 0.
+    
+    return i;
+}
+
+/*
+function: Register a callback function with a timer shut down value. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
+input: timer instance, the function to callback, the timer value, and if it needs to repeat or disables itself after function is called. The timerShutDownValue for disabling the callback after set time.
+output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
+*/
+int TimerCallbackShutDownRegister(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue) {
+	int i = 0;
+
+	if(callback == 0) return -2; // null callback
+	while(timerInstance[i].callback != 0) {
+		if(timerInstance[i].callback == callback) {
+			return -1;// Callback already defined
+		}
+		if(i == MAX_TIMER_CALLBACK) {
+			return 0;// Maximum timers reached
+		}
+		i++;// next
+	};
+
+	if(timerShutDownValue < timerValue){ // timerShutDownValue should not be less than timerValue
+	    timerShutDownValue = timerValue + 1;
+	}
+
+    timerInstance[i].callback = callback;
+
+    timerInstance[i].timerEnabled = 1;
+	timerInstance[i].timerValue = timerValue;
+    timerInstance[i].timerCount = 0;// clear the timer
+
+	timerInstance[i].timerShutDownEnable = false;
+	timerInstance[i].timerShutDownValue = timerShutDownValue;
+	timerInstance[i].timerShutDownCount = 0; // clear shutdown timer
+
+    timerInstance[i].timerRepetitionEnable = false;
+    timerInstance[i].timerRepetitionValue = 0;
+    timerInstance[i].timerRepetitionCount = 0;
+
+    timerInstance[i].timerRepeat = repeat;
+
+	timerInstance[0].timerLastIndex = i + 1; // only stored in first callback, index 0.
+	return i;
+}
 
 /*
  * Description: Enable/Disable the timer shutdown
