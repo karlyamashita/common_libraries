@@ -52,8 +52,8 @@ uint8_t uartIRQ_ByteBuffer[MAX_UART_RX_IRQ_BYTE_LENGTH];
  *
  */
 
-UartRxByteBufferStruct uartRx_ASCII_Buf = {0};
-UartRxByteBufferStruct uartRx_BINARY_Buf = {0};
+UartRxByteBufferStruct uartRx_ASCII_Buf;
+UartRxByteBufferStruct uartRx_BINARY_Buf;
 
 
 // Rx string buffer
@@ -79,14 +79,14 @@ UartTxMsgBufferStruct uartTx_BINARY_Packet;
 void UartSortRx_CHAR_Buffer(void)
 {
     static uint32_t idxPtr = 0;
-    uint32_t portNumber;
+    uint32_t portNumber = 0;
 
     if (uartRx_ASCII_Buf.ringPtr.iCnt_Handle)
     {
     	uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexIN].data[idxPtr++] = uartRx_ASCII_Buf.data[uartRx_ASCII_Buf.ringPtr.iIndexOUT];
         if(uartRx_ASCII_Buf.data[uartRx_ASCII_Buf.ringPtr.iIndexOUT] == '\n'){ // check if line feed
             idxPtr = 0;  // reset pointer
-            //uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexIN].uartPort = portNumber;
+            uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexIN].uartPort = portNumber;
             uartRx_STR_Buf.BufStruct[uartRx_STR_Buf.RingBuff.ringPtr.iIndexIN].dataSize = idxPtr - 1;
             DRV_RingBuffPtr__Input(&uartRx_STR_Buf.RingBuff.ringPtr, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
         }
@@ -104,22 +104,62 @@ void UartSortRx_CHAR_Buffer(void)
 void UartSortRx_BINARY_Buffer(void)
 {
 	static uint32_t idxPtr = 0;
-    uint32_t portNumber;
+    uint32_t i = 0;
+    uint32_t portNumber = 0;
+    uint8_t checkSum = 0; // MOD256 checksum
+    uint8_t tempTelemetry[MAX_UART_RX_BYTE_BUFFER];
+    uint32_t pointer = 0;
 
-    if (uartRx_BINARY_Buf.ringPtr.iCnt_Handle)
+    if (uartRx_BINARY_Buf.ringPtr.iCnt_Handle >= UART_PACKET_SIZE)
     {
+        // copy the bytes to a temporary array
+        for(i = 0; i < UART_PACKET_SIZE; i++)
+        {
+            pointer = uartRx_BINARY_Buf.ringPtr.iIndexOUT + i;
+            if(pointer >= MAX_UART_RX_BYTE_BUFFER)// past max range
+            {
+                pointer -= MAX_UART_RX_BYTE_BUFFER;
+            }
+
+            tempTelemetry[i] = uartRx_BINARY_Buf.data[pointer];
+        }
+        
+        // calculate checksum
+        for(i = 0; i < (UART_PACKET_SIZE - 1); i++)
+        {
+            checkSum += tempTelemetry[i];
+        }
+        
+        // verify checksum
+        if(checkSum == tempTelemetry[UART_PACKET_SIZE - 1]) // compare checksum to last index
+        {
+            // we have a crc match so save the packet to the Rx packet buffer
+            for(i = 0; i < UART_PACKET_SIZE; i++)
+            {
+                uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].data[i] = uartRx_BINARY_Buf.data[uartRx_BINARY_Buf.ringPtr.iIndexOUT];
+                DRV_RingBuffPtr__Output(&uartRx_BINARY_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER );
+            }
+            checkSum = 0; // reset checksum
+            DRV_RingBuffPtr__Input(&uartRx_BINARY_Packet.RingBuff.ringPtr, MAX_UART_RX_MESSAGE_BUFFER); // increment rx packet pointer
+        }
+        else
+        {
+            DRV_RingBuffPtr__Output(&uartRx_BINARY_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER ); // increment rx byte pointer
+        }
+        /*
     	uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].data[idxPtr++] = uartRx_BINARY_Buf.data[uartRx_BINARY_Buf.ringPtr.iIndexOUT]; // save character
 		if(idxPtr >= UART_PACKET_SIZE)
 		{
 			if(ValidateChkSum(uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].data, UART_PACKET_SIZE)) // validate checksum
 			{
-				//uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].uartPort = portNumber;
+				uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].uartPort = portNumber;
 				uartRx_BINARY_Packet.BufStruct[uartRx_BINARY_Packet.RingBuff.ringPtr.iIndexIN].dataSize = UART_PACKET_SIZE;
 				DRV_RingBuffPtr__Input(&uartRx_BINARY_Packet.RingBuff.ringPtr, MAX_UART_RX_MESSAGE_BUFFER); // new message complete
 			}
 			idxPtr = 0;
 		}
         DRV_RingBuffPtr__Output(&uartRx_BINARY_Buf.ringPtr, MAX_UART_RX_BYTE_BUFFER); // next character
+         */
     }
 }
 
@@ -161,7 +201,7 @@ void UartSendMessage(void){
     int status = NO_ERROR;
 
     if (uartTx_STR_Buf.RingBuff.ringPtr.iCnt_Handle) {
-        status = UartTxMessage(&uartTx_STR_Buf.BufStruct[uartTx_STR_Buf.RingBuff.ringPtr.iIndexOUT]);
+        status = UartTxMessage(&uartTx_STR_Buf, uartTx_STR_Buf.RingBuff.ringPtr.iIndexOUT);
         // We need to monitor the return status for a failed transmit so not to increment the pointer yet
         // so on the next loop we can try to send again
         if (status == NO_ERROR) {
@@ -207,11 +247,12 @@ int UartTxMessage(UartTxMsgBufferStruct *uartTxMessage)
 /*
  * Description: Add one byte to the data buffer.
  *
- * Input: index to which data buffer to write to, the pointer to data array, the size/length of data
+ * Input: The pointer to data array, the size/length of data
  * Output: No error or overflow
  */
 int UartAddCharToBuffer(uint8_t *data, uint32_t sizeOfData){
 	int i;
+    
     if(uartRx_ASCII_Buf.ringPtr. iCnt_OverFlow){
         // byte buffer is full. You should monitor the return status during development and increase buffer size to if overflow;
         return UART_BUFFER_OVERFLOW;
@@ -235,6 +276,7 @@ int UartAddCharToBuffer(uint8_t *data, uint32_t sizeOfData){
 int UartAddByteToBuffer(uint8_t *data, uint32_t sizeOfData)
 {
 	int i;
+    
     if(uartRx_BINARY_Buf.ringPtr. iCnt_OverFlow){
         // byte buffer is full. You should monitor the return status during development and increase buffer size to if overflow;
         return UART_BUFFER_OVERFLOW;

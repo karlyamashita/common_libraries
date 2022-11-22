@@ -10,19 +10,6 @@
 
 #include "main.h"
 
-enum
-{
-	UART_PORT_0,
-	UART_PORT_1,
-	UART_PORT_2,
-	UART_PORT_3,
-	UART_PORT_4,
-	UART_PORT_5,
-	UART_PORT_6,
-	UART_PORT_7
-};
-
-
 // buffer status
 enum
 {
@@ -41,12 +28,8 @@ enum
 
 #define MAX_UART_RX_BYTE_BUFFER 192 // this holds all the IRQ data
 #define MAX_UART_TX_BYTE_BUFFER 192
-#define MAX_UART_RX_MESSAGE_BUFFER 3 // buffer size of complete strings or packets.
-#define MAX_UART_TX_MESSAGE_BUFFER 3 // buffer size of complete strings or packets.
-
-#define NUMBER_OF_UART_PORTS 2 // This is for how many UART ports to receive from.
-#define UART_INDEX_PTR_0 0
-#define UART_INDEX_PTR_1 1
+#define MAX_UART_RX_MESSAGE_BUFFER 1 // buffer size of complete strings or packets.
+#define MAX_UART_TX_MESSAGE_BUFFER 1 // buffer size of complete strings or packets.
 
 #define UART_PACKET_SIZE 16 // The number of bytes for complete packet + checksum.
 
