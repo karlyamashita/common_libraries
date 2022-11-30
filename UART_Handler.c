@@ -13,30 +13,43 @@
 #ifdef HAL_UART_MODULE_ENABLED // STM32
 
 extern UART_HandleTypeDef huart2; // update to which uart instance is used.
-extern uint8_t uartDataBuffer[MAX_UART_RX_CHAR_BUFFER_SINGLE];
+extern uint8_t uartIRQ_ByteBuffer[MAX_UART_RX_IRQ_BYTE_LENGTH];
 
+static bool UART_RxEnErrorFlag = false;
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//if(huart->Instance == huart2.Instance)
-	{
-
-	}
 	if(huart->Instance == huart2.Instance)
 	{
-		UartAddCharToBuffer(UART_PORT_2, uartDataBuffer);
-		HAL_UART_Receive_IT(&huart2, uartDataBuffer, MAX_UART_RX_CHAR_BUFFER_SINGLE); //re-enable interrupt
+		UART_AddCharToBuffer(uartIRQ_ByteBuffer, MAX_UART_RX_IRQ_BYTE_LENGTH);
+		UART_Enable_ReceiveIT();
 	}
 }
 
+/*
+ * Description: Enable UART Rx interrupt. Set flag if HAL_BUSY.
+ * 				UART_ReceiveIT_ErrorHandler() should be called from main in polling routine to check for this flag status
+ *
+ */
+void UART_Enable_ReceiveIT(void)
+{
+	if(HAL_UART_Receive_IT(&huart2, uartIRQ_ByteBuffer, MAX_UART_RX_IRQ_BYTE_LENGTH) != HAL_OK)
+	{
+		UART_RxEnErrorFlag = true;
+	}
+}
 
-int UartTxMessage(UartCharBufferTxStruct * msg)
+/*
+ * Description: Transmit available message. If HAL_BUSY then return UART_TX_ERROR.
+ *
+ */
+int UART_TxMessage(UartTxMsgBufferStruct * msg, uint32_t ringPtr)
 {
 	HAL_StatusTypeDef hal_status;
 
-	if(msg->uartPort == UART_PORT_2)
+	if(msg->BufStruct[ringPtr].uartPort == UART_PORT_2)
 	{
-		hal_status = HAL_UART_Transmit_IT(&huart2, msg->data, msg->dataLength);
+		hal_status = HAL_UART_Transmit_IT(&huart2, msg->BufStruct[ringPtr].data, msg->BufStruct[ringPtr].dataSize);
 		if(hal_status != HAL_OK)
 		{
 			return UART_TX_ERROR;
@@ -44,6 +57,20 @@ int UartTxMessage(UartCharBufferTxStruct * msg)
 	}
 
 	return NO_ERROR;
+}
+
+/*
+ * Description: Checks for HAL_UART_Receive_IT() return status. Retry and enable if error is true
+ * 				This needs to be called from main polling routine.
+ *
+ */
+void UART_ReceiveIT_ErrorHandler(void)
+{
+	if(UART_RxEnErrorFlag)
+	{
+		UART_RxEnErrorFlag = false;
+		UART_Enable_ReceiveIT();
+	}
 }
 
 #endif // end HAL_MODULE_ENABLED
@@ -74,7 +101,7 @@ void Uart_Receive(uint32_t uart_base)
             UARTCharPut(UART0_BASE, _char); // echo character
         }
 
-        status = UartAddCharToBuffer(uart_base, &_char); // save character to char buffer
+        status = UART_AddCharToBuffer(uart_base, &_char); // save character to char buffer
         if(status != NO_ERROR){
             // TODO - check HAL Status and act accordingly.
             // For now we're going to lose a character if buffer is full. Try increasing MAX_UART_RX_CHAR_BUFFER size .
@@ -88,7 +115,7 @@ void Uart_Receive(uint32_t uart_base)
  * Input: Character buffer structure. The structure holds the uart base and the char array.
  * Output: HAL status
  */
-int UartTxMessage(UartCharBufferTxStruct *uartBufferPointer)
+int UART_TxMessage(UartCharBufferTxStruct *uartBufferPointer)
 {
     uint32_t uart_base;
     uint8_t *pData = uartBufferPointer->data;
@@ -130,7 +157,7 @@ void UART1_Receive_CallBack(void)
     uint8_t chr[1] = {0};
 
     chr[0] = U1RXREG;
-    UartAddCharToBuffer(UART_PORT_1, chr);
+    UART_AddCharToBuffer(UART_PORT_1, chr);
 }
 
 /*
@@ -139,7 +166,7 @@ void UART1_Receive_CallBack(void)
  * Input: Character buffer structure. The structure holds the UART base and the char array.
  * Output: HAL status
  */
-int UartTxMessage(UartCharBufferTxStruct *msg)
+int UART_TxMessage(UartCharBufferTxStruct *msg)
 {
     uint16_t count = 0;
     uint8_t i = 0;
@@ -186,7 +213,7 @@ void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData)
 	if(!XUartLite_IsReceiveEmpty(XPAR_UARTLITE_0_BASEADDR)){
 		XUartLite_Recv(&UartLite , buffer, 1);
 
-		status = UartAddCharToBuffer(UART_PORT_0, (char*)buffer);
+		status = UART_AddCharToBuffer(UART_PORT_0, (char*)buffer);
 		if(status != NO_ERROR){
 			// TODO - check HAL Status and act accordingly. If buffer overflows then try to increase character buffer size.
 		}
@@ -200,7 +227,7 @@ void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData)
  * Output: HAL status
  *
  */
-int UartTxMessage(UartCharBufferTxStruct *uartBufferPointer)
+int UART_TxMessage(UartCharBufferTxStruct *uartBufferPointer)
 {
 	uint8_t *pData = uartBufferPointer->data;
 	while (*pData != '\0') {

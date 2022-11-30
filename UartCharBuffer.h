@@ -28,8 +28,8 @@ enum
 
 #define MAX_UART_RX_BYTE_BUFFER 192 // this holds all the IRQ data
 #define MAX_UART_TX_BYTE_BUFFER 192
-#define MAX_UART_RX_MESSAGE_BUFFER 2 // buffer size of complete strings or packets.
-#define MAX_UART_TX_MESSAGE_BUFFER 2 // buffer size of complete strings or packets.
+#define MAX_UART_RX_MESSAGE_BUFFER 8 // buffer size of complete strings or packets.
+#define MAX_UART_TX_MESSAGE_BUFFER 8 // buffer size of complete strings or packets.
 
 #define UART_PACKET_SIZE 16 // The number of bytes for complete packet + checksum.
 
@@ -84,25 +84,27 @@ typedef struct
 }UartTxMsgBufferStruct;
 
 
-void UartSortRx_CHAR_Buffer(void);
-void UartSortRx_BINARY_Buffer(void);
+void UART_SortRx_CHAR_Buffer(void);
+void UART_SortRx_BINARY_Buffer(void);
 
-void UartAddMessageToTxBuffer(UartTxMsgBufferStruct *uartBufferPointer);
-void UartSendMessage(void);
+void UART_TX_AddMessageToBuffer(UartTxMsgBufferStruct *uartBufferPointer);
+void UART_SendMessage(void);
 
-int UartAddCharToBuffer(uint8_t *_char, uint32_t sizeOfData);
-int UartAddByteToBuffer(uint8_t *data, uint32_t sizeOfData);
+int UART_AddCharToBuffer(uint8_t *_char, uint32_t sizeOfData);
+int UART_AddByteToBuffer(uint8_t *data, uint32_t sizeOfData);
 
-int UartCopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStruct *uartTx_OUT);
-int UartCopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t sizeOfData, UartTxMsgBufferStruct *uartTx_OUT);
+int UART_CopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStruct *uartTx_OUT);
+int UART_CopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t sizeOfData, UartTxMsgBufferStruct *uartTx_OUT);
 
-void UartClearRxCharBuffer(void);
-
-bool UartStringMessagePending(void);
-void UartStringMessageClear(void);
-uint32_t UartStringMessageGetLength(void);
-void UartStringMessageIncPtr(void);
-void UartStringMessageCopyNoCRLF(char *retStr);
-void UartStringMessageCopy(char *retStr);
+// string
+bool UART_RxStringMessagePending(void);
+void UART_RxStringMessageClear(void);
+void UART_RxStringMessageIncPtr(void);
+void UART_RxStringMessageCopyNoCRLF(char *retStr);
+void UART_RxStringMessageCopy(char *retStr);
+// binary
+bool UART_RxBinaryPacketPending(void);
+void UART_RxBinaryPacketIncPtr(void);
+void UART_RxBinaryPacketCopy(uint8_t *retData);
 
 #endif /* UARTBUFFER_H_ */
