@@ -8,10 +8,19 @@
 #ifndef NOTIFYUSER_H
 #define	NOTIFYUSER_H
 
+#include "UartCharBuffer.h"
+
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
+/*
+ * Description: User should configure the UART port to use. Default is UART_PORT_1 if not defined.
+ */
+#ifndef NOTIFY_USER_UART_PORT
+#define NOTIFY_USER_UART_PORT UART_PORT_1
+#endif
 
 void NotifyUser(uint8_t uartPort, char *str, bool lineFeed);
 

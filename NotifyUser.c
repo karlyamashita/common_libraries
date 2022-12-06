@@ -19,14 +19,20 @@
  */
 void NotifyUser(uint8_t uartPort, char *str, bool lineFeed)
 {
-    UartCharBufferTxStruct uartTx = {0};
+    UartTxMsgBufferStruct uartTx;
+    
+    memset(&uartTx, 0 , sizeof(uartTx));
+    
+    char strMsg[MAX_UART_TX_BYTE_BUFFER] = {0};
+
+    strcpy(strMsg, str);
     
     if(lineFeed == true)
     {
-    	strcat(str, "\r\n"); // add CR and LF
+    	strcat(strMsg, "\r\n");
     }
 
-    UartCopyStrToCharBufferTxStruct(uartPort, str, &uartTx);
-    UartAddTxMessageBuffer(&uartTx);
+    UartCopyStringToTxStruct(uartPort, strMsg, &uartTx);
+    UartAddMessageToTxBuffer(&uartTx);
 }
 

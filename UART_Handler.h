@@ -22,22 +22,20 @@ enum
 
 #ifdef HAL_UART_MODULE_ENABLED // STM32
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-void UART_Enable_ReceiveIT(void);
-int UART_TxMessage(UartTxMsgBufferStruct * msg, uint32_t ringPtr);
-void UART_ReceiveIT_ErrorHandler(void);
-bool UART_TxPendingCheck(void);
-void UART_TxSetPendingFlag(void);
+int UART_TxMessage(UartCharBufferTxStruct * msg, uint32_t ringPtr);
 #endif
 
 #ifdef _XC_H
 void UART1_Receive_CallBack(void);
-int UART_TxMessage(UartCharBufferTxStruct *msg);
+int UART_TxMessage(UartTxMsgBufferStruct *msg, uint32_t ringPtr);
+int UartTxMessageDMA(UartTxMsgBufferStruct *msg, uint32_t ringPtr);
 #endif
 
 #ifdef ccs // TI Code Composer Studio
 void USART0_IRQHandler(void);
+void USART6_IRQHandler(void);
 void Uart_Receive(uint32_t uart_base);
-int UART_TxMessage(UartCharBufferTxStruct * msg);
+int UART_TxMessage(UartTxMsgBufferStruct * msg, uint32_t ringPtr);
 void SetEchoMode(bool mode);
 bool GetEchoMode(void);
 #endif
