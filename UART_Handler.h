@@ -10,19 +10,21 @@
 
 enum
 {
-	UART_PORT_0,
-	UART_PORT_1,
-	UART_PORT_2,
-	UART_PORT_3,
-	UART_PORT_4,
-	UART_PORT_5,
-	UART_PORT_6,
-	UART_PORT_7,
+    UART_PORT_0,
+    UART_PORT_1,
+    UART_PORT_2,
+    UART_PORT_3,
+    UART_PORT_4,
+    UART_PORT_5,
+    UART_PORT_6,
+    UART_PORT_7,
 };
 
 #ifdef HAL_UART_MODULE_ENABLED // STM32
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-int UART_TxMessage(UartCharBufferTxStruct * msg, uint32_t ringPtr);
+void UART_Enable_ReceiveIT(void);
+void UART_ReceiveIT_ErrorHandler(void);
+int UART_TxMessage(UartTxMsgBufferStruct * msg, uint32_t ringPtr);
 #endif
 
 #ifdef _XC_H
@@ -38,11 +40,12 @@ void Uart_Receive(uint32_t uart_base);
 int UART_TxMessage(UartTxMsgBufferStruct * msg, uint32_t ringPtr);
 void SetEchoMode(bool mode);
 bool GetEchoMode(void);
+
 #endif
 
 #ifdef XPARAMETERS_H // Xilinx
 void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData);
-int UART_TxMessage(UartCharBufferTxStruct *uartBufferPointer);
+int UART_TxMessage(UartTxMsgBufferStruct *msg, uint32_t ringPtr);
 static void OutbyteUart1(char c) ;
 #endif
 
