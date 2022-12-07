@@ -398,7 +398,7 @@ int UART_AddByteToBuffer(uint8_t *data, uint32_t sizeOfData)
  * Description: Helper to copy the UART port and characters to a buffer structure
  *
  * Input: The Port number, the transmit data structure, the string to copy to array
- * Output: none
+ * Output: The uartTx_OUT structure
  *
  */
 int UART_CopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStruct *uartTx_OUT)
@@ -418,7 +418,7 @@ int UART_CopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStr
  * Description: Helper to copy the UART port and binary data to a buffer structure
  *
  * Input: The UART port number, the string to copy, the data size, the transmit data structure to copy all parameters to
- * Output: none
+ * Output: The uartTx_OUT structure
  *
  */
 int UART_CopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t sizeOfData, UartTxMsgBufferStruct *uartTx_OUT)
