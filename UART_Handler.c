@@ -28,7 +28,8 @@ UartMsgQueueStruct txMsgQueue_2[UART_TX_MESSAGE_QUEUE_SIZE];
  */
 void UART_HandlerInitBuffer(void)
 {
-	UART_InitRxBuffer(&uart2_rxMsg, rxMsgQueue_2);
+	uart2_rxMsg.BufStruct.msgQueue = rxMsgQueue_2;
+	//UART_InitRxBuffer(&uart2_rxMsg, rxMsgQueue_2);
 	UART_InitTxBuffer(&uart2_txMsg, txMsgQueue_2);
 }
 

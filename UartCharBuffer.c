@@ -35,7 +35,7 @@
 		- User will need to create a message queue for each rx and tx UART port
 			UartMsgQueueStruct rxMsgQueue_2[UART_RX_MESSAGE_QUEUE_SIZE];
 			UartMsgQueueStruct txMsgQueue_2[UART_TX_MESSAGE_QUEUE_SIZE];
-		- User will need to assign each queue to an instance of UartRxBufferStruct created
+		- User will need to assign each buffer queue to an instance of UartRxBufferStruct created
 			UART_InitRxBuffer(&uart2_rxMsg, rxMsgQueue_2);
 			UART_InitTxBuffer(&uart2_txMsg, txMsgQueue_2);
 
@@ -88,18 +88,13 @@ void UART_Add_IRQ_Byte(UartRxBufferStruct *buffer, uint8_t *char_in, uint32_t da
  */
 void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *buffer)
 {
-    //static uint32_t idxPtr = 0;
-
     if(buffer->RingBuff.bytePtr.iCnt_Handle)
     {
-    	//buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[idxPtr++] = buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT];
     	buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr++] = buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT];
     	if(buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT] == '\n')
     	{
-            //buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = idxPtr - 1;
             buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr - 1;
             DRV_RingBuffPtr__Input(&buffer->RingBuff.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
-            //idxPtr = 0;  // reset pointer
             buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr = 0;
         }
     	DRV_RingBuffPtr__Output(&buffer->RingBuff.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
@@ -244,7 +239,7 @@ void UART_RxStringMessageCopy(UartRxBufferStruct *buffer, char *retStr)
 
 
 
-// TODO -
+// TODO - Need to combine these binary code with string code above as they are similar
 
 /*
  * Description: Checks for pending packet ring buffer.

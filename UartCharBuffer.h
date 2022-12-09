@@ -48,6 +48,11 @@ typedef struct
 	uint32_t dataSize;
 }UartMsgQueueSize;
 
+typedef struct
+{
+    uint16_t ptr;
+}SortPtr;
+
 // receive
 typedef struct
 {
@@ -57,6 +62,7 @@ typedef struct
 		uint8_t byteBuffer[UART_RX_BYTE_BUFFER_SIZE]; // bytes saved here as they come in from uartIRQ_ByteBuffer.
 		UartMsgQueueStruct *msgQueue;
 		UartMsgQueueSize msgQueueSize[UART_RX_MESSAGE_QUEUE_SIZE]; // the message length
+		SortPtr sortPtr[UART_RX_MESSAGE_QUEUE_SIZE];
 		bool UART_RxEnErrorFlag; // used with STM32 with HAL functions.
 	}BufStruct;
 	struct
@@ -91,6 +97,7 @@ void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *buffer);
 void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *buffer);
 
 void UART_TX_AddMessageToBuffer(UartTxBufferStruct *buffer, uint8_t *msg, uint32_t dataSize);
+uint32_t UART_TX_GetMessageSize(UartTxBufferStruct *buffer);
 void UART_SendMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
 
 int UART_AddCharToBuffer(UartRxBufferStruct *buffer);
