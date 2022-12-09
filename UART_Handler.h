@@ -31,12 +31,14 @@ int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
 #endif
 
 #ifdef _XC_H
+void UART_HandlerInitBuffer(void);
 void UART1_Receive_CallBack(void);
 int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
 int UartTxMessageDMA(UartTxBufferStruct *buffer, uint8_t uartPort);
 #endif
 
 #ifdef ccs // TI Code Composer Studio
+void UART_HandlerInitBuffer(void);
 void USART0_IRQHandler(void);
 void USART6_IRQHandler(void);
 void Uart_Receive(uint32_t uart_base, UartRxBufferStruct *buffer);
@@ -46,7 +48,8 @@ bool GetEchoMode(void);
 
 #endif
 
-#ifdef XPARAMETERS_H // Xilinx
+#ifdef XPARAMETERS_H // Xilinx'
+void UART_HandlerInitBuffer(void);
 void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData);
 int UART_TxMessage(UartTxMsgBufferStruct *msg, uint32_t ringPtr);
 static void OutbyteUart1(char c) ;
