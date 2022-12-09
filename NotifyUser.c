@@ -12,27 +12,21 @@
 
 /*
  * Description: This will add CR and LF to string before saving to tx buffer.
- * 				Be sure the char array str length is large enough for the added characters.
- * Input: String or char array
- *
+ * Input: Pointer to buffer, the string to add to tx buffer, and linefeed enable
  *
  */
-void NotifyUser(uint8_t uartPort, char *str, bool lineFeed)
+void NotifyUser(UartTxBufferStruct *buffer, char *str, bool lineFeed)
 {
-    UartTxMsgBufferStruct uartTx;
-    
-    memset(&uartTx, 0 , sizeof(uartTx));
-    
-    char strMsg[MAX_UART_TX_BYTE_BUFFER] = {0};
+    uint8_t strMsg[UART_TX_BYTE_BUFFER_SIZE] = {0};
 
-    strcpy(strMsg, str);
+    strcpy((char*)strMsg, str);
     
     if(lineFeed == true)
     {
-    	strcat(strMsg, "\r\n");
+    	strcat((char*)strMsg, "\r\n");
     }
 
-    UartCopyStringToTxStruct(uartPort, strMsg, &uartTx);
-    UartAddMessageToTxBuffer(&uartTx);
+    buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = strlen((char*)strMsg);
+    UART_TX_AddMessageToBuffer(buffer, strMsg, strlen((char*)strMsg));
 }
 

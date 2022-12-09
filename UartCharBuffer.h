@@ -24,87 +24,90 @@ enum
  *	Currently this does not support varied size binary data with checksum, just fixed size only. In a future revision this will.
  *
  */
-#define MAX_UART_RX_IRQ_BYTE_LENGTH 1
+#define UART_RX_IRQ_BYTE_SIZE 1
 
-#define MAX_UART_RX_BYTE_BUFFER 192 // this holds all the IRQ data
-#define MAX_UART_TX_BYTE_BUFFER 192
-#define MAX_UART_RX_MESSAGE_BUFFER 8 // buffer size of complete strings or packets.
-#define MAX_UART_TX_MESSAGE_BUFFER 8 // buffer size of complete strings or packets.
+#define UART_RX_BYTE_BUFFER_SIZE 192 // this holds all the IRQ data
+#define UART_TX_BYTE_BUFFER_SIZE 192
+#define UART_RX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
+#define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
 
-#define UART_PACKET_SIZE 16 // The number of bytes for complete packet + checksum.
+#define UART_RX_PACKET_SIZE 16 // The number of bytes for complete packet + checksum.
 
 
 // end user defines
 
 
 
-
-/*
- * Description: Rx byte buffer to save for the Uart IRQ data received.
- *
- */
 typedef struct
 {
-	uint8_t data[MAX_UART_RX_BYTE_BUFFER];
-	RING_BUFF_INFO ringPtr;
-}UartRxByteBufferStruct;
+	uint8_t msgData[UART_RX_BYTE_BUFFER_SIZE];
+}UartMsgQueueStruct;
 
+typedef struct
+{
+	uint32_t dataSize;
+}UartMsgQueueSize;
 
-/*
- * Because different MCU's uses UART port defines differently, we're going to use generic UART port number.
- * For your MCU you will convert the generic port numbers to the actual instance name when writing to the specific UART port.
- *
- */
+// receive
 typedef struct
 {
 	struct
 	{
-		uint8_t uartPort;
-		uint8_t data[MAX_UART_RX_BYTE_BUFFER];
-		uint8_t dataSize; // used mainly for binary data
-	}BufStruct[MAX_UART_RX_MESSAGE_BUFFER];
+		uint8_t uartIRQ_ByteBuffer[UART_RX_IRQ_BYTE_SIZE]; // UART IRQ will save to this. Typically would be 1 byte in size
+		uint8_t byteBuffer[UART_RX_BYTE_BUFFER_SIZE]; // bytes saved here as they come in from uartIRQ_ByteBuffer.
+		UartMsgQueueStruct *msgQueue;
+		UartMsgQueueSize msgQueueSize[UART_RX_MESSAGE_QUEUE_SIZE]; // the message length
+		bool UART_RxEnErrorFlag; // used with STM32 with HAL functions.
+	}BufStruct;
 	struct
 	{
-		RING_BUFF_INFO ringPtr;
+		RING_BUFF_INFO bytePtr; // pointer for byteBuffer
+		RING_BUFF_INFO msgPtr; // pointer for msgQueue and msgDataSize
 	}RingBuff;
-}UartRxMsgBufferStruct;
+}UartRxBufferStruct;
 
+// transmit
 typedef struct
 {
 	struct
 	{
-		uint8_t uartPort;
-		uint8_t data[MAX_UART_TX_BYTE_BUFFER];
-		uint8_t dataSize; // used mainly for binary data
-	}BufStruct[MAX_UART_TX_MESSAGE_BUFFER];
+		UartMsgQueueStruct *msgQueue;
+		UartMsgQueueSize msgQueueSize[UART_TX_MESSAGE_QUEUE_SIZE];
+	}BufStruct;
 	struct
 	{
-		RING_BUFF_INFO ringPtr;
+		RING_BUFF_INFO msgPtr; // pointer for msgBuffer and msgDataSize
 	}RingBuff;
-}UartTxMsgBufferStruct;
+}UartTxBufferStruct;
 
 
-void UART_SortRx_CHAR_Buffer(void);
-void UART_SortRx_BINARY_Buffer(void);
 
-void UART_TX_AddMessageToBuffer(UartTxMsgBufferStruct *uartBufferPointer);
-void UART_SendMessage(void);
+void UART_InitRxBuffer(UartRxBufferStruct *buffer, UartMsgQueueStruct *msgBuffer);
+void UART_InitTxBuffer(UartTxBufferStruct *buffer, UartMsgQueueStruct *msgBuffer);
 
-int UART_AddCharToBuffer(uint8_t *_char, uint32_t sizeOfData);
-int UART_AddByteToBuffer(uint8_t *data, uint32_t sizeOfData);
+void UART_Add_IRQ_Byte(UartRxBufferStruct *buffer, uint8_t *char_in, uint32_t dataSize);
 
-int UART_CopyStringToTxStruct(uint8_t uartPort, char *str_IN, UartTxMsgBufferStruct *uartTx_OUT);
-int UART_CopyBinaryDataToTxStruct(uint8_t uartPort, uint8_t *dataIN, uint32_t sizeOfData, UartTxMsgBufferStruct *uartTx_OUT);
+void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *buffer);
+void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *buffer);
+
+void UART_TX_AddMessageToBuffer(UartTxBufferStruct *buffer, uint8_t *msg, uint32_t dataSize);
+void UART_SendMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
+
+int UART_AddCharToBuffer(UartRxBufferStruct *buffer);
+int UART_AddByteToBuffer(UartRxBufferStruct *buffer);
+
 
 // string
-bool UART_RxStringMessagePending(void);
-void UART_RxStringMessageClear(void);
-void UART_RxStringMessageIncPtr(void);
-void UART_RxStringMessageCopyNoCRLF(char *retStr);
-void UART_RxStringMessageCopy(char *retStr);
-// binary
-bool UART_RxBinaryPacketPending(void);
-void UART_RxBinaryPacketIncPtr(void);
-void UART_RxBinaryPacketCopy(uint8_t *retData);
+bool UART_RxStringMessagePending(UartRxBufferStruct *buffer);
+void UART_RxStringMessageClear(UartRxBufferStruct *buffer);
+void UART_RxStringMessageIncPtr(UartRxBufferStruct *buffer);
+void UART_RxStringMessageCopyNoCRLF(UartRxBufferStruct *buffer, char *retStr);
+void UART_RxStringMessageCopy(UartRxBufferStruct *buffer, char *retStr);
+
+//binary
+bool UART_RxPacketPending(UartRxBufferStruct *buffer);
+void UART_RxPacketClear(UartRxBufferStruct *buffer, uint32_t packetSize);
+void UART_RxPacketIncPtr(UartRxBufferStruct *buffer);
+void UART_RxPacketCopy(UartRxBufferStruct *buffer, uint32_t packetSize, uint8_t *retStr);
 
 #endif /* UARTBUFFER_H_ */

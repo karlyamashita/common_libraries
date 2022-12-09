@@ -21,23 +21,26 @@ enum
 };
 
 #ifdef HAL_UART_MODULE_ENABLED // STM32
+void UART_HandlerInitBuffer(void);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-void UART_Enable_ReceiveIT(void);
-void UART_ReceiveIT_ErrorHandler(void);
-int UART_TxMessage(UartTxMsgBufferStruct * msg, uint32_t ringPtr);
+void UART_Enable_ReceiveIT(UartRxBufferStruct *buffer);
+void UART_ReceiveIT_ErrorHandler(UartRxBufferStruct *buffer);
+int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
+
+
 #endif
 
 #ifdef _XC_H
 void UART1_Receive_CallBack(void);
-int UART_TxMessage(UartTxMsgBufferStruct *msg, uint32_t ringPtr);
-int UartTxMessageDMA(UartTxMsgBufferStruct *msg, uint32_t ringPtr);
+int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
+int UartTxMessageDMA(UartTxBufferStruct *buffer, uint8_t uartPort);
 #endif
 
 #ifdef ccs // TI Code Composer Studio
 void USART0_IRQHandler(void);
 void USART6_IRQHandler(void);
-void Uart_Receive(uint32_t uart_base);
-int UART_TxMessage(UartTxMsgBufferStruct * msg, uint32_t ringPtr);
+void Uart_Receive(uint32_t uart_base, UartRxBufferStruct *buffer);
+int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
 void SetEchoMode(bool mode);
 bool GetEchoMode(void);
 

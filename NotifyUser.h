@@ -22,7 +22,7 @@ extern "C" {
 #define NOTIFY_USER_UART_PORT UART_PORT_1
 #endif
 
-void NotifyUser(uint8_t uartPort, char *str, bool lineFeed);
+void NotifyUser(UartTxBufferStruct *buffer, char *str, bool lineFeed);
 
 
 #ifdef	__cplusplus
