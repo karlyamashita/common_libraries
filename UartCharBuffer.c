@@ -70,12 +70,12 @@ void UART_InitTxBuffer(UartTxBufferStruct *buffer, UartMsgQueueStruct *msgBuffer
 void UART_Add_IRQ_Byte(UartRxBufferStruct *buffer, uint8_t *char_in, uint32_t dataSize)
 {
 	int i;
+	uint8_t *ptr = (uint8_t*)char_in;
 
 	for(i = 0; i < dataSize; i++)
 	{
-		buffer->BufStruct.uartIRQ_ByteBuffer[i] = *char_in++;
+		buffer->BufStruct.uartIRQ_ByteBuffer[i] = *ptr++;
 	}
-
 }
 
 
@@ -88,16 +88,19 @@ void UART_Add_IRQ_Byte(UartRxBufferStruct *buffer, uint8_t *char_in, uint32_t da
  */
 void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *buffer)
 {
-    static uint32_t idxPtr = 0;
+    //static uint32_t idxPtr = 0;
 
     if(buffer->RingBuff.bytePtr.iCnt_Handle)
     {
-    	buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[idxPtr++] = buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT];
+    	//buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[idxPtr++] = buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT];
+    	buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr++] = buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT];
     	if(buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT] == '\n')
     	{
-            idxPtr = 0;  // reset pointer
-            buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = idxPtr - 1;
+            //buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = idxPtr - 1;
+            buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr - 1;
             DRV_RingBuffPtr__Input(&buffer->RingBuff.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
+            //idxPtr = 0;  // reset pointer
+            buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr = 0;
         }
     	DRV_RingBuffPtr__Output(&buffer->RingBuff.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
     }
@@ -304,6 +307,11 @@ void UART_TX_AddMessageToBuffer(UartTxBufferStruct *buffer, uint8_t *msg, uint32
     }
     buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = dataSize;
     DRV_RingBuffPtr__Input(&buffer->RingBuff.msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
+}
+
+uint32_t UART_TX_GetMessageSize(UartTxBufferStruct *buffer)
+{
+	return buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexOUT].dataSize;
 }
 
 /*
