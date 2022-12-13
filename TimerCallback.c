@@ -59,7 +59,7 @@ int TimerCallbackRegister(TimerCallbackStruct *timerInstance, TimerCallback call
     timerInstance[i].timerRepetitionValue = 0;
     timerInstance[i].timerRepetitionCount = 0;
 
-    timerInstance[i].timerEnabled = 1;
+    timerInstance[i].timerEnabled = true;
     timerInstance[i].timerValue = timerValue;
     timerInstance[i].timerCount = 0;// clear the timer
 
@@ -249,7 +249,7 @@ int TimerCallbackDelete(TimerCallbackStruct *timerInstance, TimerCallback callba
 }
 
 /*
-function:	Enable or disable the callback
+function:	Enable or disable the callback. The timerCount is not cleared. If you want to clear the timerCount then use TimerCallbackResetStart()
 input: timer instance, the callback, enable or disable state
 output: return 0 if successful
 */
@@ -263,6 +263,26 @@ int TimerCallbackEnable(TimerCallbackStruct *timerInstance, TimerCallback callba
 		i++;
 	};
     timerInstance[i].timerEnabled = enable;
+	return 0;
+}
+
+/*
+function: Resets the timerCount value to zero and enables it. Good for debouncing switch
+input: timer instance, the callback
+output: return 0 if successful
+ */
+int TimerCallbackResetEnable(TimerCallbackStruct *timerInstance, TimerCallback callback)
+{
+	uint8_t i = 0;
+
+	while(timerInstance[i].callback != callback) {
+		if( i == timerInstance[0].timerLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+	timerInstance[i].timerCount = 0;
+	timerInstance[i].timerEnabled = true;
 	return 0;
 }
 
