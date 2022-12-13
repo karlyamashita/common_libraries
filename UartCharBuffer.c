@@ -359,31 +359,6 @@ int UART_AddCharToBuffer(UartRxBufferStruct *buffer)
     return NO_ERROR;
 }
 
-/*
- * Description: Add one byte to the data buffer.
- *
- * Input: index to which data buffer to write to, the pointer to data array, the size/length of data
- * Output: No error or overflow
- */
-int UART_AddByteToBuffer(UartRxBufferStruct *buffer)
-{
-	int i;
-    
-    if(buffer->RingBuff.bytePtr.iCnt_OverFlow){
-        // byte buffer is full. You should monitor the return status during development and increase buffer size to if overflow;
-        return UART_BUFFER_OVERFLOW;
-    }
-
-	for(i = 0; i < UART_RX_PACKET_SIZE; i++)
-	{
-		buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexIN] = buffer->BufStruct.uartIRQ_ByteBuffer[i];
-		DRV_RingBuffPtr__Input(&buffer->RingBuff.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
-	}
-
-    return NO_ERROR;
-}
-
-
 
 /*
  * Description: Gets the rx message string length

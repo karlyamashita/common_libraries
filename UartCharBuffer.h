@@ -101,7 +101,6 @@ uint32_t UART_TX_GetMessageSize(UartTxBufferStruct *buffer);
 void UART_SendMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
 
 int UART_AddCharToBuffer(UartRxBufferStruct *buffer);
-int UART_AddByteToBuffer(UartRxBufferStruct *buffer);
 
 
 // string
