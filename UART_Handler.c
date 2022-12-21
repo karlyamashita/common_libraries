@@ -135,17 +135,17 @@ void USART6_IRQHandler(void)
 
 void Uart_Receive(uint32_t uart_base, UartRxBufferStruct *buffer)
 {
-    int status;
-    uint32_t interruptStatus;
-    uint32_t data;
+	int status;
+	uint32_t interruptStatus;
+	uint8_t data;
 
-    interruptStatus = UARTIntStatus(uart_base, true);
-    UARTIntClear(uart_base, interruptStatus);
+	interruptStatus = UARTIntStatus(uart_base, true);
+	UARTIntClear(uart_base, interruptStatus);
 
 	if (UARTCharsAvail(uart_base))
 	{
-		data = UARTCharGet(uart_base);
-		UART_Add_IRQ_Byte(buffer, (uint8_t*)data, 1);
+		data = (uint8_t)UARTCharGet(uart_base);
+		UART_Add_IRQ_Byte(buffer, &data, 1);
 		if(echoMode == 1) {
 			UARTCharPut(UART0_BASE, (unsigned char)buffer->BufStruct.uartIRQ_ByteBuffer[0]); // echo character
 		}
@@ -275,6 +275,21 @@ int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort)
 #ifdef XPARAMETERS_H // Xilinx
 
 static void OutbyteUart1(char c);
+
+UartRxBufferStruct uart0_rxMsg = {0};
+UartTxBufferStruct uart0_txMsg = {0};
+
+UartMsgQueueStruct rxMsgQueue_0[UART_RX_MESSAGE_QUEUE_SIZE];
+UartMsgQueueStruct txMsgQueue_0[UART_TX_MESSAGE_QUEUE_SIZE];
+
+void UART_HandlerInitBuffer(void)
+{
+	memset(&uart1_rxMsg, 0, sizeof(uart1_rxMsg));
+    memset(&uart1_txMsg, 0, sizeof(uart1_txMsg));
+
+	UART_InitRxBuffer(&uart1_rxMsg, rxMsgQueue_1);
+	UART_InitTxBuffer(&uart1_txMsg, txMsgQueue_1);
+}
 
 /*
  * Description:

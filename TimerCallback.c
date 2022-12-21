@@ -1,10 +1,20 @@
 /*
+
 Creates a timer and will callback a function when timer reaches threshold value.
+
+
+Good for
+- Debouncing a push button switch
+- Blinking an LED or sending telemetry data at an interval
+- Debouncing a push button switch and counting the number of times the PB is pressed. This requires more than one callback function.
+- And anything else you can imagine.
+
+
 
 
 - Define timer instance some where in main or polling file. // TimerCallbackStruct timerInstanceMilliSeconds[MAX_TIMER_CALLBACK] = {0};
 - Create a callback passing timer instance and parameters. // TimerCallbackRegister(timerInstanceMilliSeconds, <function to callback>, 100, TIMER_REPEAT);
-					Note: The very first callback that is registered holds the timerLastIndex value. This callback should never be deleted or index value will be lost.
+					Note: The very first callback that is registered holds the timerLastIndex value. This callback should never be deleted or the index value will be lost.
 - Call this function "TimerCallbackIncrement(&timerInstanceMilliSeconds)" from SysTick_Handler() in stm32f1xx_it.c
 - Call this function "TimerCallbackCheck(&timerInstanceMilliSeconds)" from polling routine.
 - Call TimerCallbackEnable(&timerInstanceMilliSeconds, <function to callback>, TIMER_ENABLED) to  enable/disable callback
@@ -59,7 +69,7 @@ int TimerCallbackRegister(TimerCallbackStruct *timerInstance, TimerCallback call
     timerInstance[i].timerRepetitionValue = 0;
     timerInstance[i].timerRepetitionCount = 0;
 
-    timerInstance[i].timerEnabled = 1;
+    timerInstance[i].timerEnabled = true;
     timerInstance[i].timerValue = timerValue;
     timerInstance[i].timerCount = 0;// clear the timer
 
@@ -249,7 +259,7 @@ int TimerCallbackDelete(TimerCallbackStruct *timerInstance, TimerCallback callba
 }
 
 /*
-function:	Enable or disable the callback
+function:	Enable or disable the callback. The timerCount is not cleared. If you want to clear the timerCount then use TimerCallbackResetStart()
 input: timer instance, the callback, enable or disable state
 output: return 0 if successful
 */
@@ -263,6 +273,26 @@ int TimerCallbackEnable(TimerCallbackStruct *timerInstance, TimerCallback callba
 		i++;
 	};
     timerInstance[i].timerEnabled = enable;
+	return 0;
+}
+
+/*
+function: Resets the timerCount value to zero and enables it. Good for debouncing switch
+input: timer instance, the callback
+output: return 0 if successful
+ */
+int TimerCallbackResetEnable(TimerCallbackStruct *timerInstance, TimerCallback callback)
+{
+	uint8_t i = 0;
+
+	while(timerInstance[i].callback != callback) {
+		if( i == timerInstance[0].timerLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+	timerInstance[i].timerCount = 0;
+	timerInstance[i].timerEnabled = true;
 	return 0;
 }
 
