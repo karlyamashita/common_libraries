@@ -1,7 +1,7 @@
 // by Karl Yamashita September 2017
 
+#include <CAN_BufferV2.h>
 #include "main.h"
-#include "CAN_Buffer_V2.h"
 #include "ringBuff.h"
 
 
