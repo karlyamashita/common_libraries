@@ -4,7 +4,7 @@
 #include "main.h"
 
 // user defines
-#define MAX_TIMER_CALLBACK 15 // increase if more callbacks are needed
+#define MAX_TIMER_CALLBACK 8 // increase if more callbacks are needed
 #define MAX_TIMER_INSTANCE 2 // the number of timer instances. Default is 1 for milli seconds. Increase for each timer instances needed.
 
 
@@ -48,7 +48,8 @@ int TimerCallbackShutDownRegister(TimerCallbackStruct *timerCallback, TimerCallb
 int TimerCallbackShutDownEnable(TimerCallbackStruct *timerCallback, TimerCallback callback, uint8_t enable);
 int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
 
-int TimerCallbackSetRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t rep);
+int TimerCallbackRegisterRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback);
+int TimerCallbackResetRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t time, uint32_t repetition);
 
 int TimerCallbackClearTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
 int TimerCallbackDelete(TimerCallbackStruct *timerCallback, TimerCallback callback);

@@ -3,51 +3,60 @@
 
 #include "RingBuff.h"
 
-#define CAN_MAX_RX_BUFF 8
-#define CAN_MAX_TX_BUFF 8
+// typically this will be 8
+#define CAN_RX_BUFF_SIZE 8
+#define CAN_TX_BUFF_SIZE 8
 
-#define CAN_STD_ID 0x00
-#define CAN_EXT_ID 0x04
+// increase if buffer over run.
+#define CAN_RX_QUEUE_SIZE 4
+#define CAN_TX_QUEUE_SIZE 4
 
-
-typedef struct
-{
-	uint8_t Data[8];
-}CAN_DataBytes;
 
 // Receive
-typedef struct CanRxMsgTypeDef{
+typedef struct
+{
     struct
     {
-	    CAN_RxHeaderTypeDef CAN_RxHeaderTypeDef;
-	    CAN_DataBytes data;
-    }Msg;
+	    CAN_RxHeaderTypeDef header;
+	    uint8_t data[CAN_RX_BUFF_SIZE];
+    }QUEUE[CAN_RX_QUEUE_SIZE];
+
     RING_BUFF_INFO ptr;
-}CanRxMsgTypeDef;
+}CanRxMsg_Struct;
 
 // Transmit
-typedef struct CanTxMsgTypeDef{
+typedef struct
+{
     struct
-    {
-	    CAN_TxHeaderTypeDef CAN_TxHeaderTypeDef;
-	    uint8_t data[8];
-    }Msg[CAN_MAX_TX_BUFF];
+	{
+	    CAN_TxHeaderTypeDef header;
+	    uint8_t data[CAN_TX_BUFF_SIZE];
+    }QUEUE[CAN_TX_QUEUE_SIZE];
+
     RING_BUFF_INFO ptr;
-}CanTxMsgTypeDef;
+}CanTxMsg_Struct;
+
+// temporary rxMsg buffer without queue buffer
+typedef struct
+{
+	CAN_RxHeaderTypeDef header;
+	uint8_t data[CAN_RX_BUFF_SIZE];
+}CanRxMsgTemp_Struct;
+
+// temporary txMsg buffer without queue buffer
+typedef struct
+{
+	CAN_TxHeaderTypeDef header;
+	uint8_t data[CAN_TX_BUFF_SIZE];
+}CanTxMsgTemp_Struct;
 
 
-int SendCanTxMessage1(CAN_HandleTypeDef *hcan, CanTxMsgTypeDef *CAN_TxMsg);
-void AddCanTxBuffer1(CanTxMsgTypeDef *CAN_Msg, CanTxMsgTypeDef *canMsg);
-void AddCanRxBuffer1(CanRxMsgTypeDef *CAN_Msg, CanRxMsgTypeDef *canMsg);
-uint8_t Can1DataAvailable(CanRxMsgTypeDef *canMsg);
+void CAN_SendTxMessage(CAN_HandleTypeDef *hcan, CanTxMsg_Struct *canMsg);
+void CAN_AddTxBuffer(CanTxMsg_Struct *canMsg_Out, CanTxMsgTemp_Struct *canMsg);
+void AddCanRxBuffer(CanRxMsg_Struct *canMsg_Out, CanRxMsg_Struct *canMsg);
+void CAN_GetMessage(CAN_HandleTypeDef *hcan, CanRxMsg_Struct *rxMsg);
+int CAN_MsgAvailable(CanRxMsg_Struct *rxMsg, CanTxMsgTemp_Struct *canMsg);
 
-#ifdef USE_CAN_BUFFER_2
-int SendCanTxMessage2(CAN_HandleTypeDef *hcan);
-void AddCanTxBuffer2(CanTxMsgTypeDef *canMsg);
-void AddCanRxBuffer2(CanRxMsgTypeDef *canMsg);
-uint8_t Can2DataAvailable(CanRxMsgTypeDef *canMsg);
-#endif // USE_CAN_BUFFER_2
 
-void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg);
 	
 #endif // CAN_BUFFER_V2_H

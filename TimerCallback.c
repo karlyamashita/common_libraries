@@ -25,6 +25,7 @@ Good for
 Revision 2 - 02/17/2022, Added of passing TimerCallbackStruct Instance so that you can have more than one timer instance. One typically for Systick at 1ms and maybe another for micro seconds.
 Rev 2.1 - 10/21/2022, Added callback repetition.
 Rev 2.2 - 11/22/2022, Added TimerCallbackRegisterStruct function to pass structure data instead of individual arguments.
+Rev 2.3 - 12/24/2022, Finished the Callback Repetition.
 
 */
 
@@ -197,11 +198,49 @@ int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerInstance, TimerCal
 }
 
 /*
- * Description: You can set how many callback repetitions to do before ending callbacks
+ * Description: Register a callback that you want to do some repetitions with.
+ * 				This is off by default. To start repetition, use the TimerCallbackResetRepetition.
+ *
+ *
  *
  *
  */
-int TimerCallbackSetRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t repetition)
+int TimerCallbackRegisterRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback)
+{
+    uint8_t i = 0;
+
+    while(timerInstance[i].callback != 0) {
+		if(timerInstance[i].callback == callback) {
+			return -1;// Callback already defined
+		}
+
+		if(i == MAX_TIMER_CALLBACK) {
+			return 0;// Maximum timers reached
+		}
+		i++;// next
+	};
+
+    timerInstance[i].callback = callback;
+
+    timerInstance[i].timerRepetitionEnable = false;
+    timerInstance[i].timerEnabled = false;
+
+    timerInstance[0].timerLastIndex = i + 1; // only stored in first callback, index 0.
+
+    return 0;
+}
+
+/*
+ * Description: You can set how many callback repetitions to do before ending callbacks. The time is the delay between each repetition.
+ * 				User needs to register a callback first using TimerCallbackRegisterRepetition
+ *
+ *				Example use would be to blink an LED 3 times On/Off using the HAL_GPIO_TogglePin.
+ * 				The time could be like 500ms between On and Off. If the LED is starting in the Off state,
+ * 				use a even number to end with the LED Off, else use an odd number to end with the LED on.
+ *				So to blink the LED 3 times, use 6 for the repetition.
+ *
+ */
+int TimerCallbackResetRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t time, uint32_t repetition)
 {
     uint8_t i = 0;
 
@@ -215,6 +254,10 @@ int TimerCallbackSetRepetition(TimerCallbackStruct *timerInstance, TimerCallback
     timerInstance[i].timerRepetitionValue = repetition;
     timerInstance[i].timerRepetitionCount = 0;
     timerInstance[i].timerRepetitionEnable = true;
+
+    timerInstance[i].timerValue = time;
+    timerInstance[i].timerRepeat = true;
+    timerInstance[i].timerEnabled = true;
 
     return 0;
 }

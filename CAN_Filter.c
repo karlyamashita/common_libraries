@@ -1,5 +1,5 @@
 #include "LSP.h"
-#ifdef USE_CAN_FILTER
+//#ifdef USE_CAN_FILTER
 #include "main.h"
 #include "CAN_Filter.h"
 
@@ -34,14 +34,16 @@ void SetCanFilter(void) {
 	static CAN_FilterTypeDef sFilterConfig;
 
 	//sFilterConfig.FilterNumber           = 0;
+
 	sFilterConfig.FilterMode             = CAN_FILTERMODE_IDMASK;
 	sFilterConfig.FilterScale            = CAN_FILTERSCALE_32BIT;
 	sFilterConfig.FilterIdHigh           = 0x0000;
 	sFilterConfig.FilterIdLow            = 0x0000;
 	sFilterConfig.FilterMaskIdHigh       = 0x0000;
 	sFilterConfig.FilterMaskIdLow        = 0x0000;
-	sFilterConfig.FilterFIFOAssignment   = 0;
+	sFilterConfig.FilterFIFOAssignment   = CAN_TX_FIFO0;
 	sFilterConfig.FilterActivation       = ENABLE;
+
 #if defined STM32F042x6 || defined STM32F1 // this device defines the single CAN controller as hcan, not hcan1
 	HAL_CAN_ConfigFilter(&hcan,&sFilterConfig);
 	HAL_CAN_Start(&hcan);
