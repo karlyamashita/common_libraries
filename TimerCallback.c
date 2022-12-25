@@ -26,6 +26,7 @@ Revision 2 - 02/17/2022, Added of passing TimerCallbackStruct Instance so that y
 Rev 2.1 - 10/21/2022, Added callback repetition.
 Rev 2.2 - 11/22/2022, Added TimerCallbackRegisterStruct function to pass structure data instead of individual arguments.
 Rev 2.3 - 12/24/2022, Finished the Callback Repetition. Added secondary callback, not tested yet.
+Rev 2.4 - 12/24/2022, Finished Secondary callback and working.
 
 */
 
