@@ -5,8 +5,6 @@
 
 // user defines
 #define MAX_TIMER_CALLBACK 8 // increase if more callbacks are needed
-#define MAX_TIMER_INSTANCE 2 // the number of timer instances. Default is 1 for milli seconds. Increase for each timer instances needed.
-
 
 
 typedef void (*TimerCallback)(void);// no data is passed
@@ -22,7 +20,10 @@ enum TIMER_CALLBACK_ENABLE{
 };
 
 typedef struct TimerCallbackStruct{
-    TimerCallback callback;// what function to callback
+    TimerCallback callback;// what function to callback. This is the first callback.
+
+    bool timerCallback2Enabled; // new 12-25-2022
+    TimerCallback callback2;// new 12-25-2022 secondary callback to call after the timer is disabled for the first callback.
 
     bool timerShutDownEnable; // shut down after a certain time
     uint32_t timerShutDownValue; // the repeat timer to reach;

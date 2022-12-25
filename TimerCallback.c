@@ -25,7 +25,7 @@ Good for
 Revision 2 - 02/17/2022, Added of passing TimerCallbackStruct Instance so that you can have more than one timer instance. One typically for Systick at 1ms and maybe another for micro seconds.
 Rev 2.1 - 10/21/2022, Added callback repetition.
 Rev 2.2 - 11/22/2022, Added TimerCallbackRegisterStruct function to pass structure data instead of individual arguments.
-Rev 2.3 - 12/24/2022, Finished the Callback Repetition.
+Rev 2.3 - 12/24/2022, Finished the Callback Repetition. Added secondary callback, not tested yet.
 
 */
 
@@ -97,6 +97,7 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance)
 	};
 
     timerCallback[i].callback = timerInstance->callback;
+    timerCallback[i].callback2 = timerInstance->callback2;
     
     timerCallback[i].timerShutDownEnable = timerInstance->timerShutDownEnable;
 	timerCallback[i].timerShutDownValue = timerInstance->timerShutDownValue;
@@ -472,22 +473,37 @@ void TimerCallbackCheck(TimerCallbackStruct *timerInstance) {
 	        if(timerInstance[i].timerShutDownCount >= timerInstance[i].timerShutDownValue) {
 	        	timerInstance[i].timerShutDownCount = 0;
 	        	timerInstance[i].timerEnabled = 0; // disable timer
+
+	        	if(timerInstance[i].timerCallback2Enabled)// new 12-25-2022
+	        	{
+	        		timerInstance[i].callback2();// jump to secondary callback function
+	        	}
 	        }
 	    }
 
-		if(timerInstance[i].timerEnabled == 1) {// timer is enable so now check if time is reached
+		if(timerInstance[i].timerEnabled) {// timer or repetition is enabled
 			if(timerInstance[i].timerCount >= timerInstance[i].timerValue) {
 				timerInstance[i].timerCount = 0;// clear timer
 				timerInstance[i].callback();// jump to callback function
-				if(timerInstance[i].timerRepetitionEnable) // new 4-27-2022, has not been tested yet.
+				if(timerInstance[i].timerRepetitionEnable) // new 4-27-2022
 				{
 				    if(++timerInstance[i].timerRepetitionCount >= timerInstance[i].timerRepetitionValue)
 				    {
 				        timerInstance[i].timerEnabled = 0; // disable timer
+
+				        if(timerInstance[i].timerCallback2Enabled) // new 12-25-2022
+						{
+							timerInstance[i].callback2();// jump to secondary callback function
+						}
 				    }
 				}
 				if(timerInstance[i].timerRepeat == TIMER_NO_REPEAT) {// if no repeat then disable timer for this function
 					timerInstance[i].timerEnabled = 0; // disable timer
+
+					if(timerInstance[i].timerCallback2Enabled)// new 12-25-2022
+					{
+						timerInstance[i].callback2();// jump to secondary callback function
+					}
 				}
 				i++;
 				return;// A callback function has been called so exit and re-enter at next array pointer. This avoids blocking.
