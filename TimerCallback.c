@@ -104,7 +104,7 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance)
 	timerCallback[i].timerShutDownCount = 0; // clear shutdown timer
 
 	timerCallback[i].timerRepetitionEnable = timerInstance->timerRepetitionEnable;
-    timerCallback[i].timerRepetitionValue = 0; // clear
+    timerCallback[i].timerRepetitionValue = timerInstance->timerRepetitionValue;
     timerCallback[i].timerRepetitionCount = 0; // clear
 
     timerCallback[i].timerEnabled = timerInstance->timerEnabled;
@@ -112,6 +112,7 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance)
     timerCallback[i].timerCount = 0;// clear the timer
 
     timerCallback[i].timerRepeat = timerInstance->timerRepeat;
+    timerCallback[i].timerCallback2Enabled = timerInstance->timerCallback2Enabled;
 
 	timerCallback[0].timerLastIndex = i + 1; // only stored in first callback, index 0.
     
