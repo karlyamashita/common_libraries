@@ -27,6 +27,7 @@ Rev 2.1 - 10/21/2022, Added callback repetition.
 Rev 2.2 - 11/22/2022, Added TimerCallbackRegisterStruct function to pass structure data instead of individual arguments.
 Rev 2.3 - 12/24/2022, Finished the Callback Repetition. Added secondary callback, not tested yet.
 Rev 2.4 - 12/24/2022, Finished Secondary callback and working.
+Rev 2.5 - 12/25/2022, Renamed some variables and function names.
 
 */
 
@@ -65,15 +66,15 @@ int TimerCallbackRegister(TimerCallbackStruct *timerInstance, TimerCallback call
 
 	timerInstance[i].timerShutDownEnable = false;
 	timerInstance[i].timerShutDownValue = 0xFFFFFFFF;
-	timerInstance[i].timerShutDownCount = 0; // clear shutdown timer
+	timerInstance[i].timerShutDownTick = 0; // clear shutdown timer
 
 	timerInstance[i].timerRepetitionEnable = false;
     timerInstance[i].timerRepetitionValue = 0;
-    timerInstance[i].timerRepetitionCount = 0;
+    timerInstance[i].timerRepetitionTick = 0;
 
     timerInstance[i].timerEnabled = true;
     timerInstance[i].timerValue = timerValue;
-    timerInstance[i].timerCount = 0;// clear the timer
+    timerInstance[i].timerTick = 0;// clear the timer
 
     timerInstance[i].timerRepeat = repeat;
 
@@ -102,15 +103,15 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance)
     
     timerCallback[i].timerShutDownEnable = timerInstance->timerShutDownEnable;
 	timerCallback[i].timerShutDownValue = timerInstance->timerShutDownValue;
-	timerCallback[i].timerShutDownCount = 0; // clear shutdown timer
+	timerCallback[i].timerShutDownTick = 0; // clear shutdown timer
 
 	timerCallback[i].timerRepetitionEnable = timerInstance->timerRepetitionEnable;
     timerCallback[i].timerRepetitionValue = timerInstance->timerRepetitionValue;
-    timerCallback[i].timerRepetitionCount = 0; // clear
+    timerCallback[i].timerRepetitionTick = 0; // clear
 
     timerCallback[i].timerEnabled = timerInstance->timerEnabled;
     timerCallback[i].timerValue = timerInstance->timerValue;
-    timerCallback[i].timerCount = 0;// clear the timer
+    timerCallback[i].timerTick = 0;// clear the timer
 
     timerCallback[i].timerRepeat = timerInstance->timerRepeat;
     timerCallback[i].timerCallback2Enabled = timerInstance->timerCallback2Enabled;
@@ -122,21 +123,18 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance)
 
 /*
 function: Register a callback function with a timer shut down value. Iterate through TimerCallbackArray until a free spot is found in array. Copy callback and timerCount to array. ShutDownEnable is false by default.
-input: timer instance, the function to callback, the timer value, and if it needs to repeat or disables itself after function is called. The timerShutDownValue for disabling the callback after set time.
+input: timer instance, the function to callback, the timer value between each callback. The timerShutDownValue for disabling the callback after aount of time.
 output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
-int TimerCallbackShutDownRegister(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, bool repeat, uint32_t timerShutDownValue) {
+int TimerCallbackShutDownStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue)
+{
 	int i = 0;
 
-	if(callback == 0) return -2; // null callback
-	while(timerInstance[i].callback != 0) {
-		if(timerInstance[i].callback == callback) {
-			return -1;// Callback already defined
+	while(timerInstance[i].callback != callback) {
+		if( i == timerInstance[0].timerLastIndex) {
+			return 1;// callback not found
 		}
-		if(i == MAX_TIMER_CALLBACK) {
-			return 0;// Maximum timers reached
-		}
-		i++;// next
+		i++;
 	};
 
 	if(timerShutDownValue < timerValue){ // timerShutDownValue should not be less than timerValue
@@ -145,30 +143,24 @@ int TimerCallbackShutDownRegister(TimerCallbackStruct *timerInstance, TimerCallb
 
     timerInstance[i].callback = callback;
 
-    timerInstance[i].timerEnabled = 1;
 	timerInstance[i].timerValue = timerValue;
-    timerInstance[i].timerCount = 0;// clear the timer
+    timerInstance[i].timerTick = 0;// clear the timer count
+    timerInstance[i].timerRepeat = true;
+    timerInstance[i].timerEnabled = 1;
 
-	timerInstance[i].timerShutDownEnable = false;
 	timerInstance[i].timerShutDownValue = timerShutDownValue;
-	timerInstance[i].timerShutDownCount = 0; // clear shutdown timer
+	timerInstance[i].timerShutDownTick = 0; // clear shutdown timer count
+	timerInstance[i].timerShutDownEnable = true;
 
-    timerInstance[i].timerRepetitionEnable = false;
-    timerInstance[i].timerRepetitionValue = 0;
-    timerInstance[i].timerRepetitionCount = 0;
-
-    timerInstance[i].timerRepeat = repeat;
-
-	timerInstance[0].timerLastIndex = i + 1; // only stored in first callback, index 0.
 	return i;
 }
 
 /*
- * Description: Enable/Disable the timer shutdown
+ * Description: Disable the timer shutdown
  *
  *
  */
-int TimerCallbackShutDownEnable(TimerCallbackStruct *timerInstance, TimerCallback callback, uint8_t enable) {
+int TimerCallbackShutDownDisable(TimerCallbackStruct *timerInstance, TimerCallback callback) {
     uint8_t i = 0;
 
     while (timerInstance[i].callback != callback)
@@ -179,7 +171,7 @@ int TimerCallbackShutDownEnable(TimerCallbackStruct *timerInstance, TimerCallbac
         }
         i++;
     };
-    timerInstance[i].timerShutDownEnable = enable;
+    timerInstance[i].timerShutDownEnable = 0; // not enabled
     return 0;
 }
 
@@ -187,7 +179,7 @@ int TimerCallbackShutDownEnable(TimerCallbackStruct *timerInstance, TimerCallbac
  * Description: Clears the timer shutdown timer count
  *
  */
-int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerInstance, TimerCallback callback) {
+int TimerCallbackShutDownClearTimer(TimerCallbackStruct *timerInstance, TimerCallback callback) {
     uint8_t i = 0;
 
     while(timerInstance[i].callback != callback) {
@@ -196,19 +188,20 @@ int TimerCallbackClearShutDownTimer(TimerCallbackStruct *timerInstance, TimerCal
         }
         i++;
     };
-    timerInstance[i].timerShutDownCount = 0; // clear timerShutDownCount
+    timerInstance[i].timerShutDownTick = 0; // clear timerShutDownCount
     return 0;
 }
 
 /*
- * Description: Register a callback that you want to do some repetitions with.
- * 				This is off by default. To start repetition, use the TimerCallbackResetRepetition.
+ * Description: Register a callback. There are no parameters.
+ * 				To start repetition, use the TimerCallbackRepetitionStart.
+ * 				To start a timer to shut down after a time use TimerCallbackShutDownStart
  *
  *
  *
  *
  */
-int TimerCallbackRegisterRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback)
+int TimerCallbackRegisterOnly(TimerCallbackStruct *timerInstance, TimerCallback callback)
 {
     uint8_t i = 0;
 
@@ -243,7 +236,7 @@ int TimerCallbackRegisterRepetition(TimerCallbackStruct *timerInstance, TimerCal
  *				So to blink the LED 3 times, use 6 for the repetition.
  *
  */
-int TimerCallbackResetRepetition(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t time, uint32_t repetition)
+int TimerCallbackRepetitionStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t time, uint32_t repetition)
 {
     uint8_t i = 0;
 
@@ -255,7 +248,7 @@ int TimerCallbackResetRepetition(TimerCallbackStruct *timerInstance, TimerCallba
     };
 
     timerInstance[i].timerRepetitionValue = repetition;
-    timerInstance[i].timerRepetitionCount = 0;
+    timerInstance[i].timerRepetitionTick = 0;
     timerInstance[i].timerRepetitionEnable = true;
 
     timerInstance[i].timerValue = time;
@@ -280,7 +273,7 @@ int TimerCallbackClearTimer(TimerCallbackStruct *timerInstance, TimerCallback ca
 		}
 		i++;
 	};
-    timerInstance[i].timerCount = 0; // clear timer count
+    timerInstance[i].timerTick = 0; // clear timer count
 	return 0;
 }
 
@@ -309,7 +302,7 @@ function:	Enable or disable the callback. The timerCount is not cleared. If you 
 input: timer instance, the callback, enable or disable state
 output: return 0 if successful
 */
-int TimerCallbackEnable(TimerCallbackStruct *timerInstance, TimerCallback callback, uint8_t enable) {
+int TimerCallbackDisable(TimerCallbackStruct *timerInstance, TimerCallback callback) {
 	uint8_t i = 0;
 
 	while(timerInstance[i].callback != callback) {
@@ -318,16 +311,16 @@ int TimerCallbackEnable(TimerCallbackStruct *timerInstance, TimerCallback callba
 		}
 		i++;
 	};
-    timerInstance[i].timerEnabled = enable;
+    timerInstance[i].timerEnabled = 0; // disable
 	return 0;
 }
 
 /*
-function: Resets the timerCount value to zero and enables it. Good for debouncing switch
+function: Resets the timerCount value to zero and enables it. Good for de-bouncing switch
 input: timer instance, the callback
 output: return 0 if successful
  */
-int TimerCallbackResetEnable(TimerCallbackStruct *timerInstance, TimerCallback callback)
+int TimerCallbackResetTimer(TimerCallbackStruct *timerInstance, TimerCallback callback)
 {
 	uint8_t i = 0;
 
@@ -337,28 +330,10 @@ int TimerCallbackResetEnable(TimerCallbackStruct *timerInstance, TimerCallback c
 		}
 		i++;
 	};
-	timerInstance[i].timerCount = 0;
-	timerInstance[i].timerEnabled = true;
+	timerInstance[i].timerTick = 0;
 	return 0;
 }
 
-/*
-function:	Get the callback enable status
-input: timer instance, the callback, the variable address to pass the enable status to
-output: return 0 if successful
-*/
-int TimerCallbackEnableStatus(TimerCallbackStruct *timerInstance, TimerCallback callback, uint8_t *enableStatus) {
-	uint8_t i = 0;
-
-	while(timerInstance[i].callback != callback) {
-		if( i == timerInstance[0].timerLastIndex) {
-			return 1;// callback not found
-		}
-		i++;
-	};
-	*enableStatus = timerInstance[i].timerEnabled;
-	return 0;
-}
 
 /*
 function:	Get the callback's timer value
@@ -374,7 +349,7 @@ int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timerInstance, TimerC
 		}
 		i++;
 	};
-	*timerValue = timerInstance[i].timerCount;
+	*timerValue = timerInstance[i].timerTick;
 	return 0;
 }
 
@@ -400,7 +375,7 @@ function:	Updates the callback timer value and if repeats
 input: timer instance, the callback, the timerThreshold value.
 output: return 0 if successful
 */
-int TimerCallbackSetTimerRepeat(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint8_t repeat) {
+int TimerCallbackTimerStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint8_t repeat) {
 	uint8_t i = 0;
 
 	while(timerInstance[i].callback != callback) {
@@ -411,29 +386,11 @@ int TimerCallbackSetTimerRepeat(TimerCallbackStruct *timerInstance, TimerCallbac
 	};
 	timerInstance[i].timerValue = timerValue; // new timer value
 	timerInstance[i].timerRepeat = repeat;
-	timerInstance[i].timerCount = 0;// clear the timer
+	timerInstance[i].timerTick = 0;// clear the timer count
+	timerInstance[i].timerEnabled = true;
 	return 0;
 }
 
-/*
-function:	Updates shut down value. Shut down enable is false by default. Use TimerCallbackShutDownEnable() to enable.
-input: timer instance, the callback, the shut down value.
-output: return 0 if successful
-*/
-int TimerCallbackSetShutDownValue(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t shutDownValue) {
-	uint8_t i = 0;
-
-	while(timerInstance[i].callback != callback) {
-		if( i == timerInstance[0].timerLastIndex) {
-			return 1;// callback not found
-		}
-		i++;
-	};
-	timerInstance[i].timerShutDownEnable = false;
-	timerInstance[i].timerShutDownValue = shutDownValue;
-	timerInstance[i].timerShutDownCount = 0; // clear shutdown timer
-	return 0;
-}
 
 /*
 function: Call this function from SysTick_Handler() in stm32f1xx_it.c
@@ -448,12 +405,12 @@ void TimerCallbackTick(TimerCallbackStruct *timerInstance) {
         {
             if (timerInstance[i].timerShutDownEnable) // check if shutdown is enabled
             {
-                timerInstance[i].timerShutDownCount += 1; // increment the timerShutDownCount
+                timerInstance[i].timerShutDownTick += 1; // increment the timerShutDownCount
             }
 
             if (timerInstance[i].timerEnabled) // check if callback is enabled.
             {
-            	timerInstance[i].timerCount += 1; // increment the timerCount
+            	timerInstance[i].timerTick += 1; // increment the timerCount
             }
         }
 		i++;
@@ -472,8 +429,8 @@ void TimerCallbackCheck(TimerCallbackStruct *timerInstance) {
 
 	while(i != timerInstance[0].timerLastIndex) {
 	    if(timerInstance[i].timerShutDownEnable == 1) { // check for shutdown first
-	        if(timerInstance[i].timerShutDownCount >= timerInstance[i].timerShutDownValue) {
-	        	timerInstance[i].timerShutDownCount = 0;
+	        if(timerInstance[i].timerShutDownTick >= timerInstance[i].timerShutDownValue) {
+	        	timerInstance[i].timerShutDownTick = 0;
 	        	timerInstance[i].timerEnabled = 0; // disable timer
 
 	        	if(timerInstance[i].timerCallback2Enabled)// new 12-25-2022
@@ -484,12 +441,12 @@ void TimerCallbackCheck(TimerCallbackStruct *timerInstance) {
 	    }
 
 		if(timerInstance[i].timerEnabled) {// timer or repetition is enabled
-			if(timerInstance[i].timerCount >= timerInstance[i].timerValue) {
-				timerInstance[i].timerCount = 0;// clear timer
+			if(timerInstance[i].timerTick >= timerInstance[i].timerValue) {
+				timerInstance[i].timerTick = 0;// clear timer
 				timerInstance[i].callback();// jump to callback function
 				if(timerInstance[i].timerRepetitionEnable) // new 4-27-2022
 				{
-				    if(++timerInstance[i].timerRepetitionCount >= timerInstance[i].timerRepetitionValue)
+				    if(++timerInstance[i].timerRepetitionTick >= timerInstance[i].timerRepetitionValue)
 				    {
 				        timerInstance[i].timerEnabled = 0; // disable timer
 
