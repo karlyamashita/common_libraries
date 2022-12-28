@@ -44,7 +44,7 @@ typedef struct TimerCallbackStruct{
 
 
 int TimerCallbackRegisterOnly(TimerCallbackStruct *timerInstance, TimerCallback callback);
-int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance);
+int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance, TimerCallbackStruct * timerInstanceAdd);
 
 int TimerCallbackShutDownStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue);
 int TimerCallbackShutDownDisable(TimerCallbackStruct *timerCallback, TimerCallback callback);
@@ -54,7 +54,7 @@ int TimerCallbackRepetitionStart(TimerCallbackStruct *timerInstance, TimerCallba
 
 int TimerCallbackTimerStart(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, uint8_t repeat);
 int TimerCallbackDisable(TimerCallbackStruct *timerCallback, TimerCallback callback);
-int TimerCallbackClearTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
+int TimerCallbackResetTimer(TimerCallbackStruct *timerInstance, TimerCallback callback);
 
 int TimerCallbackDelete(TimerCallbackStruct *timerCallback, TimerCallback callback);
 
