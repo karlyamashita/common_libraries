@@ -48,9 +48,11 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance, TimerCallba
 
 int TimerCallbackShutDownStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue);
 int TimerCallbackShutDownDisable(TimerCallbackStruct *timerCallback, TimerCallback callback);
-int TimerCallbackShutDownClearTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
+int TimerCallbackShutDownResetTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
 
 int TimerCallbackRepetitionStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t time, uint32_t repetition);
+int TimerCallbackRepetitionDisable(TimerCallbackStruct *timerInstance, TimerCallback callback);
+int TimerCallbackRepetitionResetTimer(TimerCallbackStruct *timerInstance, TimerCallback callback);
 
 int TimerCallbackTimerStart(TimerCallbackStruct *timerCallback, TimerCallback callback, uint32_t timerValue, uint8_t repeat);
 int TimerCallbackDisable(TimerCallbackStruct *timerCallback, TimerCallback callback);
