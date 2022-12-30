@@ -25,9 +25,9 @@ typedef struct TimerCallbackStruct{
     bool timerCallback2Enabled; // new 12-25-2022
     TimerCallback callback2;// new 12-25-2022 secondary callback to call after the timer is disabled for the first callback.
 
-    bool timerShutDownEnable; // shut down after a certain time
-    uint32_t timerShutDownValue; // the shutdown time to reach;
-    uint32_t timerShutDownTick; // the current shutdown tick
+    bool timerTimeoutEnable; // shut down after a certain time
+    uint32_t timerTimeoutValue; // the shutdown time to reach;
+    uint32_t timerTimeoutTick; // the current shutdown tick
 
     bool timerRepetitionEnable;
     uint32_t timerRepetitionValue; // number of repetitions
@@ -44,11 +44,14 @@ typedef struct TimerCallbackStruct{
 
 
 int TimerCallbackRegisterOnly(TimerCallbackStruct *timerInstance, TimerCallback callback);
+int TimerCallbackRegister2nd(TimerCallbackStruct *timerInstance, TimerCallback callback, TimerCallback callback2);
+int TimerCallbackRegister2ndDisable(TimerCallbackStruct *timerInstance, TimerCallback callback);
+
 int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance, TimerCallbackStruct * timerInstanceAdd);
 
-int TimerCallbackShutDownStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue);
-int TimerCallbackShutDownDisable(TimerCallbackStruct *timerCallback, TimerCallback callback);
-int TimerCallbackShutDownResetTimer(TimerCallbackStruct *timerCallback, TimerCallback callback);
+int TimerCallbackTimeoutStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue);
+int TimerCallbackTimeoutDisable(TimerCallbackStruct *timerCallback, TimerCallback callback);
+int TimerCallbackTimeoutReset(TimerCallbackStruct *timerCallback, TimerCallback callback);
 
 int TimerCallbackRepetitionStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t time, uint32_t repetition);
 int TimerCallbackRepetitionDisable(TimerCallbackStruct *timerInstance, TimerCallback callback);

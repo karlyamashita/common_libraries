@@ -31,7 +31,11 @@ Rev 2.3 - 12/24/2022, Finished the Callback Repetition. Added secondary callback
 Rev 2.4 - 12/24/2022, Finished Secondary callback and working.
 Rev 2.5 - 12/25/2022, Renamed some variables and function names.
 Rev 2.6 - 12/28/2022, Updated TimerCallbackRegisterStruct to pass the instance you want to add the structure to
-Rev 2.7 - 12/28/2022, Modified TimerCallbackRegister to only register a function. Some renaming. Added disable and reset for Repetition.
+Rev 2.7 - 12/28/2022, Modified TimerCallbackRegister to only register a function.
+						Some renaming. Added disable and reset for Repetition. Updated descriptions of some functions.
+Rev 2.8 - 12/29/2022, Renamed ShutDown to Timeout. Added functions for 2nd callback.
+
+
 
 
 */
@@ -78,6 +82,52 @@ int TimerCallbackRegisterOnly(TimerCallbackStruct *timerInstance, TimerCallback 
 }
 
 /*
+ * Description: Register a 2nd callback that will be called after the timer is disabled usually from a timetout or repetition.
+ * 				The 2nd callback is automatically enabled when this function is called.
+ * 					However the 2nd callback will not be called until a timer (one shot, timeout or repetition) is started and has been disabled at the end of it's cycle.
+ * 				Use TimerCallbackRegister2ndDisable to disable the 2nd callback at any time.
+ * 				Note - The primary callback has to be registered first, otherwise the 2nd callback will not be registered.
+ *
+ */
+int TimerCallbackRegister2nd(TimerCallbackStruct *timerInstance, TimerCallback callback, TimerCallback callback2)
+{
+	int i = 0;
+
+	while(timerInstance[i].callback != callback) {
+		if( i == timerInstance[0].timerLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+
+	timerInstance[i].callback2 = callback2;
+	timerInstance[i].timerCallback2Enabled = true;
+
+	return i;
+}
+
+
+/*
+ * Description: Disable the 2nd callback.
+ *
+ */
+int TimerCallbackRegister2ndDisable(TimerCallbackStruct *timerInstance, TimerCallback callback)
+{
+	int i = 0;
+
+	while(timerInstance[i].callback != callback) {
+		if( i == timerInstance[0].timerLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+
+	timerInstance[i].timerCallback2Enabled = false;
+
+	return i;
+}
+
+/*
  * Description: Uses a single structure to save all the parameters instead of passing a bunch of arguments. Be sure to initialize new instance to zero.
  * Input: timerInstance to add the new callback to, timerInstanceAdd is the new callback you want to add
  */
@@ -95,9 +145,9 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance, TimerCallba
     timerInstance[i].callback = timerInstanceAdd->callback;
     timerInstance[i].callback2 = timerInstanceAdd->callback2;
     
-    timerInstance[i].timerShutDownEnable = timerInstanceAdd->timerShutDownEnable;
-    timerInstance[i].timerShutDownValue = timerInstanceAdd->timerShutDownValue;
-    timerInstance[i].timerShutDownTick = 0; // clear shutdown timer
+    timerInstance[i].timerTimeoutEnable = timerInstanceAdd->timerTimeoutEnable;
+    timerInstance[i].timerTimeoutValue = timerInstanceAdd->timerTimeoutValue;
+    timerInstance[i].timerTimeoutTick = 0; // clear shutdown timer
 
     timerInstance[i].timerRepetitionEnable = timerInstanceAdd->timerRepetitionEnable;
     timerInstance[i].timerRepetitionValue = timerInstanceAdd->timerRepetitionValue;
@@ -116,11 +166,11 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance, TimerCallba
 }
 
 /*
-* Description: Starts the Shut Down timer
+* Description: Starts the Timeout timer
 * input: timer instance, the function to callback, the timer value between each callback. The timerShutDownValue for disabling the callback after amount of time.
 * output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
-int TimerCallbackShutDownStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue)
+int TimerCallbackTimeoutStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue)
 {
 	int i = 0;
 
@@ -135,26 +185,24 @@ int TimerCallbackShutDownStart(TimerCallbackStruct *timerInstance, TimerCallback
 	    timerShutDownValue = timerValue + 1;
 	}
 
-    timerInstance[i].callback = callback;
-
 	timerInstance[i].timerValue = timerValue;
     timerInstance[i].timerTick = 0;// clear the timer count
     timerInstance[i].timerRepeat = true;
     timerInstance[i].timerEnabled = 1;
 
-	timerInstance[i].timerShutDownValue = timerShutDownValue;
-	timerInstance[i].timerShutDownTick = 0; // clear shutdown timer count
-	timerInstance[i].timerShutDownEnable = true;
+	timerInstance[i].timerTimeoutValue = timerShutDownValue;
+	timerInstance[i].timerTimeoutTick = 0; // clear shutdown timer count
+	timerInstance[i].timerTimeoutEnable = true;
 
 	return i;
 }
 
 /*
- * Description: Disable the timer shutdown
+ * Description: Disable the Timeout timer
  *
  *
  */
-int TimerCallbackShutDownDisable(TimerCallbackStruct *timerInstance, TimerCallback callback)
+int TimerCallbackTimeoutDisable(TimerCallbackStruct *timerInstance, TimerCallback callback)
 {
     uint8_t i = 0;
 
@@ -166,15 +214,15 @@ int TimerCallbackShutDownDisable(TimerCallbackStruct *timerInstance, TimerCallba
         }
         i++;
     };
-    timerInstance[i].timerShutDownEnable = 0; // not enabled
+    timerInstance[i].timerTimeoutEnable = 0; // not enabled
     return 0;
 }
 
 /*
- * Description: Resets the timer shutdown tick count
+ * Description: Resets the Timeout tick count
  *
  */
-int TimerCallbackShutDownResetTimer(TimerCallbackStruct *timerInstance, TimerCallback callback)
+int TimerCallbackTimeoutReset(TimerCallbackStruct *timerInstance, TimerCallback callback)
 {
     uint8_t i = 0;
 
@@ -184,7 +232,7 @@ int TimerCallbackShutDownResetTimer(TimerCallbackStruct *timerInstance, TimerCal
         }
         i++;
     };
-    timerInstance[i].timerShutDownTick = 0; // clear timerShutDownCount
+    timerInstance[i].timerTimeoutTick = 0; // clear timerShutDownCount
     return 0;
 }
 
@@ -395,9 +443,9 @@ void TimerCallbackTick(TimerCallbackStruct *timerInstance)
 	while(i != timerInstance[0].timerLastIndex) { // iterate through all arrays
         if (timerInstance[i].callback != 0)
         {
-            if (timerInstance[i].timerShutDownEnable) // check if shutdown is enabled
+            if (timerInstance[i].timerTimeoutEnable) // check if shutdown is enabled
             {
-                timerInstance[i].timerShutDownTick += 1; // increment the timerShutDownCount
+                timerInstance[i].timerTimeoutTick += 1; // increment the timerShutDownCount
             }
 
             if (timerInstance[i].timerEnabled) // check if callback is enabled.
@@ -421,9 +469,9 @@ void TimerCallbackCheck(TimerCallbackStruct *timerInstance)
 	int i = 0; // the array pointer
 
 	while(i != timerInstance[0].timerLastIndex) {
-	    if(timerInstance[i].timerShutDownEnable == 1) { // check for shutdown first
-	        if(timerInstance[i].timerShutDownTick >= timerInstance[i].timerShutDownValue) {
-	        	timerInstance[i].timerShutDownTick = 0;
+	    if(timerInstance[i].timerTimeoutEnable == 1) { // check for shutdown first
+	        if(timerInstance[i].timerTimeoutTick >= timerInstance[i].timerTimeoutValue) {
+	        	timerInstance[i].timerTimeoutTick = 0;
 	        	timerInstance[i].timerEnabled = 0; // disable timer
 
 	        	if(timerInstance[i].timerCallback2Enabled)// new 12-25-2022
