@@ -42,6 +42,7 @@
 //#define USE_BD37534FV
 //#define USE_BOOTLOADER
 //#define USE_BRAKE
+#define USE_CAN_BUS_ACTIVITY_STATUS
 //#define USE_CAN_AUTOBAUD
 #define USE_CAN_BUFFER
 //#define USE_CAN_BUFFER_1
