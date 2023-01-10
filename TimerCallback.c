@@ -34,8 +34,7 @@ Rev 2.6 - 12/28/2022, Updated TimerCallbackRegisterStruct to pass the instance y
 Rev 2.7 - 12/28/2022, Modified TimerCallbackRegister to only register a function.
 						Some renaming. Added disable and reset for Repetition. Updated descriptions of some functions.
 Rev 2.8 - 12/29/2022, Renamed ShutDown to Timeout. Added functions for 2nd callback.
-
-
+Rev 2.9 - 01/09/2023, Renamed some missed variables from ShutDown to Timeout.
 
 
 */
@@ -52,7 +51,7 @@ static void TimerCallbackSort(TimerCallbackStruct *timerCallback);
 /*
  * Description: Register a callback. There are no parameters.
  * 				To start repetition, use the TimerCallbackRepetitionStart.
- * 				To start a timer to shut down after a time use TimerCallbackShutDownStart
+ * 				To start a timer to shut down after a time use TimerCallbackTimeoutStart
  * 				To start a regular timer use TimerCallbackTimerStart. You can have it repeat or no repeat.
  *
  */
@@ -166,11 +165,11 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timerInstance, TimerCallba
 }
 
 /*
-* Description: Starts the Timeout timer
-* input: timer instance, the function to callback, the timer value between each callback. The timerShutDownValue for disabling the callback after amount of time.
+* Description: Starts the Timeout timer. User must register a function using TimerCallbackRegisterOnly
+* input: timer instance, the function to callback, the timer value between each callback. The timerTimeoutValue for disabling the callback after amount of time.
 * output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
-int TimerCallbackTimeoutStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerShutDownValue)
+int TimerCallbackTimeoutStart(TimerCallbackStruct *timerInstance, TimerCallback callback, uint32_t timerValue, uint32_t timerTimeoutValue)
 {
 	int i = 0;
 
@@ -181,8 +180,8 @@ int TimerCallbackTimeoutStart(TimerCallbackStruct *timerInstance, TimerCallback 
 		i++;
 	};
 
-	if(timerShutDownValue < timerValue){ // timerShutDownValue should not be less than timerValue
-	    timerShutDownValue = timerValue + 1;
+	if(timerTimeoutValue < timerValue){ // timerShutDownValue should not be less than timerValue
+	    timerTimeoutValue = timerValue + 1;
 	}
 
 	timerInstance[i].timerValue = timerValue;
@@ -190,7 +189,7 @@ int TimerCallbackTimeoutStart(TimerCallbackStruct *timerInstance, TimerCallback 
     timerInstance[i].timerRepeat = true;
     timerInstance[i].timerEnabled = 1;
 
-	timerInstance[i].timerTimeoutValue = timerShutDownValue;
+	timerInstance[i].timerTimeoutValue = timerTimeoutValue;
 	timerInstance[i].timerTimeoutTick = 0; // clear shutdown timer count
 	timerInstance[i].timerTimeoutEnable = true;
 
@@ -240,7 +239,7 @@ int TimerCallbackTimeoutReset(TimerCallbackStruct *timerInstance, TimerCallback 
 
 /*
  * Description: You can set how many callback repetitions to do before ending callbacks. The time is the delay between each repetition.
- * 				User needs to register a callback first using TimerCallbackRegisterRepetition
+ * 				User needs to register a callback first using TimerCallbackRegisterOnly
  *
  *				Example use would be to blink an LED 3 times On/Off using the HAL_GPIO_TogglePin.
  * 				The time could be like 500ms between On and Off. If the LED is starting in the Off state,
