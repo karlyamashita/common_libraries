@@ -14,7 +14,6 @@
 enum {
     RETURN_DATA = -2,
     NO_ACK = -1,
-    NO_ERROR = 0,
     ERROR, // not used
     BUSY_UART,
     TIMEOUT,
@@ -41,7 +40,6 @@ enum {
 enum {
     NO_ACK = -1,
     NO_ERROR = 0,
-    ERROR,
     UART_BUSY,
     MCDP6200_BUSY,
     TIMEOUT,

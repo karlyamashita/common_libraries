@@ -20,9 +20,6 @@ void GetErrorString(int errorCode, char *str){
     case NO_ERROR:
         strcpy(str, "OK");
         break;
-    case ERROR:
-        strcpy(str, "ERROR");
-        break;
     case UART_BUSY:
         strcpy(str, "ERROR-UART Busy");
         break;
