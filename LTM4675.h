@@ -8,15 +8,25 @@
 #ifndef LTM4675_H_
 #define LTM4675_H_
 
-#define LTM4675_SLAVE_ADDRESS 0x4F // see page 22 and 26 of data sheet
+// user changeable values
+// Need to define which I2C peripheral is being used.
+#define LTM4681_I2C_BASE 2 // I2C2 for Microchip
+// end user changeable values
+
+#define LTM46xx_SLAVE_ADDRESS_A 0x4f // see page 22 and 26 of data sheet
+#define LTM46xx_SLAVE_ADDRESS_B 0x40 // see page 22 and 26 of data sheet
+
+// Global address
+//#define LTM46xx_SLAVE_ADDRESS_A 0x5A // see page 41 of data sheet
+//#define LTM46xx_SLAVE_ADDRESS_B 0x5B // see page 41 of data sheet
 
 
 // commands register address
-enum{
+enum LTM46xx_Commands{
     PAGE,
     OPERATION_paged, // paged
     ON_OFF_CONFIG_paged, // paged
-    CLEAR_DEFAULTS,
+    CLEAR_FAULTS,
     PAGE_PLUS_WRITE = 0x05,
     PAGE_PLUS_READ,
     WRITE_PROTECT  = 0x10,
@@ -33,7 +43,6 @@ enum{
     FREQUENCY_SWITCH = 0x33,
     VIN_ON = 0x35,
     VIN_OFF,
-    IOUT_CAL_GAIN = 0x38,
     IOUT_CAL_GAIN_paged = 0x3B, // paged
     VOUT_OV_FAULT_LIMIT_paged = 0x40, // paged
     VOUT_OV_FAULT_RESPONSE,
@@ -67,13 +76,13 @@ enum{
     STATUS_INPUT,
     STATUS_TEMPERATURE_paged, // paged
     STATUS_CML,
-    STATUS_MFR_SPECIFIC = 0x80, // paged
+    STATUS_MFR_SPECIFIC_paged = 0x80, // paged
     READ_VIN = 0x88,
     READ_IIN,
     READ_VOUT_paged = 0x8B, // paged
     READ_IOUT_paged, // paged
-    READ_TEMPERATURE1_paged, // paged
-    READ_TEMPERATURE2,
+    READ_TEMPERATURE1_paged, // paged. External sensor
+    READ_TEMPERATURE2, // internal sensor
     READ_DUTY_CYCLE_paged = 0x94, // paged
     READ_FREQUENCY, // not in data sheet but is in LTPowerPlay software
     READ_POUT_paged = 0x96, // paged
@@ -105,7 +114,7 @@ enum{
     MFR_VOUT_PEAK_paged, // paged
     MFR_VIN_PEAK,
     MFR_TEMPERATURE_1_PEAK_paged, // paged
-    MFR_CLEAR__PEAKS = 0xE3,
+    MFR_CLEAR_PEAKS = 0xE3,
     MFR_PADS = 0xE5,
     MFR_ADDRESS,
     MFR_SPECIAL_ID,
@@ -117,13 +126,59 @@ enum{
     MFR_COMMON,
     MFR_COMPARE_USER_ALL = 0xF0,
     MFR_TEMPERATURE_2_PEAK = 0xF4,
-    MFR_PPWM_CONFIG,
+    MFR_PWM_CONFIG,
     MFR_IOUT_CAL_GAIN_TC_paged, // paged
     MFR_TEMP_1_GAIN_paged = 0xF8, // paged
     MFR_TEMP1_OFFSET_paged, // paged
     MFR_RAIL_ADDRESS_paged, // paged
     MFR_RESET = 0xFD
-}Commands;
+};
+
+enum LTM46xx_Page{
+    NO_PAGE,
+    IS_PAGED
+};
+
+enum Length{
+    LEN_0,
+    LEN_1,
+    LEN_2,
+    LEN_3,
+    LEN_8,
+    LEN_9,
+    LEN_147
+};
+
+enum NVM{
+    NO_NVM,
+    USER_NVM,
+    IS_NVM
+};
+
+enum Format{
+    NO_FORMAT,
+    REG_FORMAT,
+    L5_11_FORMAT,
+    L16_FORMAT,
+    ASCII_FORMAT
+} ;
+
+enum ReadWriteType{
+    READ_WRITE,
+    READ_ONLY,
+    WRITE_ONLY
+} ;
+
+
+typedef struct{
+    uint8_t regAddress;
+    uint8_t isPaged;
+    uint8_t dataLen;
+    uint8_t nvm;
+    uint8_t fmt;
+    uint8_t readWriteType;
+} LTM46xx_RegLookUpType;
+
 
 /*
  * Description: Use for parsing message to get Register address, data, paging and data length
@@ -132,16 +187,14 @@ enum{
  */
 typedef union{
     struct{
-        uint8_t data[4];
+        uint8_t data[3];
     }Byte;
     struct{
         unsigned page:2;
-        unsigned dataLen:2;
-        unsigned :4;
-        uint8_t regAddress;
-        uint16_t regData;
+        unsigned :6;
+        uint8_t regData[2];
     }Status;
-}DirectRegisterInfoType;
+}LTM46xx_DirectRegisterInfoType;
 
 // default 0x1f
 typedef union{
@@ -158,7 +211,7 @@ typedef union{
         unsigned runDisable :1;
         unsigned :3;
     } Status;
-}LTM4675_MfrChanConfig;
+}LTM46xx_MfrChanConfig;
 
 // default 0x09
 typedef union{
@@ -177,23 +230,23 @@ typedef union{
         unsigned ignoreResistorConfigPins :1;
         unsigned enableFaultLogging :1;
     } Status;
-}LTM4675_MfrConfigAll;
+}LTM46xx_MfrConfigAll;
 
 // ON/OFF/MARGIN
-enum{
+enum OnOffMargin{
     ON_OFF_CONFIG_OPERATION_Immediate = 0x1F,
     ON_OFF_CONFIG_OPERATION_Toff = 0x1E,
     ON_OFF_CONFIG_RUN_Immediate = 0x17,
     ON_OFF_CONFIG_RUN_Toff = 0x16
-}OnOffMargin;
+};
 
-enum{
+enum OperationCommand{
     TURN_OFF_IMMEDIATELY,
     TURN_ON = 0x80,
     //MARGIN_LOW = 0x98,
     //MARGIN_HIGH = 0xA8,
     SEQUENCE_OFF = 0x40
-}OperationCommand;
+};
 
 // default 0xC1
 typedef union{
@@ -211,7 +264,7 @@ typedef union{
         unsigned enableServoMode:1;
         unsigned rangeOfCurrentLimit:1;
     } Status;
-}LTM4675_MFR_PWM_mode;
+}LTM46xx_MFR_PWM_mode;
 
 // default 0x10
 typedef union{
@@ -227,7 +280,7 @@ typedef union{
         unsigned :2;
         unsigned eaConnection:1;
     } Status;
-}LTM4675_MfrPWM_Config;
+}LTM46xx_MfrPWM_Config;
 
 typedef union{
     struct
@@ -240,7 +293,7 @@ typedef union{
         unsigned retrySetting:3;
         unsigned response:2;
     } Status;
-}LTM4675_IOUT_OC_FAULT_RESPONSE;
+}LTM46xx_IOUT_OC_FAULT_RESPONSE;
 
 typedef union {
     struct
@@ -258,22 +311,38 @@ typedef union {
         unsigned moduleNotBusy:1;
         unsigned moduleNotDrivingAlertLow:1;
     } Status;
-}LTM4675_MfrCommon;
+}LTM46xx_MfrCommon;
+
+enum NumOfBytes
+{
+    NUM_OF_BYTES_1 = 1,
+    NUM_OF_BYTES_2,
+    NUM_OF_BYTES_3
+};
 
 
 // prototypes
-int LTM4675Init(void);
-HAL_StatusTypeDef LTM4675_Write(uint8_t *data, uint8_t writeSize);
-HAL_StatusTypeDef LTM4675_Read(uint8_t *data, uint8_t readSize);
+int LTM46xx_Init();
 
-int GetMFR_COMMON(LTM4675_MfrCommon *ltm4675_MfrCommon);
+int LTM46xx_GetMFR_COMMON(uint8_t page, LTM46xx_MfrCommon *ltm4675_MfrCommon);
+int LTM46xx_SetClockStretching(void);
 
-int GetPwrMod(char *msg, char *retStr);
-int SetPwrMod(char *msg);
+int LTM46xx_GetPwrMod(char *msg, char *retStr);
+int LTM46xx_SetPwrMod(char *msg);
 
-int SetVBAT_En(char *msg);
-int SetLTM4675RegisterData(char *msg);
-int GetLTM4675RegisterData(char *msg, char *dataOut);
+int LTM46xx_SetRegisterData(char *msg);
+int LTM46xx_GetRegisterData(char *msg, char *dataOut);
+
+int LTM46xx_Init_NVM_Write(uint8_t page);
+int LTM46xx_WriteProtect(char *msg);
+int LTM46xx_CheckIfRegisterValue(uint8_t regAddr, LTM46xx_RegLookUpType *regLookup);
+int LTM46xx_GetStatus(char *msg, char * retStr);
+
+
+#ifdef USE_VOUT_ENABLE
+int LTM46xx_VOUTx_Enable(uint8_t page, bool state);
+#endif
+
 
 
 #endif /* LTM4675_H_ */
