@@ -15,13 +15,8 @@
 #include "LTM4675.h"
 
 
-uint8_t voutModeValue;
-
-
 static int LTM46xx_ParseGetDirectRegisterInfo(char *msg, LTM46xx_DirectRegisterInfoType *info, LTM46xx_RegLookUpType *regLookUp);
 static int LTM46xx_ParseSetDirectRegisterInfo(char *msg, LTM46xx_DirectRegisterInfoType *info, LTM46xx_RegLookUpType *regLookUpType);
-
-extern UartTxBufferStruct uart1_txMsg;
 
 
 /*
@@ -95,7 +90,7 @@ const uint8_t LTM46xx_RegLookupTable[][6] =
     { READ_POUT_paged, IS_PAGED, LEN_2, NO_NVM, L5_11_FORMAT, READ_ONLY},
     { PMBUS_REVISION, NO_PAGE, LEN_1, NO_NVM, NO_FORMAT, READ_ONLY},
     // { MFR_ID, NO_PAGE, LEN_3, NO_NVM, ASCII_FORMAT, READ_ONLY}, // "LTC"
-    // { MFR_MODEL, NO_PAGE, LEN_8, NO_NVM, ASCII_FORMAT, READ_ONLY}, // “LTM4675 ”
+    // { MFR_MODEL, NO_PAGE, LEN_8, NO_NVM, ASCII_FORMAT, READ_ONLY}, // LTM4675
     // { MFR_SERIAL, NO_PAGE, LEN_9, NO_NVM, REG_FORMAT, READ_ONLY}, // 9 bytes
     { MFR_VOUT_MAX_paged, IS_PAGED, LEN_2, NO_NVM, L16_FORMAT, READ_ONLY},
     // Recommended against altering.
@@ -205,6 +200,7 @@ int LTM46xx_GetMFR_COMMON(uint8_t page, LTM46xx_MfrCommon *ltm4675_MfrCommon){
         
     return status;
 }
+
 
 int LTM46xx_SetClockStretching(void)
 {
@@ -324,22 +320,18 @@ int LTM46xx_SetPwrMod(char *msg){
      
     status = LTM46xx_GetMFR_COMMON(atoi(token2), &ltm4675_MfrCommon);
     if(status != NO_ERROR){
-        Nop();
         return status;
     }
 
     // Check if LTM46xx is busy
     if(ltm4675_MfrCommon.Status.moduleNotBusy != 1)
     {
-        Nop();
         return LTM46xx_BUSY;
     }
-    
-    
+      
     if (strncmp(token, (char*)"storeuserall", strlen("storeuserall")) == 0)
     {
         sprintf(str, "%s,0x%X", token2, STORE_USER_ALL);
-        Nop();
         status = LTM46xx_SetRegisterData(str);
     }
     else if (strncmp(token, (char*)"clrfaults", strlen("clrfaults")) == 0)
@@ -351,21 +343,18 @@ int LTM46xx_SetPwrMod(char *msg){
     {
         token4 = strtok_r(rest, "\r", &rest); //if direct reg then this is the parameter 
         sprintf(str, "%s,%s,%s", token2, token3, token4);
-        Nop();
         status = LTM46xx_SetRegisterData(str);
     }
     // vout0
     else if (strncmp(token, (char*)"voutcommand", strlen("voutcommand")) == 0)
     {          
         sprintf(str, "%s,0x%X,%s", token2, VOUT_COMMAND_paged, token3);
-        Nop();
         status = LTM46xx_SetRegisterData(str);
     }
     // over voltage
     else if(strncmp(token, "voutovfaultlimit", strlen("voutovfaultlimit")) == 0)
     {
         sprintf(str, "%s,0x%X,%s", token2, VOUT_OV_FAULT_LIMIT_paged, token3);
-        Nop();
         status = LTM46xx_SetRegisterData(str);
     }    
     // under voltage
@@ -380,18 +369,20 @@ int LTM46xx_SetPwrMod(char *msg){
         sprintf(str, "%s,0x%X,%s", token2, OT_FAULT_LIMIT_paged, token3);
         status = LTM46xx_SetRegisterData(str);
     }
-    
     // over current   
     else if(strncmp(token, "ioutocfaultlimit", strlen("ioutocfaultlimit")) == 0)
     {
         sprintf(str, "%s,0x%X,%s", token2, IOUT_OC_FAULT_LIMIT_paged, token3);
         status = LTM46xx_SetRegisterData(str);
     }
-    
     else if(strncmp(token, "mfrpwmmode", strlen("mfrpwmmode")) == 0)
     {
         sprintf(str, "%s,0x%X,%s", token2, MFR_PWM_MODE_paged, token3);
-        Nop();
+        status = LTM46xx_SetRegisterData(str);
+    }
+    else if(strncmp(token, "mfrreset", strlen("mfrreset")) == 0)
+    {
+        sprintf(str, "%s,0x%X,%s", token2, MFR_RESET, token3);
         status = LTM46xx_SetRegisterData(str);
     }
     else
@@ -431,11 +422,11 @@ int LTM46xx_SetRegisterData(char *msg){
     else if(info.Status.page == 2 || info.Status.page == 3)
     {
         slaveAddress = LTM46xx_SLAVE_ADDRESS_B;
-        if(page == 2)
+        if(info.Status.page == 2)
         {
             page = 0;
         }
-        else if(page == 3)
+        else if(info.Status.page == 3)
         {
             page = 1;
         }
@@ -599,11 +590,11 @@ int LTM46xx_GetRegisterData(char *msg, char *retStr){
     else if(info.Status.page == 2 || info.Status.page == 3)
     {
         slaveAddress = LTM46xx_SLAVE_ADDRESS_B;
-        if(page == 2)
+        if(info.Status.page == 2)
         {
             page = 0;
         }
-        else if(page == 3)
+        else if(info.Status.page == 3)
         {
             page = 1;
         }
