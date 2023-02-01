@@ -28,16 +28,8 @@
 			#define UART_RX_PACKET_SIZE 16 // The number of bytes for complete packet + checksum.
 
 
-		Note2:
-		- User will need to define global variables instance for each rx and tx UART port.
-			UartRxBufferStruct uart2_rxMsg = {0};
-			UartTxBufferStruct uart2_txMsg = {0};
-		- User will need to create a message queue for each rx and tx UART port
-			UartMsgQueueStruct rxMsgQueue_2[UART_RX_MESSAGE_QUEUE_SIZE];
-			UartMsgQueueStruct txMsgQueue_2[UART_TX_MESSAGE_QUEUE_SIZE];
-		- User will need to assign each buffer queue to an instance of UartRxBufferStruct created
-			UART_InitRxBuffer(&uart2_rxMsg, rxMsgQueue_2);
-			UART_InitTxBuffer(&uart2_txMsg, txMsgQueue_2);
+        Note2: Must include RingBuff.c/h files
+
 
 
 
@@ -47,25 +39,8 @@
 #include "UartCharBuffer.h"
 
 
-static uint32_t UART_StringMessageGetLength(UartRxBufferStruct *buffer);
+static uint32_t UART_StringMessageGetLength(UartRxBufferStruct *msg);
 
-/*
- * Description: Point to array that holds the rx message queue
- *
- */
-void UART_InitRxBuffer(UartRxBufferStruct *buffer, UartMsgQueueStruct *msgBuffer)
-{
-	buffer->BufStruct.msgQueue = msgBuffer;
-}
-
-/*
- * Description: Point to array that holds the tx message queue
- *
- */
-void UART_InitTxBuffer(UartTxBufferStruct *buffer, UartMsgQueueStruct *msgBuffer)
-{
-	buffer->BufStruct.msgQueue = msgBuffer;
-}
 
 void UART_Add_IRQ_Byte(UartRxBufferStruct *buffer, uint8_t *char_in, uint32_t dataSize)
 {
@@ -74,7 +49,7 @@ void UART_Add_IRQ_Byte(UartRxBufferStruct *buffer, uint8_t *char_in, uint32_t da
 
 	for(i = 0; i < dataSize; i++)
 	{
-		buffer->BufStruct.uartIRQ_ByteBuffer[i] = *ptr++;
+		buffer->uartIRQ_ByteBuffer[i] = *ptr++;
 	}
 }
 
@@ -86,18 +61,18 @@ void UART_Add_IRQ_Byte(UartRxBufferStruct *buffer, uint8_t *char_in, uint32_t da
  * Input: Index pointer to which byte buffer to parse
  * Output: none
  */
-void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *buffer)
+void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *msg)
 {
-    if(buffer->RingBuff.bytePtr.iCnt_Handle)
+    if(msg->bytePtr.iCnt_Handle)
     {
-    	buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr++] = buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT];
-    	if(buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT] == '\n')
+    	msg->msgQueue[msg->msgPtr.iIndexIN].data[msg->sortPtr[msg->msgPtr.iIndexIN].ptr++] = msg->byteBuffer[msg->bytePtr.iIndexOUT];
+    	if(msg->byteBuffer[msg->bytePtr.iIndexOUT] == '\n')
     	{
-            buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr - 1;
-            DRV_RingBuffPtr__Input(&buffer->RingBuff.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
-            buffer->BufStruct.sortPtr[buffer->RingBuff.msgPtr.iIndexIN].ptr = 0;
+            msg->msgQueueSize[msg->msgPtr.iIndexIN].dataSize = msg->sortPtr[msg->msgPtr.iIndexIN].ptr;
+            DRV_RingBuffPtr__Input(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
+            msg->sortPtr[msg->msgPtr.iIndexIN].ptr = 0;
         }
-    	DRV_RingBuffPtr__Output(&buffer->RingBuff.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
+    	DRV_RingBuffPtr__Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE);
     }
 }
 
@@ -108,25 +83,25 @@ void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *buffer)
  * Input: Index pointer to which UART buffer to parse, the size of bytes to receive for a complete packet
  * Output: none
  */
-void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *buffer)
+void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *msg)
 {
     uint32_t i = 0;
     uint8_t checkSum = 0; // MOD256 checksum
     uint8_t tempTelemetry[UART_RX_BYTE_BUFFER_SIZE];
     uint32_t pointer = 0;
 
-    if (buffer->RingBuff.bytePtr.iCnt_Handle >= UART_RX_PACKET_SIZE)
+    if (msg->bytePtr.iCnt_Handle >= UART_RX_PACKET_SIZE)
     {
         // copy the bytes to a temporary array
         for(i = 0; i < UART_RX_PACKET_SIZE; i++)
         {
-            pointer = buffer->RingBuff.bytePtr.iIndexOUT + i;
+            pointer = msg->bytePtr.iIndexOUT + i;
             if(pointer >= UART_RX_BYTE_BUFFER_SIZE)// past max range
             {
                 pointer -= UART_RX_BYTE_BUFFER_SIZE;
             }
 
-            tempTelemetry[i] = buffer->BufStruct.byteBuffer[pointer];
+            tempTelemetry[i] = msg->byteBuffer[pointer];
         }
         
         // calculate checksum
@@ -141,15 +116,15 @@ void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *buffer)
             // we have a crc match so save the packet to the Rx packet buffer
             for(i = 0; i < UART_RX_PACKET_SIZE; i++)
             {
-                buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[i] = buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexOUT];
-                DRV_RingBuffPtr__Output(&buffer->RingBuff.bytePtr, UART_RX_BYTE_BUFFER_SIZE );
+                msg->msgQueue[msg->msgPtr.iIndexIN].data[i] = msg->byteBuffer[msg->bytePtr.iIndexOUT];
+                DRV_RingBuffPtr__Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE );
             }
             checkSum = 0; // reset checksum
-            DRV_RingBuffPtr__Input(&buffer->RingBuff.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE); // increment rx packet pointer
+            DRV_RingBuffPtr__Input(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE); // increment rx packet pointer
         }
         else
         {
-            DRV_RingBuffPtr__Output(&buffer->RingBuff.bytePtr, UART_RX_BYTE_BUFFER_SIZE ); // increment rx byte pointer
+            DRV_RingBuffPtr__Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE ); // increment rx byte pointer
         }
     }
 }
@@ -187,101 +162,6 @@ void UART_CheckForNewMessage(void)
 }
  */
 
-
-/*
- * Description: Checks for pending string message in message ring buffer.
- * Input: none
- * Output: none
- *
- * Return: true if message available, else returns false
- *
- */
-bool UART_RxStringMessagePending(UartRxBufferStruct *buffer)
-{
-	if(buffer->RingBuff.msgPtr.iCnt_Handle != 0)
-    {
-        return true;
-    }
-    return false;
-}
-
-/*
- * Description: clears the current ring buffer array
- */
-void UART_RxStringMessageClear(UartRxBufferStruct *buffer)
-{
-	memset(&buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData, 0, UART_RX_BYTE_BUFFER_SIZE);
-}
-
-/*
- * Description: Increments ring pointer. This should be called in main loop
- */
-void UART_RxStringMessageIncPtr(UartRxBufferStruct *buffer)
-{
-	DRV_RingBuffPtr__Output(&buffer->RingBuff.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
-}
-
-/*
- * Description: Copies message from ring buffer to retStr NOT including the CR and LF characters.
- */
-void UART_RxStringMessageCopyNoCRLF(UartRxBufferStruct *buffer, char *retStr)
-{
-	memcpy(retStr, (char*)&buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData, UART_StringMessageGetLength(buffer) - 2);
-}
-
-/*
- * Description: Copies message from ring buffer to retStr including the CR and LF characters.
- */
-void UART_RxStringMessageCopy(UartRxBufferStruct *buffer, char *retStr)
-{
-	memcpy(retStr, &buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData, UART_StringMessageGetLength(buffer));
-}
-
-
-
-// TODO - Need to combine these binary code with string code above as they are similar
-
-/*
- * Description: Checks for pending packet ring buffer.
- * Input: none
- * Output: none
- *
- * Return: true if packet available, else returns false
- *
- */
-bool UART_RxPacketPending(UartRxBufferStruct *buffer)
-{
-	if(buffer->RingBuff.msgPtr.iCnt_Handle != 0)
-    {
-        return true;
-    }
-    return false;
-}
-
-/*
- * Description: clears the current ring buffer array
- */
-void UART_RxPacketClear(UartRxBufferStruct *buffer, uint32_t packetSize)
-{
-	memset(&buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData, 0, packetSize);
-}
-
-/*
- * Description: Increments ring pointer. This should be called in main loop
- */
-void UART_RxPacketIncPtr(UartRxBufferStruct *buffer)
-{
-	DRV_RingBuffPtr__Output(&buffer->RingBuff.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
-}
-
-/*
- * Description: Copies message from ring buffer to retStr including the CR and LF characters.
- */
-void UART_RxPacketCopy(UartRxBufferStruct *buffer, uint32_t packetSize, uint8_t *retStr)
-{
-	memcpy(retStr, &buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData, packetSize);
-}
-
 /*
  * Description: Add message to message buffer to be sent. Use either UartCopyStringToTxStruct() or UartCopyBinaryDataToTxStruct() to build message first
  *              Be sure to call UartSendMessage() in a polling routine
@@ -291,22 +171,23 @@ void UART_RxPacketCopy(UartRxBufferStruct *buffer, uint32_t packetSize, uint8_t 
  * Output:
  *
  */
-void UART_TX_AddMessageToBuffer(UartTxBufferStruct *buffer, uint8_t *msg, uint32_t dataSize)
+void UART_TX_AddMessageToBuffer(UartTxBufferStruct *msgOut, uint8_t uartPort, uint8_t *msgIN, uint32_t dataSize)
 {
     uint8_t i = 0;
-    uint8_t *pData = (uint8_t*)msg;
+    uint8_t *pData = (uint8_t*)msgIN;
 
     for(i = 0; i < dataSize; i++)
     {
-    	buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexIN].msgData[i] = *pData++;
+    	msgOut->msgQueue[msgOut->msgPtr.iIndexIN].data[i] = *pData++;
     }
-    buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexIN].dataSize = dataSize;
-    DRV_RingBuffPtr__Input(&buffer->RingBuff.msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
+    msgOut->uartPort[msgOut->msgPtr.iIndexIN] = uartPort;
+    msgOut->msgQueueSize[msgOut->msgPtr.iIndexIN].dataSize = dataSize;
+    DRV_RingBuffPtr__Input(&msgOut->msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
 }
 
 uint32_t UART_TX_GetMessageSize(UartTxBufferStruct *buffer)
 {
-	return buffer->BufStruct.msgQueueSize[buffer->RingBuff.msgPtr.iIndexOUT].dataSize;
+	return buffer->msgQueueSize[buffer->msgPtr.iIndexOUT].dataSize;
 }
 
 /*
@@ -317,18 +198,21 @@ uint32_t UART_TX_GetMessageSize(UartTxBufferStruct *buffer)
  * Output: none
  *
  */
-void UART_SendMessage(UartTxBufferStruct *buffer, uint8_t uartPort)
+void UART_SendMessage(UartTxBufferStruct *msg)
 {
     int status = NO_ERROR;
+    uint8_t uartPort;
 
-    if (buffer->RingBuff.msgPtr.iCnt_Handle)
+    uartPort = msg->uartPort[msg->msgPtr.iIndexOUT];
+    
+    if (msg->msgPtr.iCnt_Handle)
     {
-        status = UART_TxMessage(buffer, uartPort);
+        status = UART_TxMessage(msg);
         // We need to monitor the return status for a failed transmit so not to increment the pointer yet
         // so on the next loop we can try to send again
         if (status == NO_ERROR)
         {
-            DRV_RingBuffPtr__Output(&buffer->RingBuff.msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
+            DRV_RingBuffPtr__Output(&msg->msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
         }
     }
 }
@@ -340,11 +224,11 @@ void UART_SendMessage(UartTxBufferStruct *buffer, uint8_t uartPort)
  * Input: The pointer to data array, the size/length of data
  * Output: No error or overflow
  */
-int UART_AddCharToBuffer(UartRxBufferStruct *buffer)
+int UART_AddCharToBuffer(UartRxBufferStruct *msg)
 {
 	int i;
     
-	if(buffer->RingBuff.bytePtr.iCnt_OverFlow)
+	if(msg->bytePtr.iCnt_OverFlow)
 	{
         // byte buffer is full. You should monitor the return status during development and increase buffer size to if overflow;
         return UART_BUFFER_OVERFLOW;
@@ -352,8 +236,8 @@ int UART_AddCharToBuffer(UartRxBufferStruct *buffer)
 
 	for(i = 0; i < UART_RX_IRQ_BYTE_SIZE; i++)
 	{
-		buffer->BufStruct.byteBuffer[buffer->RingBuff.bytePtr.iIndexIN] = buffer->BufStruct.uartIRQ_ByteBuffer[i];
-		DRV_RingBuffPtr__Input(&buffer->RingBuff.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
+		msg->byteBuffer[msg->bytePtr.iIndexIN] = msg->uartIRQ_ByteBuffer[i];
+		DRV_RingBuffPtr__Input(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE);
 	}
 
     return NO_ERROR;
@@ -363,8 +247,53 @@ int UART_AddCharToBuffer(UartRxBufferStruct *buffer)
 /*
  * Description: Gets the rx message string length
  */
-static uint32_t UART_StringMessageGetLength(UartRxBufferStruct *buffer)
+static uint32_t UART_StringMessageGetLength(UartRxBufferStruct *msg)
 {
-    return strlen((char*)buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData);
+    return strlen((char*)msg->msgQueue[msg->msgPtr.iIndexOUT].data);
 }
+
+/*
+ * Description: Checks for pending string message in message ring buffer. Automatically increments pointer after saving to msgOUT.
+ * Input: none
+ * Output: none
+ *
+ * Return: true if message available, else returns false
+ *
+ */
+bool UART_RxStringMessagePending(UartRxBufferStruct *msg, UartMsgQueueStruct *msgOut)
+{
+    int i = 0;
+    uint8_t dataLen;
+    
+	if(msg->msgPtr.iCnt_Handle)
+    {
+        dataLen = msg->msgQueueSize[msg->msgPtr.iIndexOUT].dataSize;
+        for(i = 0; i < dataLen; i++)
+        {
+            msgOut->data[i] = msg->msgQueue[msg->msgPtr.iIndexOUT].data[i];
+        }
+        memset(&msg->msgQueue[msg->msgPtr.iIndexOUT].data, 0 , sizeof(msg->msgQueue[msg->msgPtr.iIndexOUT].data));
+        DRV_RingBuffPtr__Output(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
+        return true;
+    }
+    
+    return false;
+}
+
+/*
+ * Description: Copies message from ring buffer to retStr NOT including the CR and LF characters.
+ */
+void UART_RxStringMessageCopyNoCRLF(UartRxBufferStruct *msg, char *retStr)
+{
+	memcpy(retStr, (char*)&msg->msgQueue[msg->msgPtr.iIndexOUT].data, UART_StringMessageGetLength(msg) - 2);
+}
+
+/*
+ * Description: Copies message from ring buffer to retStr including the CR and LF characters.
+ */
+void UART_RxStringMessageCopy(UartRxBufferStruct *msg, char *retStr)
+{
+	memcpy(retStr, &msg->msgQueue[msg->msgPtr.iIndexOUT].data, UART_StringMessageGetLength(msg));
+}
+
 
