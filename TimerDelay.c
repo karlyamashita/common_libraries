@@ -7,16 +7,11 @@
  *
  */
 
-#include "LSP.h"
-#ifdef USE_MTIMERS
 #include "main.h"
-#include "mTimers.h"
-
-#include "main.h"
-#include "mTimers.h"
+#include "TimerDelay.h"
 
 
-#define MAX_TIMERS 16 // increase if more timers are needed
+#define MAX_TIMERS 14 // increase if more timers are needed
 
 volatile uint32_t genericTimer[MAX_TIMERS] = {0}; // array that holds timer values for each timer instance
 volatile uint8_t timerInstance = 0; // timer instance
@@ -69,6 +64,4 @@ output: none
 void TimerSetValue(uint8_t timer, uint32_t value) {
     genericTimer[timer] = value;
 }
-
-#endif // USE_MTIMERS
 
