@@ -15,7 +15,8 @@
  *
  */
 bool ValidateChkSum(uint8_t *data, uint8_t len){
-    uint32_t chksum, i = 0;
+    uint32_t chksum = 0;
+    uint32_t i = 0;
     for(i = 0; i < len - 1; i++){
         chksum += *data++;
     }
