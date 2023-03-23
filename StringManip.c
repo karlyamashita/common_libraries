@@ -43,3 +43,13 @@ bool IsDigit(char chr){
     }
     return false;
 }
+
+void ToLower(char *str)
+{
+    int i;
+
+    for(i=0;i<strlen(str);i++)
+    {
+        str[i]=tolower(str[i]);
+    }
+}

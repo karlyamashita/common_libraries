@@ -10,6 +10,6 @@
 
 void RemoveSpaces(char *str);
 bool IsDigit(char chr);
-
+void ToLower(char *str);
 
 #endif /* STRINGMANIP_H_ */
