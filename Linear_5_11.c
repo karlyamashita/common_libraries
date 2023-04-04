@@ -53,7 +53,7 @@ uint16_t Float_to_L11(float input_val)
      // set exponent to -16
      int exponent = -16;
      // extract mantissa from input value
-     int mantissa = (int)(input_val / pow(2.0, exponent));
+     int32_t mantissa = (int32_t)(input_val / pow(2.0, exponent));
      // Search for an exponent that produces
      // a valid 11-bit mantissa
      do
