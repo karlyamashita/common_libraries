@@ -9,7 +9,7 @@
 #define STRINGMANIP_H_
 
 void RemoveSpaces(char *str);
-bool IsDigit(char chr);
+bool IsDigit(char *chr);
 void ToLower(char *str);
 
 #endif /* STRINGMANIP_H_ */
