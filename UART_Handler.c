@@ -12,88 +12,14 @@
 
 #ifdef HAL_UART_MODULE_ENABLED // STM32
 
-extern UART_HandleTypeDef huart2; // update to which uart instance is used.
-
-
-UartRxBufferStruct uart2_rxMsg = {0};
-UartTxBufferStruct uart2_txMsg = {0};
-
-UartMsgQueueStruct rxMsgQueue_2[UART_RX_MESSAGE_QUEUE_SIZE];
-UartMsgQueueStruct txMsgQueue_2[UART_TX_MESSAGE_QUEUE_SIZE];
-
 /*
- * Description: User needs to init each variable for rx and tx
- *
+ * PLEASE NOTE!!!!
+ * This handler for STM32 is being replaced by UART_DMA_Handler.c
+ * That file uses HAL_UARTEx_ReceiveToIdle_DMA and HAL_UARTEx_RxEventCallback. The DMA uses the idle bit so
+ * any size packet or a string without a delimiter is saved to a ring buffer. This is far more efficient
+ * than interrupting on each character.
  *
  */
-void UART_HandlerInitBuffer(void)
-{
-	uart2_rxMsg.BufStruct.msgQueue = rxMsgQueue_2;
-	//UART_InitRxBuffer(&uart2_rxMsg, rxMsgQueue_2);
-	UART_InitTxBuffer(&uart2_txMsg, txMsgQueue_2);
-}
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart->Instance == huart2.Instance)
-	{
-		UART_AddCharToBuffer(&uart2_rxMsg);
-		UART_Enable_ReceiveIT(&uart2_rxMsg);
-	}
-	// User will need to add more code if more UART ports are used.
-}
-
-/*
- * Description: Enables UART Rx interrupt. If HAL_BUSY then set error flag
- *
- */
-void UART_Enable_ReceiveIT(UartRxBufferStruct *buffer)
-{
-	if(HAL_UART_Receive_IT(&huart2, buffer->BufStruct.uartIRQ_ByteBuffer, UART_RX_IRQ_BYTE_SIZE) != HAL_OK) //re-enable interrupt
-	{
-		buffer->BufStruct.UART_RxEnErrorFlag = true;
-	}
-}
-
-/*
- * Description: This should be called from main loop. If error flag is set then try to enable UART Rx interrupt again.
- *
- */
-void UART_ReceiveIT_ErrorHandler(UartRxBufferStruct *buffer)
-{
-	if(buffer->BufStruct.UART_RxEnErrorFlag)
-	{
-		buffer->BufStruct.UART_RxEnErrorFlag = false;
-		UART_Enable_ReceiveIT(buffer);
-	}
-}
-
-
-
-/*
- * Description: This is called from UART_SendMessage() in UartCharBuff.c
- * Input: Pointer to tx buffer and the UART port to transmit to
- *
- */
-int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort)
-{
-	HAL_StatusTypeDef hal_status;
-	uint32_t dataSize;
-
-	dataSize = UART_TX_GetMessageSize(buffer);
-
-	if(uartPort == UART_PORT_2)
-	{
-		hal_status = HAL_UART_Transmit_IT(&huart2, buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData, dataSize);
-		if(hal_status != HAL_OK)
-		{
-			return UART_TX_ERROR;
-		}
-	}
-	// User will need to add more code if more UART ports are used as well the reference to that huart.
-
-	return NO_ERROR;
-}
 
 
 #endif // end HAL_MODULE_ENABLED
@@ -108,19 +34,6 @@ UartTxBufferStruct uart0_txMsg = {0};
 UartRxBufferStruct uart6_rxMsg = {0};
 UartTxBufferStruct uart6_txMsg = {0};
 
-UartMsgQueueStruct rxMsgQueue_0[UART_RX_MESSAGE_QUEUE_SIZE];
-UartMsgQueueStruct txMsgQueue_0[UART_TX_MESSAGE_QUEUE_SIZE];
-
-UartMsgQueueStruct rxMsgQueue_6[UART_RX_MESSAGE_QUEUE_SIZE];
-UartMsgQueueStruct txMsgQueue_6[UART_TX_MESSAGE_QUEUE_SIZE];
-
-void UART_HandlerInitBuffer(void)
-{
-	UART_InitRxBuffer(&uart0_rxMsg, rxMsgQueue_0);
-	UART_InitTxBuffer(&uart0_txMsg, txMsgQueue_0);
-	UART_InitRxBuffer(&uart6_rxMsg, rxMsgQueue_6);
-	UART_InitTxBuffer(&uart6_txMsg, txMsgQueue_6);
-}
 
 // this function should be registered when initializing the UART, UARTIntRegister(UART0_BASE, USART0_IRQHandler);
 void USART0_IRQHandler(void)
@@ -133,7 +46,7 @@ void USART6_IRQHandler(void)
     Uart_Receive(UART6_BASE, &uart6_rxMsg);
 }
 
-void Uart_Receive(uint32_t uart_base, UartRxBufferStruct *buffer)
+void Uart_Receive(uint32_t uart_base, UartRxBufferStruct *msg)
 {
 	int status;
 	uint32_t interruptStatus;
@@ -145,12 +58,12 @@ void Uart_Receive(uint32_t uart_base, UartRxBufferStruct *buffer)
 	if (UARTCharsAvail(uart_base))
 	{
 		data = (uint8_t)UARTCharGet(uart_base);
-		UART_Add_IRQ_Byte(buffer, &data, 1);
+		UART_Add_IRQ_Byte(msg, &data, 1);
 		if(echoMode == 1) {
-			UARTCharPut(UART0_BASE, (unsigned char)buffer->BufStruct.uartIRQ_ByteBuffer[0]); // echo character
+			UARTCharPut(UART0_BASE, (unsigned char)msg->uartIRQ_ByteBuffer[0]); // echo character
 		}
 
-		status = UART_AddCharToBuffer(buffer); // save character to char buffer
+		status = UART_AddCharToBuffer(msg); // save character to char buffer
 		if(status != NO_ERROR){
 			// TODO - check HAL Status and act accordingly.
 			// For now we're going to lose a character if buffer is full. Try increasing MAX_UART_RX_CHAR_BUFFER size .
@@ -164,11 +77,11 @@ void Uart_Receive(uint32_t uart_base, UartRxBufferStruct *buffer)
  * Input: Character buffer structure. The structure holds the uart base and the char array.
  * Output: HAL status
  */
-int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort)
+int UART_TxMessage(UartTxBufferStruct *msg, uint8_t uartPort)
 {
     uint32_t uart_base;
-    uint8_t *pData = buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData;
-    uint32_t count = UART_TX_GetMessageSize(buffer);
+    uint8_t *pData = msg->msgQueue[msg->msgPtr.iIndexOUT].data;
+    uint32_t count = UART_TX_GetMessageSize(msg);
 
     // we need to convert the generic port number to a uart base number. If we have many ports then consider using a table lookup
     switch(uartPort){
@@ -208,28 +121,14 @@ bool GetEchoMode(void)
 
 UartRxBufferStruct uart1_rxMsg;
 UartTxBufferStruct uart1_txMsg;
-
 UartRxBufferStruct uart2_rxMsg;
 UartTxBufferStruct uart2_txMsg;
 
-UartMsgQueueStruct rxMsgQueue_1[UART_RX_MESSAGE_QUEUE_SIZE];
-UartMsgQueueStruct txMsgQueue_1[UART_TX_MESSAGE_QUEUE_SIZE];
 
-UartMsgQueueStruct rxMsgQueue_2[UART_RX_MESSAGE_QUEUE_SIZE];
-UartMsgQueueStruct txMsgQueue_2[UART_TX_MESSAGE_QUEUE_SIZE];
-
-void UART_HandlerInitBuffer(void)
-{
-	memset(&uart1_rxMsg, 0, sizeof(uart1_rxMsg));
-    memset(&uart1_txMsg, 0, sizeof(uart1_txMsg));
-
-	UART_InitRxBuffer(&uart1_rxMsg, rxMsgQueue_1);
-	UART_InitTxBuffer(&uart1_txMsg, txMsgQueue_1);
-
-	UART_InitRxBuffer(&uart2_rxMsg, rxMsgQueue_2);
-	UART_InitTxBuffer(&uart2_txMsg, txMsgQueue_2);
-}
-
+/*
+ *  Microchip default callback
+ * 
+ */
 void UART1_Receive_CallBack(void)
 {
 	static uint8_t data[1];
@@ -239,32 +138,62 @@ void UART1_Receive_CallBack(void)
 	UART_AddCharToBuffer(&uart1_rxMsg);
 }
 
+void UART2_Receive_CallBack(void)
+{
+	static uint8_t data[1];
+
+	data[0] = (uint8_t)U2RXREG;
+	UART_Add_IRQ_Byte(&uart2_rxMsg, data, 1);
+	UART_AddCharToBuffer(&uart2_rxMsg);
+}
+
+/*
+ * Description: return 1 if there is a message, 0 if no message.
+ */
+int UART1_GetMessage(UartRxBufferStruct *msg, UartMsgQueueStruct *msgOut)
+{    
+    if(UART_RxStringMessagePending(msg, msgOut))
+    {
+        return 1;
+    }
+    
+    return 0;
+}
+
 /*
  * Description: Sends string
  *
  * Input: Character buffer structure. The structure holds the UART base and the char array.
  * Output: HAL status
  */
-int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort)
+int UART_TxMessage(UartTxBufferStruct *msg)
 {
     uint16_t count = 0;
     uint8_t i = 0;
+    uint8_t uartPort;
 
-    count = UART_TX_GetMessageSize(buffer);
-
-    while(count){
-        if(!(U1STAHbits.UTXBF == 1))
+    count = UART_TX_GetMessageSize(msg);
+    uartPort = msg->uartPort[msg->msgPtr.iIndexOUT];
+    
+    while(count)
+    {
+        if(uartPort == 1)
         {
-            if(uartPort == 1)
+            if(!(U1STAHbits.UTXBF == 1))
             {
-                U1TXREG = buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData[i];
-            }
-            else if(uartPort == 2)
+                U1TXREG = msg->msgQueue[msg->msgPtr.iIndexOUT].data[i];
+                count--;
+                i++;
+            } 
+        }
+        else if(uartPort == 2)
+        {
+            if(!(U2STAHbits.UTXBF == 1))
             {
-                U2TXREG = buffer->BufStruct.msgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData[i];
+                U2TXREG = msg->msgQueue[msg->msgPtr.iIndexOUT].data[i];
+                count--;
+                i++;
             }
-            count--;
-            i++;
         }
     }
     return NO_ERROR;

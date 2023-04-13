@@ -54,13 +54,25 @@ void GetErrorString(int errorCode, char *str){
         strcpy(str, "ERROR-I2C no data read");
         break;
     case I2C_ERROR_DIRECT_PARSE:
-        strcpy(str, "ERROR-Possible parameters error");
+        strcpy(str, "ERROR-I2C Possible parameters error");
         break;
     case I2C_PERIPHERAL_NOT_INIT:
         strcpy(str, "ERROR-I2C peripheral not initialized");
         break;
+    case I2C_ERROR_ADDRESS_NO_ACK:
+        strcpy(str, "ERROR-I2C Address no ACK");
+        break;
+    case I2C_ERROR_DATA_NO_ACK:
+        strcpy(str, "ERROR-I2C Data no ACK");
+        break;
     case I2C_BASE_NOT_VALID:
         strcpy(str, "ERROR-I2C base not valid");
+        break;
+    case I2C_ERROR_TIMEOUT:
+        strcpy(str, "ERROR-I2C Timeout");    
+        break;
+    case I2C_ERROR_RETRIES_EXCEEDED:
+        strcpy(str, "ERROR-I2C Retries Exceeded");    
         break;
     case I2C_BUSY:
         strcpy(str, "ERROR-I2C busy");
@@ -69,7 +81,7 @@ void GetErrorString(int errorCode, char *str){
         strcpy(str, "ERROR-I2C bus busy");
         break;
     case I2C_ERROR_MESSAGE_FAIL:
-        strcpy(str, "ERROR-I2C ");
+        strcpy(str, "ERROR-I2C Message Fail");
         break;
     case ERROR_READ_ONLY:
         strcpy(str, "ERROR-Read Only");

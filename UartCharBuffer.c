@@ -201,9 +201,6 @@ uint32_t UART_TX_GetMessageSize(UartTxBufferStruct *buffer)
 void UART_SendMessage(UartTxBufferStruct *msg)
 {
     int status = NO_ERROR;
-    uint8_t uartPort;
-
-    uartPort = msg->uartPort[msg->msgPtr.iIndexOUT];
     
     if (msg->msgPtr.iCnt_Handle)
     {

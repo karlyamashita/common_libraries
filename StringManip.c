@@ -37,9 +37,17 @@ void RemoveSpaces(char *str)
  * Return: true or false
  *
  */
-bool IsDigit(char chr){
-    if(chr >= 0x30 && chr <= 0x39){
+bool IsDigit(char *chr){
+    if(*chr >= 0x30 && *chr <= 0x39){
         return true;
     }
     return false;
+}
+
+void ToLower(char *str)
+{
+    for(int i=0;i<strlen(str);i++)
+    {
+        str[i]=tolower(str[i]);
+    }
 }

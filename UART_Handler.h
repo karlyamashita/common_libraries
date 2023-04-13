@@ -31,10 +31,10 @@ int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
 #endif
 
 #ifdef _XC_H
-void UART_HandlerInitBuffer(void);
 void UART1_Receive_CallBack(void);
-int UART_TxMessage(UartTxBufferStruct *buffer, uint8_t uartPort);
-int UartTxMessageDMA(UartTxBufferStruct *buffer, uint8_t uartPort);
+int UART1_GetMessage(UartRxBufferStruct *msg, UartMsgQueueStruct *msgOut);
+int UART_TxMessage(UartTxBufferStruct *msg);
+int UartTxMessageDMA(UartTxBufferStruct *msg);
 #endif
 
 #ifdef ccs // TI Code Composer Studio
