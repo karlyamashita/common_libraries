@@ -3,8 +3,6 @@
  *              Use TimerDelayGetValue(<timer instance>) to get that timer instance value.
  *              You can test the return value to see if the value is >= to a certain value like 1000 for 1 second.
  *
- *
- *
  */
 
 #include "main.h"
