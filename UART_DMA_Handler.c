@@ -91,6 +91,14 @@ int UART_DMA_MsgRdy(UART_DMA_RxQueueStruct *msg, UART_MsgStruct *msgOut)
 }
 
 /*
+* Description: Add message to TX buffer
+*/
+void UART_DMA_TX_AddMessageToBuffer(UART_DMA_TxQueueStruct *msg, uint8_t uartPort, char *str, uint32_t size)
+{
+
+}
+
+/*
  * Description: This must be called from a polling routine.
  *
  */
@@ -103,6 +111,24 @@ void UART_DMA_SendMessage(UART_DMA_TxQueueStruct * msg)
 			DRV_RingBuffPtr__Output(&msg->ptr, UART_DMA_QUEUE_SIZE);
 		}
 	}
+}
+
+/*
+* Description: Add string to TX structure
+*/
+void UART_DMA_NotifyUser(UART_DMA_TxQueueStruct *msg, char *str, bool lineFeed, uint8_t uartPort)
+{
+	uint8_t strMsg[UART_TX_BYTE_BUFFER_SIZE] = {0};
+
+    strcpy((char*)strMsg, str);
+    
+    if(lineFeed == true)
+    {
+    	strcat((char*)strMsg, "\r\n");
+    }
+
+    msg->msgQueueSize[msg->msgPtr.iIndexIN].dataSize = strlen((char*)strMsg);
+    UART_DMA_TX_AddMessageToBuffer(msg, uartPort, strMsg, strlen((char*)strMsg));
 }
 
 /*

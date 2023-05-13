@@ -76,8 +76,11 @@ void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *msg)
     }
 }
 
+
 /*
- * Description: Sort UART Binary buffer and save binary packet in message buffer.
+ * Description: Sort UART Binary buffer and save binary packet in message buffer. Checksum is using MOD256.
+ * 				When the number of bytes have been recevied and the checksum matches the sum of the bytes,
+ * 				then save packet to message buffer.
  *              This needs to be called from a polling routine.
  *
  * Input: Index pointer to which UART buffer to parse, the size of bytes to receive for a complete packet
@@ -90,10 +93,10 @@ void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *msg)
     uint8_t tempTelemetry[UART_RX_BYTE_BUFFER_SIZE];
     uint32_t pointer = 0;
 
-    if (msg->bytePtr.iCnt_Handle >= UART_RX_PACKET_SIZE)
+    if (msg->bytePtr.iCnt_Handle >= msg->packetSize)
     {
         // copy the bytes to a temporary array
-        for(i = 0; i < UART_RX_PACKET_SIZE; i++)
+        for(i = 0; i < msg->packetSize; i++)
         {
             pointer = msg->bytePtr.iIndexOUT + i;
             if(pointer >= UART_RX_BYTE_BUFFER_SIZE)// past max range
@@ -105,22 +108,34 @@ void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *msg)
         }
         
         // calculate checksum
-        for(i = 0; i < (UART_RX_PACKET_SIZE - 1); i++)
+        for(i = 0; i < (msg->packetSize - 1); i++)
         {
             checkSum += tempTelemetry[i];
         }
         
         // verify checksum
-        if(checkSum == tempTelemetry[UART_RX_PACKET_SIZE - 1]) // compare checksum to last index
+        if(checkSum == tempTelemetry[msg->packetSize - 1]) // compare checksum to last index
         {
-            // we have a crc match so save the packet to the Rx packet buffer
-            for(i = 0; i < UART_RX_PACKET_SIZE; i++)
-            {
-                msg->msgQueue[msg->msgPtr.iIndexIN].data[i] = msg->byteBuffer[msg->bytePtr.iIndexOUT];
-                DRV_RingBuffPtr__Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE );
-            }
-            checkSum = 0; // reset checksum
-            DRV_RingBuffPtr__Input(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE); // increment rx packet pointer
+
+        	if( ((checkSum == 0) && (tempTelemetry[msg->packetSize - 1] == 0)) || (tempTelemetry[0] == 0) ) // ignore packets that are all zeros or first byte is zero
+        	{
+        		for(i = 0; i < msg->packetSize; i++)
+				{
+					DRV_RingBuffPtr__Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE );
+				}
+        	}
+        	else
+        	{
+				// we have a crc match so save the packet to the Rx packet buffer
+				for(i = 0; i < msg->packetSize; i++)
+				{
+					msg->msgQueue[msg->msgPtr.iIndexIN].data[i] = msg->byteBuffer[msg->bytePtr.iIndexOUT];
+					DRV_RingBuffPtr__Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE );
+				}
+				msg->msgQueueSize[msg->msgPtr.iIndexIN].dataSize = msg->packetSize;
+				checkSum = 0; // reset checksum
+				DRV_RingBuffPtr__Input(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE); // increment rx packet pointer
+        	}
         }
         else
         {
@@ -129,45 +144,17 @@ void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *msg)
     }
 }
 
-/*
- * Description: Example code using the API calls below.
- * 					This should be created in user file and called in a main loop polling routine
- *
-
-void UART_CheckForNewMessage(void)
+void UART_InitPacketSize(UartRxBufferStruct *msg, uint32_t size)
 {
-	char msg[MAX_UART_RX_BYTE_BUFFER] = {0};
-	char messageCopy[MAX_UART_RX_BYTE_BUFFER] = {0};
-
-	if(UART_RxStringMessagePending(&uart2_rxMsg))
-	{
-		UART_RxStringMessageCopy(&uart2_rxMsg, msg);// copy current ring buffer message to msg
-		UART_RxStringMessageCopyNoCRLF(&uart2_rxMsg, messageCopy); // copy of msg
-		UART_RxStringMessageClear(&uart2_rxMsg); // clears the current ring buffer
-		UART_RxStringMessageIncPtr(&uart2_rxMsg); // increment the ring buffer pointer.
-
-		RemoveSpaces(ptr);
-
-		// user can parse msg variable.
-		if(strncmp(ptr, "setfirst:", strlen("setfirst:")) == 0)
-		{
-			ptr += strlen("setfirst:");
-			firstDigit = atoi(ptr);
-			sprintf(str, " %ld", firstDigit);
-			ReturnGetMessageData(messageCopy, str);
-			NotifyUser(&uart2_txMsg, messageCopy, true);
-		}
-		else ... more compares
-	}
+	msg->packetSize = size;
 }
- */
+
 
 /*
  * Description: Add message to message buffer to be sent. Use either UartCopyStringToTxStruct() or UartCopyBinaryDataToTxStruct() to build message first
  *              Be sure to call UartSendMessage() in a polling routine
  *
  * Input: The message structure
- * 6844
  * Output:
  *
  */

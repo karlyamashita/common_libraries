@@ -26,12 +26,10 @@ enum
  */
 #define UART_RX_IRQ_BYTE_SIZE 1
 
-#define UART_RX_BYTE_BUFFER_SIZE 192 // this holds all the IRQ data
-#define UART_TX_BYTE_BUFFER_SIZE 192
-#define UART_RX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
+#define UART_RX_BYTE_BUFFER_SIZE 128 // this holds all the IRQ data
+#define UART_TX_BYTE_BUFFER_SIZE 128
+#define UART_RX_MESSAGE_QUEUE_SIZE 8// buffer size of complete strings or packets.
 #define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
-
-#define UART_RX_PACKET_SIZE 16 // The number of bytes for complete packet + checksum.
 
 
 // end user defines
@@ -58,6 +56,7 @@ typedef struct
 {
     uint8_t uartIRQ_ByteBuffer[UART_RX_IRQ_BYTE_SIZE]; // UART IRQ will save to this. Typically would be 1 byte in size
     uint8_t byteBuffer[UART_RX_BYTE_BUFFER_SIZE]; // bytes saved here as they come in from uartIRQ_ByteBuffer.
+    uint32_t packetSize;
     
     UartMsgQueueStruct msgQueue[UART_RX_MESSAGE_QUEUE_SIZE];
     UartMsgQueueSize msgQueueSize[UART_RX_MESSAGE_QUEUE_SIZE]; // the message length
@@ -84,6 +83,7 @@ void UART_Add_IRQ_Byte(UartRxBufferStruct *msg, uint8_t *char_in, uint32_t dataS
 
 void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *msg);
 void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *msg);
+void UART_InitPacketSize(UartRxBufferStruct *msg, uint32_t size);
 
 void UART_TX_AddMessageToBuffer(UartTxBufferStruct *msgOut, uint8_t uartPort, uint8_t *msgIN, uint32_t dataSize);
 uint32_t UART_TX_GetMessageSize(UartTxBufferStruct *msg);
