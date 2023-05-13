@@ -3,11 +3,10 @@
 
 #include "main.h"
 
-uint8_t TimerDelayRegister(void);
-
-uint32_t TimerDelayGetValue(uint8_t timer);
+uint32_t TimerDelayRegister(void);
+uint32_t TimerDelayGetValue(uint32_t timer);
 void TimerDelaySYSTICK(void);
-void TimerDelaySetValue(uint8_t timer, uint32_t value);
+void TimerDelaySetValue(uint32_t timer, uint32_t value);
 
 
 #endif // TIMER_DELAY_H
