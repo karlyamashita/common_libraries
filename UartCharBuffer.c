@@ -51,7 +51,7 @@ int UART_AddByteToBuffer(UartRxBufferStruct *msg, uint8_t *data, uint32_t dataSi
 
 	if(msg->bytePtr.cnt_OverFlow)
 	{
-        // byte buffer is full. You should monitor the return status during development and increase buffer size to if overflow;
+        // byte buffer is full. You should monitor the return status during development and increase buffer size if there is an overflow;
         return UART_BUFFER_OVERFLOW;
     }
 
