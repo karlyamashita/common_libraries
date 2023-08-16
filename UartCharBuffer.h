@@ -25,7 +25,6 @@
 #define UART_RX_MESSAGE_QUEUE_SIZE 32// buffer size of complete strings or packets.
 #define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
 
-
 // end user defines
 
 

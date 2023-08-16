@@ -9,7 +9,6 @@
 #define INC_UART_HANDLER_H_
 
 
-
 #ifdef HAL_MODULE_ENABLED // STM32
 
 void UART_EnableRxInterrupt(UartRxBufferStruct *msg);

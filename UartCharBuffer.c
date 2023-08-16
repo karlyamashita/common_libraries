@@ -6,7 +6,6 @@
 
 
 
-
         // Basic Info
         - This has a ring buffer for individual bytes and a ring buffer for messages.
 

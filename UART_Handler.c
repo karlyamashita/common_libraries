@@ -55,7 +55,6 @@ UartTxBufferStruct uart2Tx =
 };
 #endif
 
-
 /*
  * Description: Enables the HAL_UART_Receive_IT interrupt. Call before main while loop and in HAL_UART_RxCpltCallback
  */
