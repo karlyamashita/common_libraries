@@ -188,12 +188,7 @@ bool UART_RxMessagePending(UartRxBufferStruct *msg)
     return false;
 }
 
-// Misc
-uint32_t UART_GetRxInstance(UartRxBufferStruct *msg)
-{
-	return msg->instance;
-}
-
+#ifdef HAL_MODULE_ENABLED // STM32
 bool UART_GetRxIntErrorFlag(UartRxBufferStruct *msg)
 {
 	return msg->UART_RxEnErrorFlag;
@@ -203,53 +198,13 @@ void UART_SetRxIntErrorFlag(UartRxBufferStruct *msg, bool status)
 {
 	msg->UART_RxEnErrorFlag = status;
 }
+#endif // HAL_MODULE_ENABLED
 
-/*
- * Description: If using buffer pointers, user will need to declare some variables and call this to pass address to them.
- *
- *	 example declarations;
- *		UartRxBufferStruct rxMsg2 = {0};
- *		uint8_t uart2RxIrqByteBuffer[UART_RX_IRQ_BYTE_SIZE] = {0}; // irq array
- *		uint8_t uart2RxByteBuffer[UART_RX_BYTE_BUFFER_SIZE] = {0}; // byte array
- *		UartMsgQueueStruct uart2RxMsgQueue[UART_RX_MESSAGE_QUEUE_SIZE] = {0}; // message array
- *
- *	Somewhere before main call this
- *		UART_RxBufferInit(&rxMsg2, uart2RxIrqByteBuffer, uart2RxByteBuffer, uart2RxMsgQueue);
- *
- * Input: the above declarations
- * Output: none
- */
-#ifdef USE_BUFFER_POINTERS
-void UART_RxBufferInit(UartRxBufferStruct *msg, uint8_t *irqBuffer, uint8_t *byteBuffer, UartMsgQueueStruct *queueBuffer)
-{
-	msg->uartIRQ_ByteBuffer = irqBuffer;
-	msg->byteBuffer = byteBuffer;
-	msg->msgQueue = queueBuffer;
-}
-
-/*
- * Description: If using buffer pointers, user will need to declare some variables and call this to pass the address to them.
- *
- * 	example declarations;
- * 		UartTxBufferStruct txMsg2 = {0};
- * 		UartMsgQueueStruct uart2TxMsgQueue[UART_TX_MESSAGE_QUEUE_SIZE] = {0};
- *
- * 	Somewhere before main call
- * 		UART_TxBufferInit(&txMsg2, uart2TxMsgQueue);
- *
- * Input: the above declarations
- * Output: none
- */
-void UART_TxBufferInit(UartTxBufferStruct *msg, UartMsgQueueStruct *queue)
-{
-	msg->msgQueue = queue;
-}
-#endif
 
 //************************************ Transmit **********************************
 
 /*
- * Description: Add data to message buffer to be sent. Be sure to call UartSendMessage() in a polling routine
+ * Description: Add data to message buffer to be sent. User will need to create a UART Tx handler to be called from polling routine
  * Input: The message structure
  * Output:
  *
@@ -266,66 +221,5 @@ void UART_TX_AddDataToBuffer(UartTxBufferStruct *msgOut, uint8_t *msgIN, uint32_
     msgOut->msgQueue[msgOut->msgPtr.index_IN].size = size;
     RingBuff_Ptr_Input(&msgOut->msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
 }
-
-
-/*
- * Description: Call this from a polling routine.
- *              UartTxMessage() call below is generic function. The function should be part of your project code for your specific MCU.
- *
- * Input: none
- * Output: none
- *
- */
-void UART_SendMessage(UartTxBufferStruct *msg)
-{
-    int status = 0;
-    
-    if (msg->msgPtr.cnt_Handle)
-    {
-        if(!msg->txPending)
-        {
-            status = UART_TxMessage(msg);
-            if (status == 0)
-            {
-            	RingBuff_Ptr_Output(&msg->msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
-            }
-        }
-    }
-}
-
-
-/*
- * How to use:
- * 	You can use pointers to the buffers or you can use fixed size buffers. Use USE_BUFFER_POINTERS in h file to enable/disable.
- *
- * 	Initializing buffers and passing the address to the pointers.
- *
-
-// define the UART2 Rx buffers
-uint8_t uart2RxIrqByteBuffer[UART_RX_IRQ_BYTE_SIZE] = {0}; // irq array
-uint8_t uart2RxByteBuffer[UART_RX_BYTE_BUFFER_SIZE] = {0}; // byte array
-UartMsgQueueStruct uart2RxMsgQueue[UART_RX_MESSAGE_QUEUE_SIZE] = {0}; // message array
-UartRxBufferStruct uart2Rx =
-{
-	.instance = UART_PORT_2,
-	.byteBuffer = uart2RxByteBuffer,
-	.uartIRQ_ByteBuffer = uart2RxIrqByteBuffer,
-	.msgQueue = uart2RxMsgQueue
-};
-
-// define the UART2 Tx buffers
-UartMsgQueueStruct uart2TxMsgQueue[UART_TX_MESSAGE_QUEUE_SIZE] = {0};
-UartTxBufferStruct uart2Tx =
-{
-	.instance = UART_PORT_2,
-	.msgQueue = uart2TxMsgQueue
-};
-
-
- */
-
-
-
-
 
 

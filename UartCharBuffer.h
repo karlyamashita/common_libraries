@@ -11,46 +11,23 @@
 #include "main.h"
 
 
-#define USE_BUFFER_POINTERS // comment in if using pointers to buffers. User needs to create buffers and call UART_RxBufferInit and UART_TxBufferInit
-
-
-
 // User defines start
+//#define USE_BUFFER_POINTERS // comment in if using pointers to buffers. User needs to create buffers and call UART_RxBufferInit and UART_TxBufferInit
+
 /* 	MAX_UART_RX_IRQ_BYTE_LENGTH is for the UART IRQ.
  *	If packets with MOD256 checksum, then change to received packet size.
  *
  */
 #define UART_RX_IRQ_BYTE_SIZE 1 // Typically this is 1 byte for most uC.
 
-#define UART_RX_BYTE_BUFFER_SIZE 128 // this holds all the IRQ data
+#define UART_RX_BYTE_BUFFER_SIZE 512 // this holds all the IRQ data
 #define UART_TX_BYTE_BUFFER_SIZE 128
-#define UART_RX_MESSAGE_QUEUE_SIZE 8// buffer size of complete strings or packets.
+#define UART_RX_MESSAGE_QUEUE_SIZE 32// buffer size of complete strings or packets.
 #define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
 
 
 // end user defines
 
-// PORT number defines to assign to instance.
-enum
-{
-	UART_PORT_0,
-	UART_PORT_1,
-	UART_PORT_2,
-	UART_PORT_3,
-	UART_PORT_4,
-	UART_PORT_5,
-	UART_PORT_6,
-	UART_PORT_7,
-	UART_PORT_8,
-	UART_PORT_9,
-	UART_PORT_10,
-	UART_PORT_11,
-	UART_PORT_12,
-	UART_PORT_13,
-	UART_PORT_14,
-	UART_PORT_15
-	// add more if needed.
-};
 
 // buffer status
 enum
@@ -80,19 +57,24 @@ typedef struct
     UartMsgQueueStruct *msgQueue;
 #else
     uint8_t uartIRQ_ByteBuffer[UART_RX_IRQ_BYTE_SIZE]; // UART IRQ will save to this. Typically would be 1 byte in size
-	uint32_t uartIRQ_ByteSize;
     uint8_t byteBuffer[UART_RX_BYTE_BUFFER_SIZE]; // bytes saved here as they come in from uartIRQ_ByteBuffer.
     UartMsgQueueStruct msgQueue[UART_RX_MESSAGE_QUEUE_SIZE];
-#endif
+#endif // USE_BUFFER_POINTERS
     UartMsgQueueStruct msgToParse;
+#ifdef HAL_MODULE_ENABLED // STM32
+    UART_HandleTypeDef *huart;
+    bool UART_RxEnErrorFlag; // used with STM32 with HAL functions.
+#else
     uint32_t instance; // typically a UART Port number 0-n for identification purpose. CAN also be STM32 huart instance
+#endif // HAL_MODULE_ENABLED
     uint32_t packetSize; // for binary packets
     uint32_t sortPtr; // for binary packet sorting
 
-    bool UART_RxEnErrorFlag; // used with STM32 with HAL functions.
-
     RING_BUFF_STRUCT bytePtr; // pointer for byteBuffer
     RING_BUFF_STRUCT msgPtr; // pointer for msgQueue
+	uint32_t uartIRQ_ByteSize;
+    uint32_t byteBufferSize;
+    uint32_t msgQueueSize;
 }UartRxBufferStruct;
 
 // transmit
@@ -103,14 +85,20 @@ typedef struct
 #else
 	UartMsgQueueStruct msgQueue[UART_TX_MESSAGE_QUEUE_SIZE];
 #endif
-	bool txPending;
+//#ifdef TM4C12x
+	bool msgToSend_Pending; // used for TM4C12x in UART_Handler.c
 	uint8_t *msgToSend;
-	uint32_t msgToSendSize;
-	uint32_t msgToSendPtr;
-	uint32_t instance;
+	uint32_t msgToSend_Size;
+	uint32_t msgToSend_BytePtr; //
+//#endif // USE_BUFFER_POINTERS
+#ifdef HAL_MODULE_ENABLED // STM32
+    UART_HandleTypeDef *huart;
+#else
+    uint32_t instance; // typically a UART Port number 0-n for identification purpose. CAN also be STM32 huart instance
+#endif // HAL_MODULE_ENABLED
 	RING_BUFF_STRUCT msgPtr; // pointer for msgBuffer and msgDataSize
+	uint32_t msgQueueSize;
 }UartTxBufferStruct;
-
 
 // add to buffer
 void UART_Add_IRQ_Byte(UartRxBufferStruct *msg, uint8_t *char_in, uint32_t dataSize);
@@ -123,17 +111,14 @@ void UART_InitPacketSize(UartRxBufferStruct *msg, uint32_t size);
 // check pending message
 bool UART_RxMessagePending(UartRxBufferStruct *msg);
 
-// misc
-uint32_t UART_GetRxInstance(UartRxBufferStruct *msg);
+// When using STM32 HAL
+#ifdef HAL_MODULE_ENABLED // STM32
 bool UART_GetRxIntErrorFlag(UartRxBufferStruct *msg);
 void UART_SetRxIntErrorFlag(UartRxBufferStruct *msg, bool status);
-
-// initialize
-void UART_RxBufferInit(UartRxBufferStruct *msg, uint8_t *irqData, uint8_t *buffer, UartMsgQueueStruct *queue);
-void UART_TxBufferInit(UartTxBufferStruct *msg, UartMsgQueueStruct *queue);
+#endif // HAL_MODULE_ENABLED
 
 // Tx
 void UART_TX_AddDataToBuffer(UartTxBufferStruct *msgOut, uint8_t *msgIN, uint32_t dataSize);
-void UART_SendMessage(UartTxBufferStruct *msg);
+
 
 #endif /* UARTBUFFER_H_ */
