@@ -14,15 +14,22 @@
 void UART_EnableRxInterrupt(UartRxBufferStruct *msg);
 void UART_CheckRxIntError(UartRxBufferStruct *msg);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-int UART_TxMessage(UartTxBufferStruct *msg);
+int UART_TxMessage_IT(UartTxBufferStruct *msg);
 
 #endif
 
 #ifdef ccs
 
+enum
+{
+    UART_TX_DONE,
+    UART_TX_PENDING
+};
+
 void USART0_IRQHandler(void);
-int UART_TxMessage(UartTxBufferStruct *msg);
-void UART0_TransmitMessage(UartTxBufferStruct *msg);
+void USART6_IRQHandler(void);
+int UART_TxMessage_IT(UartTxBufferStruct *msg);
+
 int UART_Parse(UartRxBufferStruct *msg);
 
 #endif
@@ -53,8 +60,7 @@ enum
 
 void UART1_Receive_CallBack(void);
 void UART2_Receive_CallBack(void);
-int UART1_GetMessage(UartRxBufferStruct *msg);
-int UART_TxMessage(UartTxBufferStruct *msg);
+int UART_TxMessage_IT(UartTxBufferStruct *msg);
 
 
 #endif

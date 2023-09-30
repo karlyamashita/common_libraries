@@ -36,7 +36,7 @@ void UART_DMA_TxInit(UART_DMA_TxQueueStruct *msg, UART_HandleTypeDef *huart)
  */
 void UART_DMA_EnableRxInterrupt(UART_DMA_RxQueueStruct *msg)
 {
-	if(HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->queue[msg->ptr.iIndexIN].data, UART_DMA_CHAR_SIZE) != HAL_OK)
+	if(HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->queue[msg->ptr.index_IN].data, UART_DMA_CHAR_SIZE) != HAL_OK)
 	{
 		msg->uart_dma_rxIntErrorFlag = true;
 	}
@@ -63,8 +63,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
 	if(huart->Instance == uartDMA_RXMsg.huart->Instance)
 	{
-		uartDMA_RXMsg.queue[uartDMA_RXMsg.ptr.iIndexIN].dataSize = Size;
-		DRV_RingBuffPtr__Input(&uartDMA_RXMsg.ptr, UART_DMA_QUEUE_SIZE);
+		uartDMA_RXMsg.queue[uartDMA_RXMsg.ptr.index_IN].size = Size;
+		RingBuff_Ptr_Input(&uartDMA_RXMsg.ptr, UART_DMA_QUEUE_SIZE);
 		UART_DMA_EnableRxInterrupt(&uartDMA_RXMsg);
 	}
 }
@@ -72,18 +72,12 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 /*
  * Description: Return 0 if no new message, 1 if there is message in msgOut
  */
-int UART_DMA_MsgRdy(UART_DMA_RxQueueStruct *msg, UART_MsgStruct *msgOut)
+int UART_DMA_MsgRdy(UART_DMA_RxQueueStruct *msg)
 {
-	uint32_t i;
-	if(msg->ptr.iCnt_Handle)
+	if(msg->ptr.cnt_Handle)
 	{
-		msgOut->size = msg->queue[msg->ptr.iIndexOUT].dataSize;
-		for(i = 0; i < msgOut->size; i++)
-		{
-			msgOut->data[i] = msg->queue[msg->ptr.iIndexOUT].data[i];
-			msg->queue[msg->ptr.iIndexOUT].data[i] = 0;
-		}
-		DRV_RingBuffPtr__Output(&msg->ptr, UART_DMA_QUEUE_SIZE);
+		msg->msgToParse = &msg->queue[msg->ptr.index_OUT];
+		RingBuff_Ptr_Output(&msg->ptr, UART_DMA_QUEUE_SIZE);
 		return 1;
 	}
 
@@ -93,9 +87,17 @@ int UART_DMA_MsgRdy(UART_DMA_RxQueueStruct *msg, UART_MsgStruct *msgOut)
 /*
 * Description: Add message to TX buffer
 */
-void UART_DMA_TX_AddMessageToBuffer(UART_DMA_TxQueueStruct *msg, uint8_t uartPort, char *str, uint32_t size)
+void UART_DMA_TX_AddMessageToBuffer(UART_DMA_TxQueueStruct *msg, uint8_t *str, uint32_t size)
 {
+    uint8_t i = 0;
+    uint8_t *pData = (uint8_t*)str;
 
+    for(i = 0; i < size; i++)
+    {
+    	msg->queue[msg->ptr.index_IN].data[i] = *pData++;
+    }
+    msg->queue[msg->ptr.index_IN].size = size;
+    RingBuff_Ptr_Input(&msg->ptr, UART_DMA_QUEUE_SIZE);
 }
 
 /*
@@ -104,11 +106,11 @@ void UART_DMA_TX_AddMessageToBuffer(UART_DMA_TxQueueStruct *msg, uint8_t uartPor
  */
 void UART_DMA_SendMessage(UART_DMA_TxQueueStruct * msg)
 {
-	if(msg->ptr.iCnt_Handle)
+	if(msg->ptr.cnt_Handle)
 	{
-		if(HAL_UART_Transmit_IT(msg->huart, msg->queue[msg->ptr.iIndexOUT].data, msg->queue[msg->ptr.iIndexOUT].dataSize) == HAL_OK)
+		if(HAL_UART_Transmit_DMA(msg->huart, msg->queue[msg->ptr.index_OUT].data, msg->queue[msg->ptr.index_OUT].size) == HAL_OK)
 		{
-			DRV_RingBuffPtr__Output(&msg->ptr, UART_DMA_QUEUE_SIZE);
+			RingBuff_Ptr_Output(&msg->ptr, UART_DMA_QUEUE_SIZE);
 		}
 	}
 }
@@ -116,7 +118,7 @@ void UART_DMA_SendMessage(UART_DMA_TxQueueStruct * msg)
 /*
 * Description: Add string to TX structure
 */
-void UART_DMA_NotifyUser(UART_DMA_TxQueueStruct *msg, char *str, bool lineFeed, uint8_t uartPort)
+void UART_DMA_NotifyUser(UART_DMA_TxQueueStruct *msg, char *str, bool lineFeed)
 {
 	uint8_t strMsg[UART_TX_BYTE_BUFFER_SIZE] = {0};
 
@@ -127,9 +129,10 @@ void UART_DMA_NotifyUser(UART_DMA_TxQueueStruct *msg, char *str, bool lineFeed, 
     	strcat((char*)strMsg, "\r\n");
     }
 
-    msg->msgQueueSize[msg->msgPtr.iIndexIN].dataSize = strlen((char*)strMsg);
-    UART_DMA_TX_AddMessageToBuffer(msg, uartPort, strMsg, strlen((char*)strMsg));
+    msg->queue[msg->ptr.index_IN].size = strlen((char*)strMsg);
+    UART_DMA_TX_AddMessageToBuffer(msg, strMsg, strlen((char*)strMsg));
 }
+
 
 /*
  - Below is an example of checking for a new message and have it copied to msgNew variable.
@@ -138,17 +141,14 @@ void UART_DMA_NotifyUser(UART_DMA_TxQueueStruct *msg, char *str, bool lineFeed, 
 
 void UART_CheckForNewMessage(UART_DMA_RxQueueStruct *msg)
 {
-	UART_MsgStruct msgNew = {0};
-	char *ptr = (char*)msgNew.data;
-
-	if(UART_DMA_MsgRdy(msg, &msgNew))
+	if(UART_DMA_MsgRdy(msg))
 	{
 		// user can parse msg variable.
-		if(strncmp(ptr, "get version", strlen("get version")) == 0)
+		if(strncmp(msg->msgToParse->data, "get version", strlen("get version")) == 0)
 		{
 			// call function to return version number
 		}
-		else if(strncmp(ptr, "get status", strlen("get status")) == 0)
+		else if(strncmp(msg->msgToParse->data, "get status", strlen("get status")) == 0)
 		{
 			// call function to get status information
 		}

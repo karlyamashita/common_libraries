@@ -12,7 +12,8 @@
 
 #ifdef HAL_MODULE_ENABLED // STM32
 
-extern UART_HandleTypeDef huart2;
+//extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef hlpuart1;
 
 #ifdef USE_BUFFER_POINTERS
 // define the UART2 Rx buffers
@@ -43,14 +44,15 @@ UartTxBufferStruct uart2Tx =
 
 UartRxBufferStruct uart2Rx =
 {
-	.huart = &huart2,
+	.huart = &hlpuart1,
 	.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE,
 	.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE,
-	.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE
+	.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
 };
+
 UartTxBufferStruct uart2Tx =
 {
-	.huart = &huart2,
+	.huart = &hlpuart1,
 	.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
 };
 #endif
@@ -62,7 +64,7 @@ void UART_EnableRxInterrupt(UartRxBufferStruct *msg)
 {
 	if(HAL_UART_Receive_IT(msg->huart, msg->uartIRQ_ByteBuffer, msg->uartIRQ_ByteSize) != HAL_OK)
 	{
-	//	UART_SetRxIntErrorFlag(msg, true);
+		UART_SetRxIntErrorFlag(msg, true);
 	}
 }
 
@@ -95,7 +97,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 /*
  * Description: Transmit any available messages. Call from main while loop
  */
-int UART_TxMessage(UartTxBufferStruct *msg)
+int UART_TxMessage_IT(UartTxBufferStruct *msg)
 {
 	int status = NO_ERROR;
 
@@ -162,6 +164,7 @@ RingBuff_Ptr_Output(&msg->msgPtr, msg->msgQueueSize) (or) RingBuff_Ptr_Output(&m
 UartRxBufferStruct uart0_Rx =
 {
  .instance = UART0_BASE,
+ .uartIRQ_ByteSize = 1,
  .msgPtr = {0},
  .byteBuffer = {0}
 };
@@ -172,16 +175,33 @@ UartTxBufferStruct uart0_Tx =
  .msgPtr = {0}
 };
 
-uint8_t data[1];
+UartRxBufferStruct uart6_Rx =
+{
+ .instance = UART6_BASE,
+ .uartIRQ_ByteSize = 1,
+ .msgPtr = {0},
+ .byteBuffer = {0}
+};
+
+UartTxBufferStruct uart6_Tx =
+{
+ .instance = UART6_BASE,
+ .msgPtr = {0}
+};
+
+
+static void UART_TransmitMessage(UartTxBufferStruct *msg);
 
 //*****************************************************************************
 //
 // The UART interrupt handler.
 //
 //*****************************************************************************
+// this function should be registered when initializing the UART, UARTIntRegister(UART0_BASE, USART0_IRQHandler);
 void USART0_IRQHandler(void)
 {
     uint32_t ui32Status;
+    uint8_t data[1];
 
     //
     // Get the interrupt status.
@@ -193,10 +213,9 @@ void USART0_IRQHandler(void)
     //
     MAP_UARTIntClear(UART0_BASE, ui32Status);
 
-
     if(ui32Status & UART_INT_TX)
     {
-        UART0_TransmitMessage(&uart0_Tx);
+        UART_TransmitMessage(&uart0_Tx);
     }
     else
     {
@@ -211,44 +230,80 @@ void USART0_IRQHandler(void)
     }
 }
 
+void USART6_IRQHandler(void)
+{
+    uint32_t ui32Status;
+    uint8_t data[1];
+
+    //
+    // Get the interrupt status.
+    //
+    ui32Status = UARTIntStatus(UART6_BASE, true);
+
+    //
+    // Clear the asserted interrupts.
+    //
+    MAP_UARTIntClear(UART6_BASE, ui32Status);
+
+    if(ui32Status & UART_INT_TX)
+    {
+        UART_TransmitMessage(&uart6_Tx);
+    }
+    else
+    {
+        //
+        // Save available character in buffer.
+        //
+        if(MAP_UARTCharsAvail(UART6_BASE))
+        {
+            data[0] = (uint8_t)UARTCharGet(UART6_BASE);
+            UART_AddByteToBuffer(&uart6_Rx, data, 1);
+        }
+    }
+}
+
 
 /*
  * Description: Called from UartCharBuffer.c
  *              This will enable TX interrupt. The UART interrupt Handler which will call UART0_TransmitMessage
  */
-int UART_TxMessage(UartTxBufferStruct *msg)
+int UART_TxMessage_IT(UartTxBufferStruct *msg)
 {
     int status = 0;
 
-    if(msg->txPending == true) return UART_TX_PENDING;
-    msg->txPending = true;
+    if(msg->msgToSend_Pending == true) return UART_TX_PENDING;
 
-    msg->msgToSend = msg->msgQueue[msg->msgPtr.index_OUT].data;
-    msg->msgToSendSize = msg->msgQueue[msg->msgPtr.index_OUT].size;
-    msg->msgToSendPtr = 0; // reset
+    if(msg->msgPtr.cnt_Handle)
+    {
+        msg->msgToSend = msg->msgQueue[msg->msgPtr.index_OUT].data;
+        msg->msgToSend_Size = msg->msgQueue[msg->msgPtr.index_OUT].size;
+        msg->msgToSend_BytePtr = 0; // reset
+        msg->msgToSend_Pending = true;
 
-    UARTIntEnable(msg->instance, UART_INT_TX);
+        UARTIntEnable(msg->instance, UART_INT_TX);
+    }
 
     return status;
 }
 
 /*
- * Description: called from uart interrupt
+ * Description: called from uart interrupt. Sends one byte at a time until finished.
  */
-void UART0_TransmitMessage(UartTxBufferStruct *msg)
+static void UART_TransmitMessage(UartTxBufferStruct *msg)
 {
-    if(msg->msgToSendPtr < msg->msgToSendSize)
+    if(msg->msgToSend_BytePtr < msg->msgToSend_Size)
     {
-        if(UARTCharPutNonBlocking(UART0_BASE, msg->msgToSend[msg->msgToSendPtr]) == true)
+        if(UARTCharPutNonBlocking(msg->instance, msg->msgToSend[msg->msgToSend_BytePtr]) == true)
         {
-            if(++msg->msgToSendPtr == msg->msgToSendSize)
+            if(++msg->msgToSend_BytePtr == msg->msgToSend_Size)
             {
-                msg->txPending = false; // clear for next message to be sent
-                UARTIntDisable(msg->instance, UART_INT_TX);
+                msg->msgToSend_Pending = false; // clear for next message to be sent
+                UARTIntDisable(msg->instance, UART_INT_TX); // disable the Tx interrupt
             }
         }
     }
 }
+
 
 /*
  * Description: Check for a new messsage then Find instance, then call appropriate parser
@@ -265,7 +320,7 @@ int UART_Parse(UartRxBufferStruct *msg)
             UART0_Parser(msg);
             break;
         case UART1_BASE:
-
+            UART6_Parser(msg);
             break;
         case UART2_BASE:
 
@@ -292,8 +347,11 @@ UartRxBufferStruct uart0Rx =
 {
 	.instance = UART0_BASE,
 	.uartIRQ_ByteBuffer = uart0RxIrqByteBuffer,
+	.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE, // optional
 	.byteBuffer = uart0RxByteBuffer,
+	.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE, // optional
 	.msgQueue = uart0RxMsgQueue
+	.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE // optional
 };
 
 // define the UART0 Tx buffers
@@ -302,6 +360,7 @@ UartTxBufferStruct uart0Tx =
 {
 	.instance = UART0_BASE,
 	.msgQueue = uart0TxMsgQueue
+	.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE // optional
 };
 
 */
@@ -339,18 +398,6 @@ void UART2_Receive_CallBack(void)
 	UART_AddCharToBuffer(&uart2_rxMsg);
 }
 
-/*
- * Description: return 1 if there is a message, 0 if no message.
- */
-int UART1_GetMessage(UartRxBufferStruct *msg)
-{
-    if(UART_RxMessagePending(msg))
-    {
-        return 1;
-    }
-
-    return 0;
-}
 
 /*
  * Description: Sends string
@@ -358,7 +405,7 @@ int UART1_GetMessage(UartRxBufferStruct *msg)
  * Input: Character buffer structure. The structure holds the UART base and the char array.
  * Output: HAL status
  */
-int UART_TxMessage(UartTxBufferStruct *msg)
+int UART_TxMessage_IT(UartTxBufferStruct *msg)
 {
     uint16_t count = 0;
     uint8_t i = 0;

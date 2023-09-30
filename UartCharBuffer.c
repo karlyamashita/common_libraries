@@ -56,7 +56,7 @@ int UART_AddByteToBuffer(UartRxBufferStruct *msg, uint8_t *data, uint32_t size)
 
 
 /*
- * Description: Sort UART character buffer and save string in message buffer. The string being received should have LF terminator
+ * Description: Sort UART character buffer and save string in a message buffer. The string being received should have LF terminator
  *              This needs to be called from a polling routine.
  *
  * Input: Pointer to which UartRxBufferStruct buffer to parse
@@ -158,10 +158,10 @@ void UART_InitPacketSize(UartRxBufferStruct *msg, uint32_t size)
 }
 
 /*
- * Description: Checks for pending message in message ring buffer. Automatically increments pointer after copying to msgOUT.
+ * Description: Checks for pending message in message ring buffer. Automatically increments ring buffer pointer after setting msgQueue address to msgToParse.
  * 				This should be called after the buffer has been sorted using one of the two sort functions
  * Input: UartRxBufferStruct to grab message from.
- * Output: the UartMsgQueueStruct to save the message to
+ * Output: msgToParse points to msgQueue to parse
  *
  * Return: true if message available, else returns false
  *
@@ -173,13 +173,7 @@ bool UART_RxMessagePending(UartRxBufferStruct *msg)
 
 	if(msg->msgPtr.cnt_Handle)
     {
-        size = msg->msgQueue[msg->msgPtr.index_OUT].size;
-        msg->msgToParse.size = size;
-        for(i = 0; i < size; i++)
-        {
-            msg->msgToParse.data[i] = msg->msgQueue[msg->msgPtr.index_OUT].data[i];
-        }
-        memset(&msg->msgQueue[msg->msgPtr.index_OUT].data, 0 , sizeof(msg->msgQueue[msg->msgPtr.index_OUT].data));
+		msg->msgToParse = &msg->msgQueue[msg->msgPtr.index_OUT];
         RingBuff_Ptr_Output(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
         return true;
     }
@@ -205,7 +199,7 @@ void UART_SetRxIntErrorFlag(UartRxBufferStruct *msg, bool status)
 /*
  * Description: Add data to message buffer to be sent. User will need to create a UART Tx handler to be called from polling routine
  * Input: The message structure
- * Output:
+ * Output: The updated msgOut.
  *
  */
 void UART_TX_AddDataToBuffer(UartTxBufferStruct *msgOut, uint8_t *msgIN, uint32_t size)

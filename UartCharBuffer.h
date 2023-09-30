@@ -20,9 +20,9 @@
  */
 #define UART_RX_IRQ_BYTE_SIZE 1 // Typically this is 1 byte for most uC.
 
-#define UART_RX_BYTE_BUFFER_SIZE 512 // this holds all the IRQ data
+#define UART_RX_BYTE_BUFFER_SIZE 128 // this holds all the IRQ data
 #define UART_TX_BYTE_BUFFER_SIZE 128
-#define UART_RX_MESSAGE_QUEUE_SIZE 32// buffer size of complete strings or packets.
+#define UART_RX_MESSAGE_QUEUE_SIZE 8// buffer size of complete strings or packets.
 #define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
 
 // end user defines
@@ -59,7 +59,7 @@ typedef struct
     uint8_t byteBuffer[UART_RX_BYTE_BUFFER_SIZE]; // bytes saved here as they come in from uartIRQ_ByteBuffer.
     UartMsgQueueStruct msgQueue[UART_RX_MESSAGE_QUEUE_SIZE];
 #endif // USE_BUFFER_POINTERS
-    UartMsgQueueStruct msgToParse;
+    UartMsgQueueStruct *msgToParse;
 #ifdef HAL_MODULE_ENABLED // STM32
     UART_HandleTypeDef *huart;
     bool UART_RxEnErrorFlag; // used with STM32 with HAL functions.
@@ -93,7 +93,7 @@ typedef struct
 #ifdef HAL_MODULE_ENABLED // STM32
     UART_HandleTypeDef *huart;
 #else
-    uint32_t instance; // typically a UART Port number 0-n for identification purpose. CAN also be STM32 huart instance
+    uint32_t instance; // typically a UART Port number 0-n for identification purpose. Can also be TI's or Xilinx UART base
 #endif // HAL_MODULE_ENABLED
 	RING_BUFF_STRUCT msgPtr; // pointer for msgBuffer and msgDataSize
 	uint32_t msgQueueSize;
