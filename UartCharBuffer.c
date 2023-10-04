@@ -35,11 +35,11 @@
  * Input: The UartRxBufferStruct to save the data to, the pointer to data array (uartIRQ_ByteBuffer), the size of data
  * Output: No error or overflow
  */
-int UART_AddByteToBuffer(UartRxBufferStruct *msg, uint8_t *data, uint32_t size)
+int UART_AddByteToBuffer(UartBufferStruct *msg, uint8_t *data, uint32_t size)
 {
 	int i;
 
-	if(msg->bytePtr.cnt_OverFlow)
+	if(msg->rx.bytePtr.cnt_OverFlow)
 	{
         // byte buffer is full. You should monitor the return status during development and increase buffer size if there is an overflow;
         return UART_BUFFER_OVERFLOW;
@@ -47,8 +47,8 @@ int UART_AddByteToBuffer(UartRxBufferStruct *msg, uint8_t *data, uint32_t size)
 
 	for(i = 0; i < size; i++)
 	{
-		msg->byteBuffer[msg->bytePtr.index_IN] = data[i];
-		RingBuff_Ptr_Input(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE);
+		msg->rx.byteBuffer[msg->rx.bytePtr.index_IN] = data[i];
+		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
 	}
 
     return 0;
@@ -62,18 +62,18 @@ int UART_AddByteToBuffer(UartRxBufferStruct *msg, uint8_t *data, uint32_t size)
  * Input: Pointer to which UartRxBufferStruct buffer to parse
  * Output: none
  */
-void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *msg)
+void UART_SortRx_CHAR_Buffer(UartBufferStruct *msg)
 {
-    if(msg->bytePtr.cnt_Handle)
+    if(msg->rx.bytePtr.cnt_Handle)
     {
-    	msg->msgQueue[msg->msgPtr.index_IN].data[msg->sortPtr++] = msg->byteBuffer[msg->bytePtr.index_OUT];
-    	if(msg->byteBuffer[msg->bytePtr.index_OUT] == '\n')
+    	msg->rx.msgQueue[msg->rx.msgPtr.index_IN].data[msg->rx.sortPtr++] = msg->rx.byteBuffer[msg->rx.bytePtr.index_OUT];
+    	if(msg->rx.byteBuffer[msg->rx.bytePtr.index_OUT] == '\n')
     	{
-            msg->msgQueue[msg->msgPtr.index_IN].size = msg->sortPtr;
-            RingBuff_Ptr_Input(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
-            msg->sortPtr = 0;// reset
+            msg->rx.msgQueue[msg->rx.msgPtr.index_IN].size = msg->rx.sortPtr;
+            RingBuff_Ptr_Input(&msg->rx.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
+            msg->rx.sortPtr = 0;// reset
         }
-    	RingBuff_Ptr_Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE);
+    	RingBuff_Ptr_Output(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
     }
 }
 
@@ -91,59 +91,59 @@ void UART_SortRx_CHAR_Buffer(UartRxBufferStruct *msg)
  * 		UART_SortRx_BINARY_Buffer(&rxMsg2, CHECKSUM_MOD256); // called from a main while loop
  *
  */
-void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *msg, CheckSumType checkSumType)
+void UART_SortRx_BINARY_Buffer(UartBufferStruct *msg, CheckSumType checkSumType)
 {
     uint32_t i = 0;
     uint8_t checkSum = 0; // MOD256 checksum
     uint8_t tempTelemetry[UART_RX_BYTE_BUFFER_SIZE] = {0};
     uint32_t pointer = 0;
 
-    if (msg->bytePtr.cnt_Handle >= msg->packetSize)
+    if (msg->rx.bytePtr.cnt_Handle >= msg->rx.packetSize)
     {
         // copy the bytes to a temporary array
-        for(i = 0; i < msg->packetSize; i++)
+        for(i = 0; i < msg->rx.packetSize; i++)
         {
-            pointer = msg->bytePtr.index_OUT + i;
+            pointer = msg->rx.bytePtr.index_OUT + i;
             if(pointer >= UART_RX_BYTE_BUFFER_SIZE)// past max range
             {
                 pointer -= UART_RX_BYTE_BUFFER_SIZE;
             }
 
-            tempTelemetry[i] = msg->byteBuffer[pointer];
+            tempTelemetry[i] = msg->rx.byteBuffer[pointer];
         }
         
         // calculate checksum
-        for(i = 0; i < (msg->packetSize - 1); i++)
+        for(i = 0; i < (msg->rx.packetSize - 1); i++)
         {
             checkSum += tempTelemetry[i];
         }
         
         // verify checksum
-        if(checkSum == tempTelemetry[msg->packetSize - 1]) // compare checksum to last index
+        if(checkSum == tempTelemetry[msg->rx.packetSize - 1]) // compare checksum to last index
         {
-        	if( ((checkSum == 0) && (tempTelemetry[msg->packetSize - 1] == 0)) || (tempTelemetry[0] == 0) ) // ignore packets that are all zeros or first byte is zero
+        	if( ((checkSum == 0) && (tempTelemetry[msg->rx.packetSize - 1] == 0)) || (tempTelemetry[0] == 0) ) // ignore packets that are all zeros or first byte is zero
         	{
-        		for(i = 0; i < msg->packetSize; i++)
+        		for(i = 0; i < msg->rx.packetSize; i++)
 				{
-        			RingBuff_Ptr_Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE );
+        			RingBuff_Ptr_Output(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE );
 				}
         	}
         	else
         	{
 				// we have a crc match so save the packet to the Rx packet buffer
-				for(i = 0; i < msg->packetSize; i++)
+				for(i = 0; i < msg->rx.packetSize; i++)
 				{
-					msg->msgQueue[msg->msgPtr.index_IN].data[i] = msg->byteBuffer[msg->bytePtr.index_OUT];
-					RingBuff_Ptr_Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE );
+					msg->rx.msgQueue[msg->rx.msgPtr.index_IN].data[i] = msg->rx.byteBuffer[msg->rx.bytePtr.index_OUT];
+					RingBuff_Ptr_Output(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE );
 				}
-				msg->msgQueue[msg->msgPtr.index_IN].size = msg->packetSize;
+				msg->rx.msgQueue[msg->rx.msgPtr.index_IN].size = msg->rx.packetSize;
 				checkSum = 0; // reset checksum
-				RingBuff_Ptr_Input(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE); // increment rx packet pointer
+				RingBuff_Ptr_Input(&msg->rx.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE); // increment rx packet pointer
         	}
         }
         else
         {
-        	RingBuff_Ptr_Output(&msg->bytePtr, UART_RX_BYTE_BUFFER_SIZE ); // increment rx byte pointer
+        	RingBuff_Ptr_Output(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE ); // increment rx byte pointer
         }
     }
 }
@@ -152,9 +152,9 @@ void UART_SortRx_BINARY_Buffer(UartRxBufferStruct *msg, CheckSumType checkSumTyp
  * Description: User will need to initialize the expected packet size. This will help the UART_SortRx_BINARY_Buffer function to extract the packet
  * 				correctly. Only needed for binary data, not for string commands.
  */
-void UART_InitPacketSize(UartRxBufferStruct *msg, uint32_t size)
+void UART_InitPacketSize(UartBufferStruct *msg, uint32_t size)
 {
-	msg->packetSize = size;
+	msg->rx.packetSize = size;
 }
 
 /*
@@ -166,15 +166,12 @@ void UART_InitPacketSize(UartRxBufferStruct *msg, uint32_t size)
  * Return: true if message available, else returns false
  *
  */
-bool UART_RxMessagePending(UartRxBufferStruct *msg)
+bool UART_RxMessagePending(UartBufferStruct *msg)
 {
-    int i = 0;
-    uint8_t size;
-
-	if(msg->msgPtr.cnt_Handle)
+	if(msg->rx.msgPtr.cnt_Handle)
     {
-		msg->msgToParse = &msg->msgQueue[msg->msgPtr.index_OUT];
-        RingBuff_Ptr_Output(&msg->msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
+		msg->rx.msgToParse = &msg->rx.msgQueue[msg->rx.msgPtr.index_OUT];
+        RingBuff_Ptr_Output(&msg->rx.msgPtr, UART_RX_MESSAGE_QUEUE_SIZE);
         return true;
     }
 
@@ -182,14 +179,14 @@ bool UART_RxMessagePending(UartRxBufferStruct *msg)
 }
 
 #ifdef HAL_MODULE_ENABLED // STM32
-bool UART_GetRxIntErrorFlag(UartRxBufferStruct *msg)
+bool UART_GetRxIntErrorFlag(UartBufferStruct *msg)
 {
-	return msg->UART_RxEnErrorFlag;
+	return msg->rx.UART_RxEnErrorFlag;
 }
 
-void UART_SetRxIntErrorFlag(UartRxBufferStruct *msg, bool status)
+void UART_SetRxIntErrorFlag(UartBufferStruct *msg, bool status)
 {
-	msg->UART_RxEnErrorFlag = status;
+	msg->rx.UART_RxEnErrorFlag = status;
 }
 #endif // HAL_MODULE_ENABLED
 
@@ -202,17 +199,17 @@ void UART_SetRxIntErrorFlag(UartRxBufferStruct *msg, bool status)
  * Output: The updated msgOut.
  *
  */
-void UART_TX_AddDataToBuffer(UartTxBufferStruct *msgOut, uint8_t *msgIN, uint32_t size)
+void UART_TX_AddDataToBuffer(UartBufferStruct *msgOut, uint8_t *msgIN, uint32_t size)
 {
     uint8_t i = 0;
     uint8_t *pData = (uint8_t*)msgIN;
 
     for(i = 0; i < size; i++)
     {
-    	msgOut->msgQueue[msgOut->msgPtr.index_IN].data[i] = *pData++;
+    	msgOut->tx.msgQueue[msgOut->tx.msgPtr.index_IN].data[i] = *pData++;
     }
-    msgOut->msgQueue[msgOut->msgPtr.index_IN].size = size;
-    RingBuff_Ptr_Input(&msgOut->msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
+    msgOut->tx.msgQueue[msgOut->tx.msgPtr.index_IN].size = size;
+    RingBuff_Ptr_Input(&msgOut->tx.msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
 }
 
 

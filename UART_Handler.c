@@ -15,54 +15,53 @@
 //extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef hlpuart1;
 
+
 #ifdef USE_BUFFER_POINTERS
 // define the UART2 Rx buffers
 uint8_t uart2RxIrqByteBuffer[UART_RX_IRQ_BYTE_SIZE] = {0}; // irq array
 uint8_t uart2RxByteBuffer[UART_RX_BYTE_BUFFER_SIZE] = {0}; // byte array
-UartMsgQueueStruct uart2RxMsgQueue[UART_RX_MESSAGE_QUEUE_SIZE] = {0}; // message array
-UartRxBufferStruct uart2Rx =
+UartDataStruct uart2RxMsgQueue[UART_RX_MESSAGE_QUEUE_SIZE] = {0}; // message array
+UartDataStruct uart2TxMsgQueue[UART_TX_MESSAGE_QUEUE_SIZE] = {0};
+UartBufferStruct uart2 =
 {	// init and point to buffers
-	.huart = &huart2,
-	.uartIRQ_ByteBuffer = uart2RxIrqByteBuffer,
-	.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE,
-	.byteBuffer = uart2RxByteBuffer,
-	.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE,
-	.msgQueue = uart2RxMsgQueue,
-	.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE
+	.rx.huart = &hlpuart1,
+	.rx.uartIRQ_ByteBuffer = uart2RxIrqByteBuffer,
+	.rx.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE,
+	.rx.byteBuffer = uart2RxByteBuffer,
+	.rx.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE,
+	.rx.msgQueue = uart2RxMsgQueue,
+	.rx.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
+	// tx
+	.tx.huart = &hlpuart1,
+	.tx.msgQueue = uart2TxMsgQueue,
+	.tx.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
 };
 
-// define the UART2 Tx buffers
-UartMsgQueueStruct uart2TxMsgQueue[UART_TX_MESSAGE_QUEUE_SIZE] = {0};
-UartTxBufferStruct uart2Tx =
-{	// init and point to buffers
-	.huart = &huart2,
-	.msgQueue = uart2TxMsgQueue,
-	.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
-};
 
 #else
 
-UartRxBufferStruct uart2Rx =
+// Init uart2 or lpuart1
+UartBufferStruct uart2 =
 {
-	.huart = &hlpuart1,
-	.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE,
-	.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE,
-	.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
+	// rx
+	.rx.huart = &hlpuart1,
+	.rx.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE,
+	.rx.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE,
+	.rx.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
+	// tx
+	.tx.huart = &hlpuart1,
+	.tx.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
 };
 
-UartTxBufferStruct uart2Tx =
-{
-	.huart = &hlpuart1,
-	.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
-};
+
 #endif
 
 /*
  * Description: Enables the HAL_UART_Receive_IT interrupt. Call before main while loop and in HAL_UART_RxCpltCallback
  */
-void UART_EnableRxInterrupt(UartRxBufferStruct *msg)
+void UART_EnableRxInterrupt(UartBufferStruct *msg)
 {
-	if(HAL_UART_Receive_IT(msg->huart, msg->uartIRQ_ByteBuffer, msg->uartIRQ_ByteSize) != HAL_OK)
+	if(HAL_UART_Receive_IT(msg->rx.huart, msg->rx.uartIRQ_ByteBuffer, msg->rx.uartIRQ_ByteSize) != HAL_OK)
 	{
 		UART_SetRxIntErrorFlag(msg, true);
 	}
@@ -72,7 +71,7 @@ void UART_EnableRxInterrupt(UartRxBufferStruct *msg)
  * Description: If error flag then call UART_EnableRxInterrupt. Call from main while loop.
  *
  */
-void UART_CheckRxIntError(UartRxBufferStruct *msg)
+void UART_CheckRxIntError(UartBufferStruct *msg)
 {
 	if(UART_GetRxIntErrorFlag(msg))
 	{
@@ -87,25 +86,25 @@ void UART_CheckRxIntError(UartRxBufferStruct *msg)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart->Instance == uart2Rx.huart->Instance)
+	if(huart->Instance == uart2.tx.huart->Instance)
 	{
-		UART_AddByteToBuffer(&uart2Rx, uart2Rx.uartIRQ_ByteBuffer, uart2Rx.uartIRQ_ByteSize);
-		UART_EnableRxInterrupt(&uart2Rx);
+		UART_AddByteToBuffer(&uart2, uart2.rx.uartIRQ_ByteBuffer, uart2.rx.uartIRQ_ByteSize);
+		UART_EnableRxInterrupt(&uart2);
 	}
 }
 
 /*
  * Description: Transmit any available messages. Call from main while loop
  */
-int UART_TxMessage_IT(UartTxBufferStruct *msg)
+int UART_TxMessage_IT(UartBufferStruct *msg)
 {
 	int status = NO_ERROR;
 
-	if(msg->msgPtr.cnt_Handle)
+	if(msg->tx.msgPtr.cnt_Handle)
 	{
-		if(HAL_UART_Transmit_IT(msg->huart, msg->msgQueue[msg->msgPtr.index_OUT].data, msg->msgQueue[msg->msgPtr.index_OUT].size) == HAL_OK)
+		if(HAL_UART_Transmit_IT(msg->tx.huart, msg->tx.msgQueue[msg->tx.msgPtr.index_OUT].data, msg->tx.msgQueue[msg->tx.msgPtr.index_OUT].size) == HAL_OK)
 		{
-			RingBuff_Ptr_Output(&msg->msgPtr, msg->msgQueueSize);
+			RingBuff_Ptr_Output(&msg->tx.msgPtr, msg->tx.msgQueueSize);
 		}
 	}
 

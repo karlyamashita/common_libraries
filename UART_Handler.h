@@ -11,10 +11,10 @@
 
 #ifdef HAL_MODULE_ENABLED // STM32
 
-void UART_EnableRxInterrupt(UartRxBufferStruct *msg);
-void UART_CheckRxIntError(UartRxBufferStruct *msg);
+void UART_EnableRxInterrupt(UartBufferStruct *msg);
+void UART_CheckRxIntError(UartBufferStruct *msg);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-int UART_TxMessage_IT(UartTxBufferStruct *msg);
+int UART_TxMessage_IT(UartBufferStruct *msg);
 
 #endif
 
