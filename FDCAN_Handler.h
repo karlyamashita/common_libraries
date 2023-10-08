@@ -13,7 +13,6 @@
 #define FDCAN_TX_BUF_SIZE 4
 
 
-
 typedef struct
 {
 	FDCAN_RxHeaderTypeDef *pRxHeader;

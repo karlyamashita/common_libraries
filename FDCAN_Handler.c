@@ -50,7 +50,6 @@ void FDCAN_InitInstance(FDCAN_Buffer *fdcanBuffer, FDCAN_HandleTypeDef *fdcan)
 	{
 
 	}
-
 }
 
 /*
