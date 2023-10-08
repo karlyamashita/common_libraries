@@ -31,7 +31,7 @@ void UART_DMA_TxInit(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
 }
 
 /*
- * Description: Enable rx interrupt
+ * Description: Enable rx interrupt. Set flag if not succesful
  *
  */
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
@@ -43,7 +43,8 @@ void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
 }
 
 /*
- * Description: Call from polling routine
+ * Description: Call from polling routine. Try to enable Rx interrupt again if there was
+ *				an error on the previous attempt.
  *
  */
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
@@ -56,7 +57,8 @@ void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
 }
 
 /*
- * Description: Increment pointer
+ * Description: Increment ring buffer pointer and enable DMA Rx interrupt
+ *				for next packet of data
  *
  */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
@@ -101,7 +103,8 @@ void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *str, uin
 }
 
 /*
- * Description: This must be called from a polling routine.
+ * Description: This must be called from a polling routine. 
+ *				Only increment ring buffer pointer if HAL status is HAL_OK.
  *
  */
 void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
@@ -135,7 +138,7 @@ void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 
 
 /*
- - Below is an example of checking for a new message and have it copied to msgNew variable.
+ - Below is an example of checking for a new message and have msgNew point to it.
  - It is totally up to the user how to send messages to the STM32 and how to parse the messages.
  - User would call UART_CheckForNewMessage(&uartDMA_RXMsg) from a polling routine
 
