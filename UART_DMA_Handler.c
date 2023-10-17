@@ -11,7 +11,8 @@
 #include "main.h"
 #include "UART_DMA_Handler.h"
 
-// User can use these default variables or rename them to their liking
+// User can use these default variables or rename them to their liking.
+// If not using, be sure to change name in HAL_UARTEx_RxEventCallback below.
 UART_DMA_QueueStruct uartDMA_Msg = {0};
 
 
@@ -63,7 +64,7 @@ void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
  */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-	if(huart->Instance == uartDMA_Msg.rx.huart->Instance)
+	if(huart == uartDMA_Msg.rx.huart)
 	{
 		uartDMA_Msg.rx.queue[uartDMA_Msg.rx.ptr.index_IN].size = Size;
 		RingBuff_Ptr_Input(&uartDMA_Msg.rx.ptr, UART_DMA_QUEUE_SIZE);
@@ -123,7 +124,7 @@ void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
 */
 void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 {
-	uint8_t strMsg[UART_TX_BYTE_BUFFER_SIZE] = {0};
+	uint8_t strMsg[UART_DMA_CHAR_SIZE] = {0};
 
     strcpy((char*)strMsg, str);
     
