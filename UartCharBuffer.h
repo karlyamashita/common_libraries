@@ -50,24 +50,14 @@ typedef struct
 // receive
 typedef struct
 {
+    uint32_t instance; // typically a UART Port number 0-n for identification purpose. Can also be TI's or Xilinx UART base
 	struct
 	{
-#ifdef USE_BUFFER_POINTERS
-		uint8_t *uartIRQ_ByteBuffer;
-		uint8_t *byteBuffer;
-		UartDataStruct *msgQueue;
-#else
 		uint8_t uartIRQ_ByteBuffer[UART_RX_IRQ_BYTE_SIZE]; // UART IRQ will save to this. Typically would be 1 byte in size
 		uint8_t byteBuffer[UART_RX_BYTE_BUFFER_SIZE]; // bytes saved here as they come in from uartIRQ_ByteBuffer.
 		UartDataStruct msgQueue[UART_RX_MESSAGE_QUEUE_SIZE];
-#endif // USE_BUFFER_POINTERS
+
 		UartDataStruct *msgToParse;
-#ifdef HAL_MODULE_ENABLED // STM32
-		UART_HandleTypeDef *huart;
-		bool UART_RxEnErrorFlag; // used with STM32 with HAL functions.
-#else
-		uint32_t instance; // typically a UART Port number 0-n for identification purpose. CAN also be STM32 huart instance
-#endif // HAL_MODULE_ENABLED
 		uint32_t packetSize; // for binary packets
 		uint32_t sortPtr; // for binary packet sorting
 
@@ -79,49 +69,15 @@ typedef struct
 	}rx;
 	struct
 	{
-#ifdef USE_BUFFER_POINTERS
-		UartDataStruct *msgQueue;
-#else
 		UartDataStruct msgQueue[UART_TX_MESSAGE_QUEUE_SIZE];
-#endif
-	//#ifdef TM4C12x
+		UartDataStruct *msgToSend;
 		bool msgToSend_Pending; // used for TM4C12x in UART_Handler.c
-		uint8_t *msgToSend;
-		uint32_t msgToSend_Size;
 		uint32_t msgToSend_BytePtr; //
-	//#endif // USE_BUFFER_POINTERS
-#ifdef HAL_MODULE_ENABLED // STM32
-		UART_HandleTypeDef *huart;
-#else
-		uint32_t instance; // typically a UART Port number 0-n for identification purpose. Can also be TI's or Xilinx UART base
-#endif // HAL_MODULE_ENABLED
 		RING_BUFF_STRUCT msgPtr; // pointer for msgBuffer and msgDataSize
 		uint32_t msgQueueSize;
 	}tx;
 }UartBufferStruct;
 
-// transmit
-//typedef struct
-//{
-//#ifdef USE_BUFFER_POINTERS
-//	UartDataStruct *msgQueue;
-//#else
-//	UartDataStruct msgQueue[UART_TX_MESSAGE_QUEUE_SIZE];
-//#endif
-////#ifdef TM4C12x
-//	bool msgToSend_Pending; // used for TM4C12x in UART_Handler.c
-//	uint8_t *msgToSend;
-//	uint32_t msgToSend_Size;
-//	uint32_t msgToSend_BytePtr; //
-////#endif // USE_BUFFER_POINTERS
-//#ifdef HAL_MODULE_ENABLED // STM32
-//    UART_HandleTypeDef *huart;
-//#else
-//    uint32_t instance; // typically a UART Port number 0-n for identification purpose. Can also be TI's or Xilinx UART base
-//#endif // HAL_MODULE_ENABLED
-//	RING_BUFF_STRUCT msgPtr; // pointer for msgBuffer and msgDataSize
-//	uint32_t msgQueueSize;
-//}UartTxBufferStruct;
 
 // add to buffer
 void UART_Add_IRQ_Byte(UartBufferStruct *msg, uint8_t *char_in, uint32_t dataSize);

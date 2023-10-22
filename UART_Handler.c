@@ -160,36 +160,14 @@ RingBuff_Ptr_Output(&msg->msgPtr, msg->msgQueueSize) (or) RingBuff_Ptr_Output(&m
 /*
  * Description: Init uart0 buffers
  */
-UartRxBufferStruct uart0_Rx =
+UartBufferStruct uart0 =
 {
- .instance = UART0_BASE,
- .uartIRQ_ByteSize = 1,
- .msgPtr = {0},
- .byteBuffer = {0}
+    .instance = UART0_BASE,
+    .rx.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
+    .tx.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
 };
 
-UartTxBufferStruct uart0_Tx =
-{
- .instance = UART0_BASE,
- .msgPtr = {0}
-};
-
-UartRxBufferStruct uart6_Rx =
-{
- .instance = UART6_BASE,
- .uartIRQ_ByteSize = 1,
- .msgPtr = {0},
- .byteBuffer = {0}
-};
-
-UartTxBufferStruct uart6_Tx =
-{
- .instance = UART6_BASE,
- .msgPtr = {0}
-};
-
-
-static void UART_TransmitMessage(UartTxBufferStruct *msg);
+static void UART_TransmitMessage(UartBufferStruct *msg);
 
 //*****************************************************************************
 //
@@ -212,11 +190,11 @@ void USART0_IRQHandler(void)
     //
     MAP_UARTIntClear(UART0_BASE, ui32Status);
 
-    if(ui32Status & UART_INT_TX)
+    if((ui32Status & UART_INT_TX) == UART_INT_TX)
     {
-        UART_TransmitMessage(&uart0_Tx);
+        UART_TransmitMessage(&uart0);
     }
-    else
+    else if((ui32Status & UART_INT_RX) == UART_INT_RX)
     {
         //
         // Save available character in buffer.
@@ -224,90 +202,100 @@ void USART0_IRQHandler(void)
         if(MAP_UARTCharsAvail(UART0_BASE))
         {
             data[0] = (uint8_t)UARTCharGet(UART0_BASE);
-            UART_AddByteToBuffer(&uart0_Rx, data, 1);
+            UART_AddByteToBuffer(&uart0, data, 1);
         }
-    }
-}
-
-void USART6_IRQHandler(void)
-{
-    uint32_t ui32Status;
-    uint8_t data[1];
-
-    //
-    // Get the interrupt status.
-    //
-    ui32Status = UARTIntStatus(UART6_BASE, true);
-
-    //
-    // Clear the asserted interrupts.
-    //
-    MAP_UARTIntClear(UART6_BASE, ui32Status);
-
-    if(ui32Status & UART_INT_TX)
-    {
-        UART_TransmitMessage(&uart6_Tx);
     }
     else
     {
-        //
-        // Save available character in buffer.
-        //
-        if(MAP_UARTCharsAvail(UART6_BASE))
-        {
-            data[0] = (uint8_t)UARTCharGet(UART6_BASE);
-            UART_AddByteToBuffer(&uart6_Rx, data, 1);
-        }
+        // some other interrupt
+        ToggleLedGrn();
     }
 }
 
 
 /*
- * Description: Called from UartCharBuffer.c
- *              This will enable TX interrupt. The UART interrupt Handler which will call UART0_TransmitMessage
+ * Description: This will enable TX interrupt start the first byte transmit and continue interrupts until done.
+ *              Must call from polling routine
+ * Input: the UART data structure
+ *
  */
-int UART_TxMessage_IT(UartTxBufferStruct *msg)
+int UART_TxMessage_IT(UartBufferStruct *msg)
 {
     int status = 0;
 
-    if(msg->msgToSend_Pending == true) return UART_TX_PENDING;
+    if(msg->tx.msgToSend_Pending == true) return UART_TX_PENDING;
 
-    if(msg->msgPtr.cnt_Handle)
+    if(msg->tx.msgPtr.cnt_Handle)
     {
-        msg->msgToSend = msg->msgQueue[msg->msgPtr.index_OUT].data;
-        msg->msgToSend_Size = msg->msgQueue[msg->msgPtr.index_OUT].size;
-        msg->msgToSend_BytePtr = 0; // reset
-        msg->msgToSend_Pending = true;
+        msg->tx.msgToSend = &msg->tx.msgQueue[msg->tx.msgPtr.index_OUT]; // set msgToSend to buffer index
+        RingBuff_Ptr_Output(&msg->tx.msgPtr, msg->tx.msgQueueSize); // increment buffer index
 
-        UARTIntEnable(msg->instance, UART_INT_TX);
+        if(msg->tx.msgToSend->size > 1)
+        {
+            msg->tx.msgToSend_BytePtr = 0;
+            msg->tx.msgToSend_Pending = true;
+            UARTIntEnable(msg->instance, UART_INT_TX); // enable tx interrupts
+            UART_TransmitMessage(msg); // start the transmit
+        }
+        else if(msg->tx.msgToSend->size == 1) // we can poll since this only 1 byte
+        {
+            UART_TxMessage(msg); // non interrupt send
+        }
+        else // the queue has no bytes to send.
+        {
+            return 1; // return non zero is an error
+        }
     }
 
     return status;
 }
 
 /*
- * Description: called from uart interrupt. Sends one byte at a time until finished.
+ * Description:
  */
-static void UART_TransmitMessage(UartTxBufferStruct *msg)
+static void UART_TransmitMessage(UartBufferStruct *msg)
 {
-    if(msg->msgToSend_BytePtr < msg->msgToSend_Size)
+    if(msg->tx.msgToSend_BytePtr < msg->tx.msgToSend->size)
     {
-        if(UARTCharPutNonBlocking(msg->instance, msg->msgToSend[msg->msgToSend_BytePtr]) == true)
+        if(UARTCharPutNonBlocking(msg->instance, msg->tx.msgToSend->data[msg->tx.msgToSend_BytePtr]) == true)
         {
-            if(++msg->msgToSend_BytePtr == msg->msgToSend_Size)
+            if(++msg->tx.msgToSend_BytePtr == msg->tx.msgToSend->size)
             {
-                msg->msgToSend_Pending = false; // clear for next message to be sent
-                UARTIntDisable(msg->instance, UART_INT_TX); // disable the Tx interrupt
+                msg->tx.msgToSend_Pending = false; // clear for next message to be sent
+                UARTIntDisable(msg->instance, UART_INT_TX); // done transmitting bytes, so disable the Tx interrupt
             }
         }
     }
+}
+
+/*
+ * Description: UART Blocking method
+ *
+ */
+int UART_TxMessage(UartBufferStruct *msg)
+{
+    int i = 0;
+
+    if(msg->tx.msgPtr.cnt_Handle)
+    {
+        msg->tx.msgToSend = &msg->tx.msgQueue[msg->tx.msgPtr.index_OUT];
+
+        RingBuff_Ptr_Output(&msg->tx.msgPtr, msg->tx.msgQueueSize);
+
+        for(i = 0; i < msg->tx.msgToSend->size; i++)
+        {
+            UARTCharPut(msg->instance, msg->tx.msgToSend->data[i]);
+        }
+    }
+
+    return 0;
 }
 
 
 /*
  * Description: Check for a new messsage then Find instance, then call appropriate parser
  */
-int UART_Parse(UartRxBufferStruct *msg)
+int UART_Parse(UartBufferStruct *msg)
 {
     int status = 0;
 
@@ -316,13 +304,7 @@ int UART_Parse(UartRxBufferStruct *msg)
         switch (msg->instance)
         {
         case UART0_BASE:
-            UART0_Parser(msg);
-            break;
-        case UART1_BASE:
-            UART6_Parser(msg);
-            break;
-        case UART2_BASE:
-
+            UART0_Parse(msg);
             break;
         }
     }

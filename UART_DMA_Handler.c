@@ -11,41 +11,31 @@
 #include "main.h"
 #include "UART_DMA_Handler.h"
 
-// User can use these default variables or rename them to their liking.
-// If not using, be sure to change name in HAL_UARTEx_RxEventCallback below.
-UART_DMA_QueueStruct uartDMA_Msg = {0};
-
 
 /*
- * Description: Must be called prior to using UART DMA. This assigns the DMA structure with a UART Port
+ * Description: assign uart instance to data structure, if variable was not assigned during instantiation
  * 	example: UART_DMA_RxInit(&uartDMA_RXMsg, &huart2);
  *
  */
-void UART_DMA_RxInit(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
+void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
 {
-	msg->rx.huart = huart;
-}
-// same as UART_DMA_RxInit above
-void UART_DMA_TxInit(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
-{
-	msg->tx.huart = huart;
+	msg->huart = huart;
 }
 
 /*
- * Description: Enable rx interrupt. Set flag if not succesful
+ * Description: Enable rx interrupt
  *
  */
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
 {
-	if(HAL_UARTEx_ReceiveToIdle_DMA(msg->rx.huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_CHAR_SIZE) != HAL_OK)
+	if(HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_CHAR_SIZE) != HAL_OK)
 	{
 		msg->rx.uart_dma_rxIntErrorFlag = true;
 	}
 }
 
 /*
- * Description: Call from polling routine. Try to enable Rx interrupt again if there was
- *				an error on the previous attempt.
+ * Description: Call from polling routine
  *
  */
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
@@ -57,20 +47,6 @@ void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
 	}
 }
 
-/*
- * Description: Increment ring buffer pointer and enable DMA Rx interrupt
- *				for next packet of data
- *
- */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
-{
-	if(huart == uartDMA_Msg.rx.huart)
-	{
-		uartDMA_Msg.rx.queue[uartDMA_Msg.rx.ptr.index_IN].size = Size;
-		RingBuff_Ptr_Input(&uartDMA_Msg.rx.ptr, UART_DMA_QUEUE_SIZE);
-		UART_DMA_EnableRxInterrupt(&uartDMA_Msg);
-	}
-}
 
 /*
  * Description: Return 0 if no new message, 1 if there is message in msgOut
@@ -104,15 +80,14 @@ void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *str, uin
 }
 
 /*
- * Description: This must be called from a polling routine. 
- *				Only increment ring buffer pointer if HAL status is HAL_OK.
+ * Description: This must be called from a polling routine.
  *
  */
 void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
 {
 	if(msg->tx.ptr.cnt_Handle)
 	{
-		if(HAL_UART_Transmit_DMA(msg->tx.huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
+		if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
 		{
 			RingBuff_Ptr_Output(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
 		}
@@ -139,7 +114,7 @@ void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 
 
 /*
- - Below is an example of checking for a new message and have msgNew point to it.
+ - Below is an example of checking for a new message and have it copied to msgNew variable.
  - It is totally up to the user how to send messages to the STM32 and how to parse the messages.
  - User would call UART_CheckForNewMessage(&uartDMA_RXMsg) from a polling routine
 

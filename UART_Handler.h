@@ -27,11 +27,10 @@ enum
 };
 
 void USART0_IRQHandler(void);
-void USART6_IRQHandler(void);
-int UART_TxMessage_IT(UartTxBufferStruct *msg);
+int UART_TxMessage_IT(UartBufferStruct *msg);
 
-int UART_Parse(UartRxBufferStruct *msg);
-
+int UART_Parse(UartBufferStruct *msg);
+int UART_TxMessage(UartBufferStruct *msg);
 #endif
 
 #ifdef _XC_H // Microchip
