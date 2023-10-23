@@ -28,10 +28,8 @@ void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
  */
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
 {
-	if(HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_CHAR_SIZE) != HAL_OK)
-	{
-		msg->rx.uart_dma_rxIntErrorFlag = true;
-	}
+	// We need to enable the DMA to receive twice the data size so that Half Callback is called instead of Complete Callback.   
+	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_DATA_SIZE * 2);
 }
 
 /*
@@ -40,23 +38,24 @@ void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
  */
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
 {
-	if(msg->rx.uart_dma_rxIntErrorFlag)
+	if(msg->rx.hal_status != HAL_OK)
 	{
-		msg->rx.uart_dma_rxIntErrorFlag = false;
+		msg->rx.hal_status = HAL_OK;
 		UART_DMA_EnableRxInterrupt(msg);
 	}
 }
 
 
 /*
- * Description: Return 0 if no new message, 1 if there is message in msgOut
+ * Description: Returns 0 if no new message, 1 if there is message.
+ *				msgToParse will point to the queue index
  */
 int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
 {
 	if(msg->rx.ptr.cnt_Handle)
 	{
 		msg->rx.msgToParse = &msg->rx.queue[msg->rx.ptr.index_OUT];
-		RingBuff_Ptr_Output(&msg->rx.ptr, UART_DMA_QUEUE_SIZE);
+		RingBuff_Ptr_Output(&msg->rx.ptr, msg->rx.queueSize);
 		return 1;
 	}
 
@@ -64,65 +63,62 @@ int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
 }
 
 /*
-* Description: Add message to TX buffer
+* Description: Add data to TX buffer. Used for binary data.
+				For Strings, you can call UART_DMA_NotifyUser, which will call this function.
 */
-void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *str, uint32_t size)
+void UART_DMA_TX_AddDataToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint32_t size)
 {
-    uint8_t i = 0;
-    uint8_t *pData = (uint8_t*)str;
+    UART_DMA_Data *ptr = &msg->tx.queue[msg->tx.ptr.index_IN];
 
-    for(i = 0; i < size; i++)
-    {
-    	msg->tx.queue[msg->tx.ptr.index_IN].data[i] = *pData++;
-    }
-    msg->tx.queue[msg->tx.ptr.index_IN].size = size;
-    RingBuff_Ptr_Input(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
+    memcpy(ptr->data, data, size);
+    ptr->size = size;
+    RingBuff_Ptr_Input(&msg->tx.ptr, msg->tx.queueSize);
 }
 
 /*
  * Description: This must be called from a polling routine.
+ * 				If HAL status is HAL_OK, we can increment the buffer pointer. 
+ *				Else if HAL_BUSY, then we can attempt to send again when called from polling routine.
  *
  */
-void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
+void UART_DMA_SendData(UART_DMA_QueueStruct * msg)
 {
 	if(msg->tx.ptr.cnt_Handle)
 	{
 		if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
 		{
-			RingBuff_Ptr_Output(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
+			RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize);
 		}
 	}
 }
 
 /*
-* Description: Add string to TX structure
+* Description: Add string to TX structure. You can specifiy to add CR and LF to end of string.
 */
 void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 {
-	uint8_t strMsg[UART_DMA_CHAR_SIZE] = {0};
+	uint8_t strMsg[UART_DMA_DATA_SIZE] = {0};
 
     strcpy((char*)strMsg, str);
     
     if(lineFeed == true)
     {
-    	strcat((char*)strMsg, "\r\n");
+    	strcat((char*)strMsg, "\r\n"); // add CR and LF to string
     }
 
-    msg->tx.queue[msg->tx.ptr.index_IN].size = strlen((char*)strMsg);
-    UART_DMA_TX_AddMessageToBuffer(msg, strMsg, strlen((char*)strMsg));
+    UART_DMA_TX_AddDataToBuffer(msg, strMsg, strlen((char*)strMsg));
 }
 
 
 /*
- - Below is an example of checking for a new message and have it copied to msgNew variable.
- - It is totally up to the user how to send messages to the STM32 and how to parse the messages.
- - User would call UART_CheckForNewMessage(&uartDMA_RXMsg) from a polling routine
+ - Below is an example of checking for a new message and have msgToParse point to the queue buffer index to be parsed.
+ - User would call UART_CheckForNewMessage(&uart2Msg) from a polling routine.
 
 void UART_CheckForNewMessage(UART_DMA_RxQueueStruct *msg)
 {
 	if(UART_DMA_MsgRdy(msg))
 	{
-		// user can parse msg variable.
+		// user can parse msgToParse.
 		if(strncmp(msg->msgToParse->data, "get version", strlen("get version")) == 0)
 		{
 			// call function to return version number
