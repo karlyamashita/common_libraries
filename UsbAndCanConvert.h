@@ -1,8 +1,6 @@
 #ifndef CONVERT_USB_AND_CAN_H
 #define CONVERT_USB_AND_CAN_H
-#include "LSP.H"
-#ifdef USE_USB_CAN_CONVERT
-#include "CAN_Buffer.h"
+
 
 // Node defines
 #define CAN1_NODE 0
@@ -14,14 +12,19 @@
 #define SWCAN2_NODE 6
 #define LSFTCAN2_NODE 7
 
+#define CAN_STD_ID 0x00
+#define CAN_EXT_ID 0x04
+
+#define USB_MESSAGE_SIZE 24
+
 // the structure sent by the PC.
 typedef	union UsbCanStruct {
 	struct {
-		uint8_t msgArray[17];
+		uint8_t msgArray[USB_MESSAGE_SIZE];
 	}array;
 	struct {
 		uint8_t Command; // command
-		uint8_t IDE; // ide
+		uint8_t IDE; // ide, STD or EXT
 		uint8_t RTR;// rtr
 		uint8_t na; // node
 		uint32_t ArbID; // ArbID
@@ -54,9 +57,8 @@ typedef	union UsbCanStruct {
 	}msgBytes;
 }UsbCanStruct;
 
-void SendUsbDataToCanBus(uint8_t canChannel, uint8_t *data);
-void SendCanDataToUsb(CanRxMsgTypeDef *msg, uint8_t node);
-uint8_t GetNode(uint8_t *data);
+void USB_to_CAN_Send(CanMsg_Struct *msg, uint8_t *data);
+void CAN_to_USB_Send(CanMsg_Struct *msg, uint8_t node);
 
 #endif // CONVERT_USB_AND_CAN_H
-#endif // USE_USB_CAN_CONVERT_H
+
