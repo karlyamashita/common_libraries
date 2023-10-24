@@ -42,6 +42,8 @@ void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart);
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg);
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg);
 int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg);
+void UART_DMA_IncRx_IN(UART_DMA_QueueStruct *msg);
+void UART_DMA_CallbackDone(UART_DMA_QueueStruct *msg);
 
 void UART_DMA_TX_AddDataToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint32_t size);
 void UART_DMA_SendData(UART_DMA_QueueStruct * msg);
