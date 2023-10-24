@@ -23,6 +23,16 @@ void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
 }
 
 /*
+ * Description: Call this from HAL_UARTEx_RxEventCallback if huart matches.
+ * 				This is just one call that calls two functions, UART_DMA_IncRx_IN and UART_DMA_EnableRxInterrupt
+ */
+void UART_DMA_CallbackDone(UART_DMA_QueueStruct *msg)
+{
+	UART_DMA_IncRx_IN(msg);
+	UART_DMA_EnableRxInterrupt(msg);
+}
+
+/*
  * Description: Enable rx interrupt
  *
  */
@@ -33,7 +43,7 @@ void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
 }
 
 /*
- * Description: Call from polling routine
+ * Description: Check for HAL status. Call from polling routine
  *
  */
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
@@ -44,7 +54,6 @@ void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
 		UART_DMA_EnableRxInterrupt(msg);
 	}
 }
-
 
 /*
  * Description: Returns 0 if no new message, 1 if there is message.
@@ -63,21 +72,12 @@ int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
 }
 
 /*
- * Description:
+ * Description: Increments the rx pointer.
  *
  */
 void UART_DMA_IncRx_IN(UART_DMA_QueueStruct *msg)
 {
 	RingBuff_Ptr_Input(&msg->rx.ptr, msg->rx.queueSize);
-}
-
-/*
- * Description: Call this from HAL_UARTEx_RxEventCallback if huart matches.
- */
-void UART_DMA_CallbackDone(UART_DMA_QueueStruct *msg)
-{
-	UART_DMA_IncRx_IN(msg);
-	UART_DMA_EnableRxInterrupt(msg);
 }
 
 /*
@@ -96,8 +96,8 @@ void UART_DMA_TX_AddDataToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint3
 
 /*
  * Description: This must be called from a polling routine.
- * 				If HAL status is HAL_OK, we can increment the buffer pointer. 
- *				Else if HAL_BUSY, then we can attempt to send again when called from polling routine.
+ * 				If HAL status is HAL_OK, then increment the buffer pointer.
+ *				Else if HAL_BUSY, then user can attempt to send again when called from polling routine.
  *
  */
 void UART_DMA_SendData(UART_DMA_QueueStruct * msg)
@@ -112,7 +112,7 @@ void UART_DMA_SendData(UART_DMA_QueueStruct * msg)
 }
 
 /*
-* Description: Add string to TX structure. You can specifiy to add CR and LF to end of string.
+* Description: Add string to TX structure. You can specify to add CR and LF to end of string.
 */
 void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 {
@@ -129,7 +129,22 @@ void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 }
 
 
+
+
 /*
+
+- Below is an example to create a uart data instance.
+- You can create multiple instances depending on how many UART peripheral used, so give useful names.
+
+UART_DMA_QueueStruct uart2msg =
+{
+	.huart =  &huart2,
+	.rx.queueSize = UART_DMA_QUEUE_SIZE,
+	.tx.queueSize = UART_DMA_QUEUE_SIZE
+};
+
+
+
  - Below is an example of checking for a new message.
  - The pointer msgToParse, points to the queue index to be parsed.
  - strncmp is used to parse message, but the user can use his preferred method instead.

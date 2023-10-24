@@ -8,10 +8,15 @@
 #ifndef INC_UART_DMA_HANDLER_H_
 #define INC_UART_DMA_HANDLER_H_
 
+// USER DEFINES User can adjust these defines to fit their project requirements
+#define UART_DMA_DATA_SIZE 128 // The maximum size of bytes expected in a packet
+#define UART_DMA_QUEUE_SIZE 4 // The number of queues to hold each packet.
+// END USER DEFINES
 
-#define UART_DMA_DATA_SIZE 128
-#define UART_DMA_QUEUE_SIZE 4
 
+// **************************************************
+// ********* Do not modify code below here **********
+// **************************************************
 typedef struct
 {
 	uint8_t data[UART_DMA_DATA_SIZE];
@@ -39,11 +44,11 @@ typedef struct
 
 
 void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart);
+void UART_DMA_CallbackDone(UART_DMA_QueueStruct *msg);
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg);
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg);
 int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg);
 void UART_DMA_IncRx_IN(UART_DMA_QueueStruct *msg);
-void UART_DMA_CallbackDone(UART_DMA_QueueStruct *msg);
 
 void UART_DMA_TX_AddDataToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint32_t size);
 void UART_DMA_SendData(UART_DMA_QueueStruct * msg);
