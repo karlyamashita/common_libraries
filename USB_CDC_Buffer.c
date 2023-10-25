@@ -78,9 +78,18 @@ int USB_CDC_SendMsg(USB_CDC_MsgStruct *msg)
 	if(msg->tx.ptr.cnt_Handle)
 	{
 		ptr = &msg->tx.queue[msg->tx.ptr.index_OUT];
-		if(CDC_Transmit_FS(ptr->Byte.data, ptr->Status.size) == 0)
+#if (DEVICE_HS == 1)
+		if(CDC_Transmit_HS(ptr->Byte.data, ptr->Status.size) == 0)
+#else
+		if(CDC_Transmit_HS(ptr->Byte.data, ptr->Status.size) == 0)
+
+#endif
 		{
 			RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.msgQueueSize);
+		}
+		else
+		{
+			return 1;
 		}
 	}
 
