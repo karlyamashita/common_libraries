@@ -9,20 +9,22 @@
 #define INC_USB_CDC_BUFFER_H_
 
 
-#define USB_CDC_QUEUE_SIZE 8
+#define USB_CDC_QUEUE_SIZE 16
+#define ID_AND_SIZE_LENGTH 16
+#define USB_CDC_DATA_SIZE (256 - ID_AND_SIZE_LENGTH) //256 - id - size
 
 
 typedef union
 {
 	struct
 	{
-		uint8_t data[24];
+		uint8_t data[USB_CDC_DATA_SIZE + ID_AND_SIZE_LENGTH];
 	}Byte;
 	struct
 	{
-		uint8_t id;
-		uint8_t data[24 - 1];
+		uint32_t id;
 		uint32_t size;
+		uint8_t data[USB_CDC_DATA_SIZE];
 	}Status;
 }USB_CDC_Data;
 
