@@ -13,7 +13,6 @@ extern "C" {
 #endif
 
 bool IsHex(char *msg, uint32_t *dataOut);
-int ConvertHex2Int(char *hex, uint32_t *valOut);
 
 #ifdef	__cplusplus
 }
