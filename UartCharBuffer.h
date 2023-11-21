@@ -11,9 +11,6 @@
 #include "main.h"
 
 
-// User defines start
-//#define USE_BUFFER_POINTERS // comment in if using pointers to buffers. User needs to create buffers and call UART_RxBufferInit and UART_TxBufferInit
-
 /* 	MAX_UART_RX_IRQ_BYTE_LENGTH is for the UART IRQ.
  *	If packets with MOD256 checksum, then change to received packet size.
  *
@@ -35,6 +32,12 @@ enum
 	UART_BUFFER_OVERFLOW
 };
 
+enum UART_TYPE
+{
+	UART_ASCII,
+	UART_BINARY
+};
+
 typedef enum CheckSumType
 {
 	CHECKSUM_MOD256, // 8 bit
@@ -47,54 +50,48 @@ typedef struct
 	uint32_t size;
 }UartDataStruct;
 
-// receive
 typedef struct
 {
-    uint32_t instance; // typically a UART Port number 0-n for identification purpose. Can also be TI's or Xilinx UART base
-	struct
+#ifdef USE_HAL_DRIVER
+	UART_HandleTypeDef *huart;
+#else
+    uint32_t instance; // Can be TI's or Xilinx UART base
+#endif
+    struct
 	{
-		uint8_t uartIRQ_ByteBuffer[UART_RX_IRQ_BYTE_SIZE]; // UART IRQ will save to this. Typically would be 1 byte in size
-		uint8_t byteBuffer[UART_RX_BYTE_BUFFER_SIZE]; // bytes saved here as they come in from uartIRQ_ByteBuffer.
-		UartDataStruct msgQueue[UART_RX_MESSAGE_QUEUE_SIZE];
-
+    	uint8_t irqByte[1];
+		UartDataStruct queue[UART_RX_MESSAGE_QUEUE_SIZE];
 		UartDataStruct *msgToParse;
+
+    	uint8_t binaryBuffer[UART_RX_BYTE_BUFFER_SIZE]; // For binary data, bytes saved here as they come in from uartIRQ_ByteBuffer.
 		uint32_t packetSize; // for binary packets
-		uint32_t sortPtr; // for binary packet sorting
 
 		RING_BUFF_STRUCT bytePtr; // pointer for byteBuffer
-		RING_BUFF_STRUCT msgPtr; // pointer for msgQueue
-		uint32_t uartIRQ_ByteSize;
-		uint32_t byteBufferSize;
-		uint32_t msgQueueSize;
+		RING_BUFF_STRUCT ptr; // pointer for queue
+		uint8_t uartType; // default UART_ASCII
+#ifdef USE_HAL_DRIVER
+		HAL_StatusTypeDef HAL_Status;
+#endif
 	}rx;
 	struct
 	{
-		UartDataStruct msgQueue[UART_TX_MESSAGE_QUEUE_SIZE];
+		UartDataStruct queue[UART_TX_MESSAGE_QUEUE_SIZE];
 		UartDataStruct *msgToSend;
 		bool msgToSend_Pending; // used for TM4C12x in UART_Handler.c
 		uint32_t msgToSend_BytePtr; //
-		RING_BUFF_STRUCT msgPtr; // pointer for msgBuffer and msgDataSize
-		uint32_t msgQueueSize;
+		RING_BUFF_STRUCT ptr; // pointer for queue
 	}tx;
 }UartBufferStruct;
 
-
 // add to buffer
-void UART_Add_IRQ_Byte(UartBufferStruct *msg, uint8_t *char_in, uint32_t dataSize);
-int UART_AddByteToBuffer(UartBufferStruct *msg, uint8_t *char_in, uint32_t dataSize);
+void UART_AddByteToBuffer(UartBufferStruct *msg);
 
 // sorting
-void UART_SortRx_CHAR_Buffer(UartBufferStruct *msg);
+void UART_SortRx_ASCII_Buffer(UartBufferStruct *msg);
 void UART_SortRx_BINARY_Buffer(UartBufferStruct *msg, CheckSumType checkSumType);
 void UART_InitPacketSize(UartBufferStruct *msg, uint32_t size);
 // check pending message
 bool UART_RxMessagePending(UartBufferStruct *msg);
-
-// When using STM32 HAL
-#ifdef HAL_MODULE_ENABLED // STM32
-bool UART_GetRxIntErrorFlag(UartBufferStruct *msg);
-void UART_SetRxIntErrorFlag(UartBufferStruct *msg, bool status);
-#endif // HAL_MODULE_ENABLED
 
 // Tx
 void UART_TX_AddDataToBuffer(UartBufferStruct *msgOut, uint8_t *msgIN, uint32_t dataSize);

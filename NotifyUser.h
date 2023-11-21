@@ -15,14 +15,8 @@
 extern "C" {
 #endif
 
-/*
- * Description: User should configure the UART port to use. Default is UART_PORT_1 if not defined.
- */
-#ifndef NOTIFY_USER_UART_PORT
-#define NOTIFY_USER_UART_PORT UART_PORT_1
-#endif
 
-void NotifyUser(UartTxBufferStruct *msg, char *str, uint32_t size, bool lineFeed);
+void NotifyUser(UartBufferStruct *msg, char *str, bool lineFeed);
 
 
 #ifdef	__cplusplus

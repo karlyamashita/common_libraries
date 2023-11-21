@@ -12,9 +12,9 @@
  * Input: Pointer to buffer, the string to add to tx buffer, and linefeed enable
  *
  */
-void NotifyUserDMA(UART_DMA_TxQueueStruct *msg, char *str, bool lineFeed)
+void NotifyUserDMA(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 {
-    uint8_t strMsg[UART_DMA_CHAR_SIZE] = {0};
+    uint8_t strMsg[UART_DMA_DATA_SIZE] = {0};
     uint8_t *ptr = strMsg;
     int i = 0;
 
@@ -25,13 +25,13 @@ void NotifyUserDMA(UART_DMA_TxQueueStruct *msg, char *str, bool lineFeed)
     	strcat((char*)strMsg, "\r\n");
     }
 
-	memset(&msg->queue[msg->ptr.iIndexIN].data, 0 , sizeof(msg->queue[msg->ptr.iIndexIN].data));
+	memset(&msg->tx.queue[msg->tx.ptr.index_IN].data, 0 , sizeof(msg->tx.queue[msg->tx.ptr.index_IN].data));
 
-    msg->queue[msg->ptr.iIndexIN].dataSize = strlen((char*)strMsg);
+    msg->tx.queue[msg->tx.ptr.index_IN].size = strlen((char*)strMsg);
     while(*ptr != '\0')
     {
-    	msg->queue[msg->ptr.iIndexIN].data[i++] = *ptr++;
+    	msg->tx.queue[msg->tx.ptr.index_IN].data[i++] = *ptr++;
     }
 
-    DRV_RingBuffPtr__Input(&msg->ptr, UART_DMA_QUEUE_SIZE);
+    RingBuff_Ptr_Input(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
 }

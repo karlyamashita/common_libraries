@@ -15,20 +15,19 @@
  * Input: Pointer to buffer, the string to add to tx buffer, the size of string, and CR/LF (carriage return/linefeed enable)
  *
  */
-void NotifyUser(UartTxBufferStruct *msg, char *str, uint32_t size, bool lineFeed)
+void NotifyUser(UartBufferStruct *msg, char *str, bool lineFeed)
 {
     uint8_t strMsg[UART_TX_BYTE_BUFFER_SIZE] = {0};
+    uint32_t size = strlen(str);
 
-    //strcpy((char*)strMsg, str);
-    memcpy(&strMsg, str, size);
+    memcpy(&strMsg, str, strlen(str));
     
     if(lineFeed == true)
     {
     	strcat((char*)strMsg, "\r\n");
-    	 size += 1;
+    	size += 2;
     }
 
-    msg->msgQueue[msg->msgPtr.index_IN].size = size;
     UART_TX_AddDataToBuffer(msg, strMsg, size);
 }
 

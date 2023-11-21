@@ -23,48 +23,37 @@ void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
 }
 
 /*
- * Description: Call this from HAL_UARTEx_RxEventCallback if huart matches.
- * 				This is just one call that calls two functions, UART_DMA_IncRx_IN and UART_DMA_EnableRxInterrupt
- */
-void UART_DMA_CallbackDone(UART_DMA_QueueStruct *msg)
-{
-	UART_DMA_IncRx_IN(msg);
-	UART_DMA_EnableRxInterrupt(msg);
-}
-
-/*
  * Description: Enable rx interrupt
  *
  */
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
 {
-	// We need to enable the DMA to receive twice the data size so that Half Callback is called instead of Complete Callback.   
-	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_DATA_SIZE * 2);
+	msg->rx.HAL_Status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_CHAR_SIZE * 2);
 }
 
 /*
- * Description: Check for HAL status. Call from polling routine
+ * Description: Call from polling routine
  *
  */
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
 {
-	if(msg->rx.hal_status != HAL_OK)
+	if(msg->rx.HAL_Status != HAL_OK)
 	{
-		msg->rx.hal_status = HAL_OK;
+		msg->rx.HAL_Status = HAL_OK;
 		UART_DMA_EnableRxInterrupt(msg);
 	}
 }
 
+
 /*
- * Description: Returns 0 if no new message, 1 if there is message.
- *				msgToParse will point to the queue index
+ * Description: Return 0 if no new message, 1 if there is message in msgOut
  */
 int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
 {
 	if(msg->rx.ptr.cnt_Handle)
 	{
 		msg->rx.msgToParse = &msg->rx.queue[msg->rx.ptr.index_OUT];
-		RingBuff_Ptr_Output(&msg->rx.ptr, msg->rx.queueSize);
+		RingBuff_Ptr_Output(&msg->rx.ptr, UART_DMA_QUEUE_SIZE);
 		return 1;
 	}
 
@@ -72,136 +61,75 @@ int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
 }
 
 /*
- * Description: Increments the rx pointer.
- *
- */
-void UART_DMA_IncRx_IN(UART_DMA_QueueStruct *msg)
-{
-	RingBuff_Ptr_Input(&msg->rx.ptr, msg->rx.queueSize);
-}
-
-/*
-* Description: Add data to TX buffer. Used for binary data.
-				For Strings, you can call UART_DMA_NotifyUser, which will call this function.
+* Description: Add message to TX buffer
 */
-void UART_DMA_TX_AddDataToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint32_t size)
+void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *str, uint32_t size)
 {
-    UART_DMA_Data *ptr = &msg->tx.queue[msg->tx.ptr.index_IN];
+    uint8_t i = 0;
+    uint8_t *pData = (uint8_t*)str;
 
-    memcpy(ptr->data, data, size);
-    ptr->size = size;
-    RingBuff_Ptr_Input(&msg->tx.ptr, msg->tx.queueSize);
+    for(i = 0; i < size; i++)
+    {
+    	msg->tx.queue[msg->tx.ptr.index_IN].data[i] = *pData++;
+    }
+    msg->tx.queue[msg->tx.ptr.index_IN].size = size;
+    RingBuff_Ptr_Input(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
 }
-
 
 /*
  * Description: This must be called from a polling routine.
- * 				If HAL status is HAL_OK, then increment the buffer pointer.
- *				Else if HAL_BUSY, then user can attempt to send again when called from polling routine.
  *
  */
-void UART_DMA_SendData(UART_DMA_QueueStruct * msg)
+void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
 {
 	if(msg->tx.ptr.cnt_Handle)
 	{
 		if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
 		{
-			RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize);
+			RingBuff_Ptr_Output(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
 		}
 	}
 }
 
 /*
-* Description: Add string to TX structure. You can specify to add CR and LF to end of string.
+* Description: Add string to TX structure
 */
 void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
 {
-	uint8_t strMsg[UART_DMA_DATA_SIZE] = {0};
+	uint8_t strMsg[UART_DMA_CHAR_SIZE] = {0};
 
     strcpy((char*)strMsg, str);
     
     if(lineFeed == true)
     {
-    	strcat((char*)strMsg, "\r\n"); // add CR and LF to string
+    	strcat((char*)strMsg, "\r\n");
     }
 
-    UART_DMA_TX_AddDataToBuffer(msg, strMsg, strlen((char*)strMsg));
+    msg->tx.queue[msg->tx.ptr.index_IN].size = strlen((char*)strMsg);
+    UART_DMA_TX_AddMessageToBuffer(msg, strMsg, strlen((char*)strMsg));
 }
-
-
 
 
 /*
+ - Below is an example of checking for a new message and have it copied to msgNew variable.
+ - It is totally up to the user how to send messages to the STM32 and how to parse the messages.
+ - User would call UART_CheckForNewMessage(&uartDMA_RXMsg) from a polling routine
 
-- Below is an example to create a uart data instance.
-- You can create multiple instances depending on how many UART peripheral used, so give useful names.
-
-UART_DMA_QueueStruct uart2msg =
+void UART_CheckForNewMessage(UART_DMA_RxQueueStruct *msg)
 {
-	.huart =  &huart2,
-	.rx.queueSize = UART_DMA_QUEUE_SIZE,
-	.tx.queueSize = UART_DMA_QUEUE_SIZE
-};
-
-
-
- - Below is an example of checking for a new message.
- - The pointer msgToParse, points to the queue index to be parsed.
- - strncmp is used to parse message, but the user can use his preferred method instead.
- - User would call UART_Parse(&uart2Msg) from a polling routine.
-
-void UART2_Parse(UART_DMA_QueueStruct *msg)
-{
-	char *ptr;
-	char *copy;
-	char *rest;
-	char str[32] = {0};
-
 	if(UART_DMA_MsgRdy(msg))
 	{
-		ptr = (char*)msg->rx.msgToParse->data; // for use with strncmp below
-		rest = (char*)msg->rx.msgToParse->data; // for use with strtok_r
-		copy = strtok_r(rest, "\r", &rest); // a copy of string up to CR
-
-		if(strncmp(ptr, "toggleled", strlen("toggleled")) == 0)
+		// user can parse msg variable.
+		if(strncmp(msg->msgToParse->data, "get version", strlen("get version")) == 0)
 		{
-			ToggleLED();
+			// call function to return version number
 		}
-		else if(strncmp(ptr, "firmware", strlen("firmware")) == 0)
+		else if(strncmp(msg->msgToParse->data, "get status", strlen("get status")) == 0)
 		{
-			sprintf(str, " = %s", firmware);
-			strcat(copy, str);
-			UART_DMA_NotifyUser(&uart2msg, copy, true);
-			return;
+			// call function to get status information
 		}
-		else
-		{
-			strcat(copy, " = Command Unknown");
-			UART_DMA_NotifyUser(&uart2msg, copy, true);
-			return;
-		}
-		strcat(copy, " = OK");
-		UART_DMA_NotifyUser(&uart2msg, (char*)copy, true);
 	}
 }
-
-
-- Below is example of HAL callback checking for huart2 and huart1.
-- Since each project can vary, add more if/else based on other huart(x) used and
-	call UART_DMA_CallbackDone and pass UART_DMA_QueueStruct instance.
-
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
-{
-	if(huart == &huart2)
-	{
-		UART_DMA_CallbackDone(&uart2msg);
-	}
-	else if(huart == &huart1)
-	{
-		UART_DMA_CallbackDone(&uart1msg);
-	}
-}
-
 
  */
 
