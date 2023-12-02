@@ -87,7 +87,6 @@ typedef struct
 void UART_AddByteToBuffer(UartBufferStruct *msg);
 
 // sorting
-void UART_SortRx_ASCII_Buffer(UartBufferStruct *msg);
 void UART_SortRx_BINARY_Buffer(UartBufferStruct *msg, CheckSumType checkSumType);
 void UART_InitPacketSize(UartBufferStruct *msg, uint32_t size);
 // check pending message

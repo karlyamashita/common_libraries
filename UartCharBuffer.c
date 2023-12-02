@@ -37,31 +37,29 @@ void UART_AddByteToBuffer(UartBufferStruct *msg)
 {
 	if(msg->rx.uartType == UART_ASCII)
 	{
-		msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = msg->rx.irqByte[0];
+		msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = msg->rx.irqByte[0]; // save byte to current queue
+		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE); // increment byte pointer
+		if(msg->rx.irqByte[0] == '\n') // check for LF
+		{
+			msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = 0; // add null
+			msg->rx.queue[msg->rx.ptr.index_IN].size = msg->rx.bytePtr.index_IN; // save size
+			RingBuff_Ptr_Input(&msg->rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE); // increment queue index
+			RingBuff_Ptr_Reset(&msg->rx.bytePtr); // reset byte pointer
+		}
 	}
 	else if(msg->rx.uartType == UART_BINARY)
 	{
 		msg->rx.binaryBuffer[msg->rx.bytePtr.index_IN] = msg->rx.irqByte[0];
-	}
-
-	RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
-}
-
-/*
- * Description: Parse the UART for a string.
- */
-void UART_SortRx_ASCII_Buffer(UartBufferStruct *msg)
-{
-	if(msg->rx.bytePtr.cnt_Handle)
-	{
-		if(msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_OUT] == '\n')
+		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE); // increment byte pointer
+		if(msg->rx.bytePtr.index_IN >= msg->rx.packetSize) // check if byte pointer equals packet size
 		{
+			msg->rx.queue[msg->rx.ptr.index_IN].size = msg->rx.bytePtr.index_IN; // save size
 			RingBuff_Ptr_Input(&msg->rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE); // increment queue index
 			RingBuff_Ptr_Reset(&msg->rx.bytePtr); // reset byte pointer
 		}
-		RingBuff_Ptr_Output(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE);
 	}
 }
+
 
 /*
  * Description: Sort UART Binary buffer and save binary packet in message buffer. Checksum is using MOD256.
@@ -78,6 +76,7 @@ void UART_SortRx_ASCII_Buffer(UartBufferStruct *msg)
  */
 void UART_SortRx_BINARY_Buffer(UartBufferStruct *msg, CheckSumType checkSumType)
 {
+	/*
     uint32_t i = 0;
     uint8_t tempTelemetry[UART_RX_BYTE_BUFFER_SIZE] = {0};
 
@@ -132,6 +131,7 @@ void UART_SortRx_BINARY_Buffer(UartBufferStruct *msg, CheckSumType checkSumType)
         	RingBuff_Ptr_Output(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE ); // increment rx byte pointer
         }
     }
+    */
 }
 
 /*

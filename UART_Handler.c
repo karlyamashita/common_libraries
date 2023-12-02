@@ -16,55 +16,21 @@
 extern UART_HandleTypeDef hlpuart1;
 
 
-#ifdef USE_BUFFER_POINTERS
-// define the UART2 Rx buffers
-uint8_t uart2RxIrqByteBuffer[UART_RX_IRQ_BYTE_SIZE] = {0}; // irq array
-uint8_t uart2RxByteBuffer[UART_RX_BYTE_BUFFER_SIZE] = {0}; // byte array
-UartDataStruct uart2RxMsgQueue[UART_RX_MESSAGE_QUEUE_SIZE] = {0}; // message array
-UartDataStruct uart2TxMsgQueue[UART_TX_MESSAGE_QUEUE_SIZE] = {0};
-UartBufferStruct uart2 =
-{	// init and point to buffers
-	.rx.huart = &hlpuart1,
-	.rx.uartIRQ_ByteBuffer = uart2RxIrqByteBuffer,
-	.rx.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE,
-	.rx.byteBuffer = uart2RxByteBuffer,
-	.rx.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE,
-	.rx.msgQueue = uart2RxMsgQueue,
-	.rx.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
-	// tx
-	.tx.huart = &hlpuart1,
-	.tx.msgQueue = uart2TxMsgQueue,
-	.tx.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
-};
-
-
-#else
-
 // Init uart2 or lpuart1
-UartBufferStruct uart2 =
+UartBufferStruct uart1 =
 {
-	// rx
-	.rx.huart = &hlpuart1,
-	.rx.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE,
-	.rx.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE,
-	.rx.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
-	// tx
-	.tx.huart = &hlpuart1,
-	.tx.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
+	.huart = &hlpuart1,
+	.rx.uartType = UART_BINARY
 };
 
 
-#endif
 
 /*
  * Description: Enables the HAL_UART_Receive_IT interrupt. Call before main while loop and in HAL_UART_RxCpltCallback
  */
 void UART_EnableRxInterrupt(UartBufferStruct *msg)
 {
-	if(HAL_UART_Receive_IT(msg->rx.huart, msg->rx.uartIRQ_ByteBuffer, msg->rx.uartIRQ_ByteSize) != HAL_OK)
-	{
-		UART_SetRxIntErrorFlag(msg, true);
-	}
+	msg->rx.HAL_Status = HAL_UART_Receive_IT(msg->huart, msg->rx.irqByte, 1);
 }
 
 /*
@@ -73,9 +39,9 @@ void UART_EnableRxInterrupt(UartBufferStruct *msg)
  */
 void UART_CheckRxIntError(UartBufferStruct *msg)
 {
-	if(UART_GetRxIntErrorFlag(msg))
+	if(msg->rx.HAL_Status != HAL_OK)
 	{
-		UART_SetRxIntErrorFlag(msg, false);
+		msg->rx.HAL_Status = HAL_OK;
 		UART_EnableRxInterrupt(msg);
 	}
 }
@@ -86,10 +52,24 @@ void UART_CheckRxIntError(UartBufferStruct *msg)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart->Instance == uart2.tx.huart->Instance)
+	if(huart == uart1.huart)
 	{
-		UART_AddByteToBuffer(&uart2, uart2.rx.uartIRQ_ByteBuffer, uart2.rx.uartIRQ_ByteSize);
-		UART_EnableRxInterrupt(&uart2);
+		UART_AddByteToBuffer(&uart1);
+		UART_EnableRxInterrupt(&uart1);
+	}
+}
+
+/*
+ * Description: STM32 IDLE callback
+ *
+ */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	if(huart == uart1.huart)
+	{
+		uart1.rx.queue[uart1.rx.ptr.index_IN].size = Size;
+		RingBuff_Ptr_Input(&uart1.rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE);
+		UART_EnableRxInterrupt(&uart1);
 	}
 }
 
@@ -98,13 +78,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  */
 int UART_TxMessage_IT(UartBufferStruct *msg)
 {
-	int status = NO_ERROR;
+	int status = 0;
 
-	if(msg->tx.msgPtr.cnt_Handle)
+	if(msg->tx.ptr.cnt_Handle)
 	{
-		if(HAL_UART_Transmit_IT(msg->tx.huart, msg->tx.msgQueue[msg->tx.msgPtr.index_OUT].data, msg->tx.msgQueue[msg->tx.msgPtr.index_OUT].size) == HAL_OK)
+		if(HAL_UART_Transmit_IT(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
 		{
-			RingBuff_Ptr_Output(&msg->tx.msgPtr, msg->tx.msgQueueSize);
+			RingBuff_Ptr_Output(&msg->tx.ptr, UART_RX_MESSAGE_QUEUE_SIZE);
 		}
 	}
 
@@ -202,7 +182,7 @@ void USART0_IRQHandler(void)
         if(MAP_UARTCharsAvail(UART0_BASE))
         {
             data[0] = (uint8_t)UARTCharGet(UART0_BASE);
-            UART_AddByteToBuffer(&uart0, data, 1);
+            UART_IncrementCharPointer(&uart0, data, 1);
         }
     }
     else
@@ -225,10 +205,10 @@ int UART_TxMessage_IT(UartBufferStruct *msg)
 
     if(msg->tx.msgToSend_Pending == true) return UART_TX_PENDING;
 
-    if(msg->tx.msgPtr.cnt_Handle)
+    if(msg->tx.queuePtr.cnt_Handle)
     {
-        msg->tx.msgToSend = &msg->tx.msgQueue[msg->tx.msgPtr.index_OUT]; // set msgToSend to buffer index
-        RingBuff_Ptr_Output(&msg->tx.msgPtr, msg->tx.msgQueueSize); // increment buffer index
+        msg->tx.msgToSend = &msg->tx.queue[msg->tx.queuePtr.index_OUT]; // set msgToSend to buffer index
+        RingBuff_Ptr_Output(&msg->tx.queuePtr, msg->tx.msgQueueSize); // increment buffer index
 
         if(msg->tx.msgToSend->size > 1)
         {
@@ -276,11 +256,11 @@ int UART_TxMessage(UartBufferStruct *msg)
 {
     int i = 0;
 
-    if(msg->tx.msgPtr.cnt_Handle)
+    if(msg->tx.queuePtr.cnt_Handle)
     {
-        msg->tx.msgToSend = &msg->tx.msgQueue[msg->tx.msgPtr.index_OUT];
+        msg->tx.msgToSend = &msg->tx.queue[msg->tx.queuePtr.index_OUT];
 
-        RingBuff_Ptr_Output(&msg->tx.msgPtr, msg->tx.msgQueueSize);
+        RingBuff_Ptr_Output(&msg->tx.queuePtr, msg->tx.msgQueueSize);
 
         for(i = 0; i < msg->tx.msgToSend->size; i++)
         {
@@ -367,7 +347,7 @@ void UART1_Receive_CallBack(void)
 
 	data[0] = (uint8_t)U1RXREG;
 	UART_Add_IRQ_Byte(&uart1_rxMsg, data, 1);
-	UART_AddCharToBuffer(&uart1_rxMsg);
+	UART_IncrementCharPointer(&uart1_rxMsg);
 }
 
 void UART2_Receive_CallBack(void)
@@ -376,7 +356,7 @@ void UART2_Receive_CallBack(void)
 
 	data[0] = (uint8_t)U2RXREG;
 	UART_Add_IRQ_Byte(&uart2_rxMsg, data, 1);
-	UART_AddCharToBuffer(&uart2_rxMsg);
+	UART_IncrementCharPointer(&uart2_rxMsg);
 }
 
 
@@ -393,7 +373,7 @@ int UART_TxMessage_IT(UartTxBufferStruct *msg)
     uint8_t uartPort;
 
     count = UART_TX_GetMessageSize(msg);
-    uartPort = msg->uartPort[msg->msgPtr.iIndexOUT];
+    uartPort = msg->uartPort[msg->queuePtr.iIndexOUT];
 
     while(count)
     {
@@ -401,7 +381,7 @@ int UART_TxMessage_IT(UartTxBufferStruct *msg)
         {
             if(!(U1STAHbits.UTXBF == 1))
             {
-                U1TXREG = msg->msgQueue[msg->msgPtr.iIndexOUT].data[i];
+                U1TXREG = msg->queue[msg->queuePtr.iIndexOUT].data[i];
                 count--;
                 i++;
             }
@@ -410,7 +390,7 @@ int UART_TxMessage_IT(UartTxBufferStruct *msg)
         {
             if(!(U2STAHbits.UTXBF == 1))
             {
-                U2TXREG = msg->msgQueue[msg->msgPtr.iIndexOUT].data[i];
+                U2TXREG = msg->queue[msg->queuePtr.iIndexOUT].data[i];
                 count--;
                 i++;
             }
@@ -474,7 +454,7 @@ void Uart0ReceiveInterruptHandler(void *CallBackRef, unsigned int EventData)
  */
 int UartTxMessage(UartTxBufferStruct *buffer, uint8_t uartPort)
 {
-	uint8_t *pData = buffer->BufStruct.rxMsgQueue[buffer->RingBuff.msgPtr.iIndexOUT].msgData;
+	uint8_t *pData = buffer->BufStruct.rxMsgQueue[buffer->RingBuff.queuePtr.iIndexOUT].msgData;
 	while (*pData != '\0') {
 		switch (uartPort) {
 		case UART_PORT_0:
