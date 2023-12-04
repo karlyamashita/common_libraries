@@ -164,6 +164,33 @@ bool UART_RxMessagePending(UartBufferStruct *msg)
     return false;
 }
 
+/*
+ * Description: Checks for new Tx message.
+ * 				Be sure to call UART_TxMessagePendingDone when msg->tx.msgToSend has been sent.
+ */
+bool UART_TxMessagePending(UartBufferStruct *msg)
+{
+	if(msg->tx.msgToSend_Pending) return false; // there is a tx message that is pending, so return until sent
+
+	if(msg->tx.ptr.cnt_Handle)
+	{
+		msg->tx.msgToSend = &msg->tx.queue[msg->tx.ptr.index_OUT];
+		RingBuff_Ptr_Output(&msg->tx.ptr, UART_TX_MESSAGE_QUEUE_SIZE);
+		msg->tx.msgToSend_Pending = true; // pending tx message
+		return true;
+	}
+
+	return false;
+}
+
+/*
+ * Description: Call this when the pending message has been sent.
+ */
+void UART_TxMessagePendingDone(UartBufferStruct *msg)
+{
+	msg->tx.msgToSend_Pending = false;
+}
+
 //************************************ Transmit **********************************
 
 /*

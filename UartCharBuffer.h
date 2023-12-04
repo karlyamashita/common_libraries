@@ -68,7 +68,7 @@ typedef struct
 
 		RING_BUFF_STRUCT bytePtr; // pointer for byteBuffer
 		RING_BUFF_STRUCT ptr; // pointer for queue
-		uint8_t uartType; // default UART_ASCII
+		uint8_t uartType; // UART_ASCII or UART_BINARY, default UART_ASCII
 #ifdef USE_HAL_DRIVER
 		HAL_StatusTypeDef HAL_Status;
 #endif
@@ -77,7 +77,7 @@ typedef struct
 	{
 		UartDataStruct queue[UART_TX_MESSAGE_QUEUE_SIZE];
 		UartDataStruct *msgToSend;
-		bool msgToSend_Pending; // used for TM4C12x in UART_Handler.c
+		bool msgToSend_Pending;
 		uint32_t msgToSend_BytePtr; //
 		RING_BUFF_STRUCT ptr; // pointer for queue
 	}tx;
@@ -91,7 +91,8 @@ void UART_SortRx_BINARY_Buffer(UartBufferStruct *msg, CheckSumType checkSumType)
 void UART_InitPacketSize(UartBufferStruct *msg, uint32_t size);
 // check pending message
 bool UART_RxMessagePending(UartBufferStruct *msg);
-
+bool UART_TxMessagePending(UartBufferStruct *msg);
+void UART_TxMessagePendingDone(UartBufferStruct *msg);
 // Tx
 void UART_TX_AddDataToBuffer(UartBufferStruct *msgOut, uint8_t *msgIN, uint32_t dataSize);
 
