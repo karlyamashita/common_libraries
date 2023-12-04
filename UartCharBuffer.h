@@ -59,7 +59,7 @@ typedef struct
 #endif
     struct
 	{
-    	uint8_t irqByte[1];
+    	uint8_t irqByte; // UART IRQ needs to save Rx byte to this variable
 		UartDataStruct queue[UART_RX_MESSAGE_QUEUE_SIZE];
 		UartDataStruct *msgToParse;
 
@@ -77,8 +77,6 @@ typedef struct
 	{
 		UartDataStruct queue[UART_TX_MESSAGE_QUEUE_SIZE];
 		UartDataStruct *msgToSend;
-		bool msgToSend_Pending;
-		uint32_t msgToSend_BytePtr; //
 		RING_BUFF_STRUCT ptr; // pointer for queue
 	}tx;
 }UartBufferStruct;
@@ -91,8 +89,7 @@ void UART_SortRx_BINARY_Buffer(UartBufferStruct *msg, CheckSumType checkSumType)
 void UART_InitPacketSize(UartBufferStruct *msg, uint32_t size);
 // check pending message
 bool UART_RxMessagePending(UartBufferStruct *msg);
-bool UART_TxMessagePending(UartBufferStruct *msg);
-void UART_TxMessagePendingDone(UartBufferStruct *msg);
+
 // Tx
 void UART_TX_AddDataToBuffer(UartBufferStruct *msgOut, uint8_t *msgIN, uint32_t dataSize);
 

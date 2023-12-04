@@ -9,17 +9,18 @@
 
 #include "main.h"
 
-//extern UART_HandleTypeDef huart2;
-extern UART_HandleTypeDef hlpuart1;
+extern UART_HandleTypeDef huart2;
+//extern UART_HandleTypeDef hlpuart1;
 
 
 // Init uart2 or lpuart1
-UartBufferStruct uart1 =
+UartBufferStruct uart2 =
 {
-	.huart = &hlpuart1,
-	.rx.uartType = UART_ASCII
-};
+	.huart = &huart2,
+	.rx.uartType = UART_ASCII,
+	.rx.irqByte = 0
 
+};
 
 
 /*
@@ -27,7 +28,7 @@ UartBufferStruct uart1 =
  */
 void UART_EnableRxInterrupt(UartBufferStruct *msg)
 {
-	msg->rx.HAL_Status = HAL_UART_Receive_IT(msg->huart, msg->rx.irqByte, 1);
+	msg->rx.HAL_Status = HAL_UART_Receive_IT(msg->huart, &msg->rx.irqByte, 1);
 }
 
 /*
@@ -49,10 +50,10 @@ void UART_CheckRxIntError(UartBufferStruct *msg)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == uart1.huart)
+	if(huart == uart2.huart)
 	{
-		UART_AddByteToBuffer(&uart1);
-		UART_EnableRxInterrupt(&uart1);
+		UART_AddByteToBuffer(&uart2);
+		UART_EnableRxInterrupt(&uart2);
 	}
 }
 
@@ -62,13 +63,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-	if(huart == uart1.huart)
+	if(huart == uart2.huart)
 	{
-		uart1.rx.queue[uart1.rx.ptr.index_IN].size = Size;
-		RingBuff_Ptr_Input(&uart1.rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE);
-		UART_EnableRxInterrupt(&uart1);
+		uart2.rx.queue[uart2.rx.ptr.index_IN].size = Size;
+		RingBuff_Ptr_Input(&uart2.rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE);
+		UART_EnableRxInterrupt(&uart2);
 	}
 }
+
 
 /*
  * Description: Transmit any available messages. Call from main while loop
@@ -76,12 +78,15 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 int UART_TxMessage_IT(UartBufferStruct *msg)
 {
 	int status = 0;
+	UartDataStruct *ptr;
 
-	if(UART_TxMessagePending(msg))
+	if(msg->tx.ptr.cnt_Handle)
 	{
-		if(HAL_UART_Transmit_IT(msg->huart, msg->tx.msgToSend->data, msg->tx.msgToSend->size) == HAL_OK)
+		ptr = &msg->tx.queue[msg->tx.ptr.index_OUT];
+
+		if(HAL_UART_Transmit_IT(msg->huart, ptr->data, ptr->size) == HAL_OK)
 		{
-			UART_TxMessagePendingDone(msg);
+			RingBuff_Ptr_Output(&msg->tx.ptr, UART_TX_MESSAGE_QUEUE_SIZE);
 		}
 	}
 

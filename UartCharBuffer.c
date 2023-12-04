@@ -37,9 +37,9 @@ void UART_AddByteToBuffer(UartBufferStruct *msg)
 {
 	if(msg->rx.uartType == UART_ASCII)
 	{
-		msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = msg->rx.irqByte[0]; // save byte to current queue
+		msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = msg->rx.irqByte; // save byte to current queue
 		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE); // increment byte pointer
-		if(msg->rx.irqByte[0] == '\n') // check for LF
+		if(msg->rx.irqByte == '\n') // check for LF
 		{
 			msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = 0; // add null
 			msg->rx.queue[msg->rx.ptr.index_IN].size = msg->rx.bytePtr.index_IN; // save size
@@ -49,7 +49,7 @@ void UART_AddByteToBuffer(UartBufferStruct *msg)
 	}
 	else if(msg->rx.uartType == UART_BINARY)
 	{
-		msg->rx.binaryBuffer[msg->rx.bytePtr.index_IN] = msg->rx.irqByte[0];
+		msg->rx.binaryBuffer[msg->rx.bytePtr.index_IN] = msg->rx.irqByte;
 		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE); // increment byte pointer
 		if(msg->rx.bytePtr.index_IN >= msg->rx.packetSize) // check if byte pointer equals packet size
 		{
@@ -164,32 +164,6 @@ bool UART_RxMessagePending(UartBufferStruct *msg)
     return false;
 }
 
-/*
- * Description: Checks for new Tx message.
- * 				Be sure to call UART_TxMessagePendingDone when msg->tx.msgToSend has been sent.
- */
-bool UART_TxMessagePending(UartBufferStruct *msg)
-{
-	if(msg->tx.msgToSend_Pending) return false; // there is a tx message that is pending, so return until sent
-
-	if(msg->tx.ptr.cnt_Handle)
-	{
-		msg->tx.msgToSend = &msg->tx.queue[msg->tx.ptr.index_OUT];
-		RingBuff_Ptr_Output(&msg->tx.ptr, UART_TX_MESSAGE_QUEUE_SIZE);
-		msg->tx.msgToSend_Pending = true; // pending tx message
-		return true;
-	}
-
-	return false;
-}
-
-/*
- * Description: Call this when the pending message has been sent.
- */
-void UART_TxMessagePendingDone(UartBufferStruct *msg)
-{
-	msg->tx.msgToSend_Pending = false;
-}
 
 //************************************ Transmit **********************************
 
