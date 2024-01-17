@@ -115,7 +115,7 @@ void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
  - It is totally up to the user how to send messages to the STM32 and how to parse the messages.
  - User would call UART_CheckForNewMessage(&uartDMA_RXMsg) from a polling routine
 
-void UART_CheckForNewMessage(UART_DMA_RxQueueStruct *msg)
+void UART_CheckForNewMessage(UART_DMA_QueueStruct *msg)
 {
 	if(UART_DMA_MsgRdy(msg))
 	{
