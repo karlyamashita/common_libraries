@@ -168,6 +168,16 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
+// Be sure to initialize UART instance in polling routine
+ *
+UART_DMA_QueueStruct uart1 =
+{
+	.huart = &hlpuart1,
+	.rx.queueSize = UART_DMA_QUEUE_SIZE,
+	.tx.queueSize = UART_DMA_QUEUE_SIZE
+};
+
+
  */
 
 
