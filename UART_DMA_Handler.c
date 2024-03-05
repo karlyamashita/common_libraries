@@ -77,16 +77,20 @@ void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *str, uin
 }
 
 /*
- * Description: This must be called from a polling routine.
+ * Description: This will be called from UART_DMA_NotifyUser or from HAL_UART_TxCpltCallback
  *
  */
 void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
 {
 	if(msg->tx.ptr.cnt_Handle)
 	{
-		if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
+		if(!msg->tx.txPending)
 		{
-			RingBuff_Ptr_Output(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
+			if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
+			{
+				msg->tx.txPending = true;
+				RingBuff_Ptr_Output(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
+			}
 		}
 	}
 }
@@ -106,7 +110,9 @@ void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
     }
 
     msg->tx.queue[msg->tx.ptr.index_IN].size = strlen((char*)strMsg);
-    UART_DMA_TX_AddMessageToBuffer(msg, strMsg, strlen((char*)strMsg));
+    UART_DMA_TX_AddMessageToBuffer(msg, strMsg, strlen((char*)strMsg)); // add message to queue
+
+    UART_DMA_StartSendMessage();
 }
 
 
@@ -128,6 +134,37 @@ void UART_CheckForNewMessage(UART_DMA_QueueStruct *msg)
 		{
 			// call function to get status information
 		}
+	}
+}
+
+// Here are callbacks that should be placed in your polling routine or interrupt routine.
+ * This is for uart1. If you have more UART instances then test for those.
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	if(huart == uart1.huart)
+	{
+		RingBuff_Ptr_Input(&uart1.rx.ptr, uart1.rx.queueSize);
+		UART_DMA_EnableRxInterrupt(&uart1);
+	}
+	else if(huart == uart2.huart)
+	{
+		RingBuff_Ptr_Input(&uart2.rx.ptr, uart2.rx.queueSize);
+		UART_DMA_EnableRxInterrupt(&uart2);
+	}
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == uart1.huart)
+	{
+		uart1.tx.txPending = false;
+		UART_DMA_SendMessage(&uart1);
+	}
+	else if(huart == uart2.huart)
+	{
+		uart2.tx.txPending = false;
+		UART_DMA_SendMessage(&uart2);
 	}
 }
 
