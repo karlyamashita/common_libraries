@@ -28,7 +28,7 @@ void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
  */
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
 {
-	msg->rx.HAL_Status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_DATA_SIZE * 2);
+	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.queue[msg->rx.ptr.index_IN].data, UART_DMA_DATA_SIZE * 2);
 }
 
 /*
@@ -37,9 +37,9 @@ void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg)
  */
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg)
 {
-	if(msg->rx.HAL_Status != HAL_OK)
+	if(msg->rx.hal_status != HAL_OK)
 	{
-		msg->rx.HAL_Status = HAL_OK;
+		msg->rx.hal_status = HAL_OK;
 		UART_DMA_EnableRxInterrupt(msg);
 	}
 }
@@ -84,7 +84,7 @@ void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
 {
 	if(msg->tx.ptr.cnt_Handle)
 	{
-		if(!msg->tx.txPending)
+		if(!msg->tx.txPending) // If no message is being sent then send message in queue
 		{
 			if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
 			{
@@ -112,7 +112,7 @@ void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed)
     msg->tx.queue[msg->tx.ptr.index_IN].size = strlen((char*)strMsg);
     UART_DMA_TX_AddMessageToBuffer(msg, strMsg, strlen((char*)strMsg)); // add message to queue
 
-    UART_DMA_StartSendMessage();
+    UART_DMA_SendMessage(msg); // Try to send message if !msg->tx.txPending
 }
 
 

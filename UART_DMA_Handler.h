@@ -30,7 +30,7 @@ typedef struct
 		UART_DMA_Data *msgToParse;
 		RING_BUFF_STRUCT ptr;
 		uint32_t queueSize;
-		HAL_StatusTypeDef HAL_Status;
+		HAL_StatusTypeDef hal_status;
 	}rx;
 	struct
 	{
