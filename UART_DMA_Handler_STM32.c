@@ -9,7 +9,7 @@
  */
 
 #include "main.h"
-#include "UART_DMA_Handler.h"
+#include "UART_DMA_Handler_STM32.h"
 
 
 /*
@@ -114,7 +114,7 @@ void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, uint32_t size, bo
 
 
 /*
- - Below is an example of checking for a new message and have it copied to msgNew variable.
+ - Below is an example of checking for a new message and have msgToParse as a pointer to the queue.
  - It is totally up to the user how to send messages to the STM32 and how to parse the messages.
  - User would call UART_CheckForNewMessage(&uartDMA_RXMsg) from a polling routine
 
