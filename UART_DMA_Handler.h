@@ -10,7 +10,7 @@
 
 // USER DEFINES User can adjust these defines to fit their project requirements
 #define UART_DMA_DATA_SIZE 128
-#define UART_DMA_QUEUE_SIZE 4
+#define UART_DMA_QUEUE_SIZE 8
 // END USER DEFINES
 // **************************************************
 // ********* Do not modify code below here **********
@@ -46,9 +46,9 @@ void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart);
 void UART_DMA_EnableRxInterrupt(UART_DMA_QueueStruct *msg);
 void UART_DMA_CheckRxInterruptErrorFlag(UART_DMA_QueueStruct *msg);
 int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg);
-void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, bool lineFeed);
+void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, uint32_t size, bool lineFeed);
 
-void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *str, uint32_t size);
+void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint32_t size);
 void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg);
 
 
