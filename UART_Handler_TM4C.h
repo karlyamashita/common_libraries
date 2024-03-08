@@ -21,5 +21,4 @@ int UART_TxMessage_IT(UartBufferStruct *msg);
 int UART_Parse(UartBufferStruct *msg);
 int UART_TxMessage(UartBufferStruct *msg);
 
-
 #endif /* INC_UART_HANDLER_H_ */

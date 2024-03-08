@@ -16,8 +16,7 @@
 UartBufferStruct uart0 =
 {
     .instance = UART0_BASE,
-    .rx.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE,
-    .tx.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE
+    .rx.uartType = UART_ASCII
 };
 
 static void UART_TransmitMessage(UartBufferStruct *msg);
@@ -28,10 +27,10 @@ static void UART_TransmitMessage(UartBufferStruct *msg);
 //
 //*****************************************************************************
 // this function should be registered when initializing the UART, UARTIntRegister(UART0_BASE, USART0_IRQHandler);
+
 void USART0_IRQHandler(void)
 {
     uint32_t ui32Status;
-    uint8_t data[1];
 
     //
     // Get the interrupt status.
@@ -41,27 +40,29 @@ void USART0_IRQHandler(void)
     //
     // Clear the asserted interrupts.
     //
-    MAP_UARTIntClear(UART0_BASE, ui32Status);
+    UARTIntClear(UART0_BASE, ui32Status);
 
     if((ui32Status & UART_INT_TX) == UART_INT_TX)
     {
         UART_TransmitMessage(&uart0);
     }
-    else if((ui32Status & UART_INT_RX) == UART_INT_RX)
+
+    if( (ui32Status & UART_INT_RT) == UART_INT_RT)
     {
         //
         // Save available character in buffer.
         //
-        if(MAP_UARTCharsAvail(UART0_BASE))
+        if(UARTCharsAvail(UART0_BASE))
         {
-            data[0] = (uint8_t)UARTCharGet(UART0_BASE);
-            UART_IncrementCharPointer(&uart0, data, 1);
+            uart0.rx.irqByte = (uint8_t)UARTCharGetNonBlocking(UART0_BASE);
+            UART_AddByteToBuffer(&uart0);
         }
     }
-    else
+
+    if(UARTCharsAvail(UART0_BASE))
     {
-        // some other interrupt
-        ToggleLedGrn();
+        uart0.rx.irqByte = (uint8_t)UARTCharGetNonBlocking(UART0_BASE);
+        UART_AddByteToBuffer(&uart0);
     }
 }
 
@@ -78,10 +79,10 @@ int UART_TxMessage_IT(UartBufferStruct *msg)
 
     if(msg->tx.msgToSend_Pending == true) return UART_TX_PENDING;
 
-    if(msg->tx.queuePtr.cnt_Handle)
+    if(msg->tx.ptr.cnt_Handle)
     {
-        msg->tx.msgToSend = &msg->tx.queue[msg->tx.queuePtr.index_OUT]; // set msgToSend to buffer index
-        RingBuff_Ptr_Output(&msg->tx.queuePtr, msg->tx.msgQueueSize); // increment buffer index
+        msg->tx.msgToSend = &msg->tx.queue[msg->tx.ptr.index_OUT]; // set msgToSend to buffer index
+        RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize); // increment buffer index
 
         if(msg->tx.msgToSend->size > 1)
         {
@@ -129,11 +130,11 @@ int UART_TxMessage(UartBufferStruct *msg)
 {
     int i = 0;
 
-    if(msg->tx.queuePtr.cnt_Handle)
+    if(msg->tx.ptr.cnt_Handle)
     {
-        msg->tx.msgToSend = &msg->tx.queue[msg->tx.queuePtr.index_OUT];
+        msg->tx.msgToSend = &msg->tx.queue[msg->tx.ptr.index_OUT];
 
-        RingBuff_Ptr_Output(&msg->tx.queuePtr, msg->tx.msgQueueSize);
+        RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize);
 
         for(i = 0; i < msg->tx.msgToSend->size; i++)
         {
