@@ -17,8 +17,8 @@
  */
 #define UART_RX_IRQ_BYTE_SIZE 1 // Typically this is 1 byte for most uC.
 
-#define UART_RX_BYTE_BUFFER_SIZE 128 // this holds all the IRQ data
-#define UART_TX_BYTE_BUFFER_SIZE 128
+#define UART_RX_BYTE_BUFFER_SIZE 512 // this holds all the IRQ data
+#define UART_TX_BYTE_BUFFER_SIZE 256
 #define UART_RX_MESSAGE_QUEUE_SIZE 8// buffer size of complete strings or packets.
 #define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
 

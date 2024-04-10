@@ -28,15 +28,17 @@ UartBufferStruct uart2_msg =
  *  Microchip default callback
  *
  */
-void UART1_Receive_CallBack(void)
+// UART1_Receive_CallBack for Classic
+void UART1_RxCompleteCallback(void)
 {
-	uart1_msg.rx.irqByte[0] = (uint8_t)U1RXREG;
+	uart1_msg.rx.irqByte = (uint8_t)U1RXREG;
     UART_AddByteToBuffer(&uart1_msg);
 }
 
-void UART2_Receive_CallBack(void)
+// UART2_Receive_CallBack for Classic
+void UART2_RxCompleteCallback(void)
 {
-	uart2_msg.rx.irqByte[0] = (uint8_t)U2RXREG;
+	uart2_msg.rx.irqByte = (uint8_t)U2RXREG;
 	UART_AddByteToBuffer(&uart2_msg);
 }
 

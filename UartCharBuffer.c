@@ -184,6 +184,8 @@ void UART_TX_AddDataToBuffer(UartBufferStruct *msgOut, uint8_t *msgIN, uint32_t 
     }
     msgOut->tx.queue[msgOut->tx.ptr.index_IN].size = size;
     RingBuff_Ptr_Input(&msgOut->tx.ptr, UART_TX_MESSAGE_QUEUE_SIZE);
+
+    UART_TxMessage_IT(msgOut); // try sending if queue is empty
 }
 
 

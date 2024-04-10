@@ -9,17 +9,16 @@
 
 #include "main.h"
 
-extern UART_HandleTypeDef huart2;
-//extern UART_HandleTypeDef hlpuart1;
 
+//extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef hlpuart1;
 
 // Init uart2 or lpuart1
-UartBufferStruct uart2 =
+UartBufferStruct uart1_msg =
 {
-	.huart = &huart2,
+	.huart = &hlpuart1,
 	.rx.uartType = UART_ASCII,
 	.rx.irqByte = 0
-
 };
 
 
@@ -50,24 +49,19 @@ void UART_CheckRxIntError(UartBufferStruct *msg)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == uart2.huart)
+	if(huart == uart1_msg.huart)
 	{
-		UART_AddByteToBuffer(&uart2);
-		UART_EnableRxInterrupt(&uart2);
+		UART_AddByteToBuffer(&uart1_msg);
+		UART_EnableRxInterrupt(&uart1_msg);
 	}
 }
 
-/*
- * Description: STM32 IDLE callback
- *
- */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == uart2.huart)
+	if(huart == uart1_msg.huart)
 	{
-		uart2.rx.queue[uart2.rx.ptr.index_IN].size = Size;
-		RingBuff_Ptr_Input(&uart2.rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE);
-		UART_EnableRxInterrupt(&uart2);
+		UART_TxMessage_IT(&uart1_msg); // transmit more if queue is not empty
 	}
 }
 
@@ -93,43 +87,3 @@ int UART_TxMessage_IT(UartBufferStruct *msg)
 	return status;
 }
 
-
-/*
- * How to use:
- * 	You can use pointers to the buffers or you can use fixed size buffers. Use USE_BUFFER_POINTERS in UartCharBuffer.h file to enable/disable.
- *
- * 	Initializing buffers and passing the address to the pointers.
- * 	The optional Size is for ease of use when you know the data structure name but don't remember the define size names
- *
-
-// define the UART2 Rx buffers
-uint8_t uart2RxIrqByteBuffer[UART_RX_IRQ_BYTE_SIZE] = {0}; // irq array
-uint8_t uart2RxByteBuffer[UART_RX_BYTE_BUFFER_SIZE] = {0}; // byte array
-UartMsgQueueStruct uart2RxMsgQueue[UART_RX_MESSAGE_QUEUE_SIZE] = {0}; // message array
-UartRxBufferStruct uart2Rx =
-{
-	.huart = &huart2,
-	.uartIRQ_ByteBuffer = uart2RxIrqByteBuffer,
-	.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE, // optional
-	.byteBuffer = uart2RxByteBuffer,
-	.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE, // optional
-	.msgQueue = uart2RxMsgQueue,
-	.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE // optional
-};
-
-// define the UART2 Tx buffers
-UartMsgQueueStruct uart2TxMsgQueue[UART_TX_MESSAGE_QUEUE_SIZE] = {0};
-UartTxBufferStruct uart2Tx =
-{
-	.huart = &huart2,
-	.msgQueue = uart2TxMsgQueue,
-	.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE // optional
-};
-
-
-* You can use the data structure name for Size or the define names like below
-
-RingBuff_Ptr_Output(&msg->msgPtr, msg->msgQueueSize) (or) RingBuff_Ptr_Output(&msg->msgPtr, UART_TX_MESSAGE_QUEUE_SIZE);
-
-
-*/
