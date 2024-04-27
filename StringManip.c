@@ -21,8 +21,10 @@ void RemoveSpaces(char *str)
 
     // Traverse the given string. If current character
     // is not space, then place it at index 'count++'
-    for (i = 0; str[i]; i++){
-        if (str[i] != ' '){
+    for (i = 0; str[i]; i++)
+    {
+        if (str[i] != ' ')
+        {
             str[count++] = str[i]; // here count is
                                    // incremented
         }
@@ -37,8 +39,10 @@ void RemoveSpaces(char *str)
  * Return: true or false
  *
  */
-bool IsDigit(char chr){
-    if(chr >= 0x30 && chr <= 0x39){
+bool IsDigit(char chr)
+{
+    if(chr >= 0x30 && chr <= 0x39)
+    {
         return true;
     }
     return false;
@@ -46,7 +50,9 @@ bool IsDigit(char chr){
 
 void ToLower(char *str)
 {
-    for(int i=0;i<strlen(str);i++)
+    int i;
+
+    for(i = 0; i < strlen(str); i++)
     {
         str[i]=tolower(str[i]);
     }
@@ -54,7 +60,9 @@ void ToLower(char *str)
 
 void ToUpper(char *str)
 {
-    for(int i=0;i<strlen(str);i++)
+    int i;
+
+    for(i = 0; i < strlen(str); i++)
     {
         str[i]=toupper(str[i]);
     }
