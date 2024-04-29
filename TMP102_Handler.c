@@ -50,7 +50,8 @@ int TMP102_Init(I2C_DataStruct *msg)
     msg->Tx.data[1] = TMP102_Configuration.Byte.byte1;
 
     status = I2C_Mem_Write_Generic(msg);
-    if(status != NO_ERROR){
+    if(status != NO_ERROR)
+    {
         return status;
     }
 
@@ -187,6 +188,7 @@ int TMP102_SetThermostatMode(char *msg)
     tmp102_data_1.Rx.regSize = 1;
     tmp102_data_1.Rx.registerAddr = TMP102_CONFIGURATION_REGISTER;
     tmp102_data_1.Rx.dataSize = 2;
+    // Read register
     status = I2C_Mem_Read_Generic(&tmp102_data_1);
     if (status != NO_ERROR)
     {
@@ -196,14 +198,17 @@ int TMP102_SetThermostatMode(char *msg)
     // modify bit
     TMP102_Configuration.Byte.byte0 = tmp102_data_1.Rx.data[0];
     TMP102_Configuration.Status.TM = atoi(token);
-
-    // write data
-    tmp102_data_1.Tx.regSize = 1;
-    tmp102_data_1.Tx.registerAddr = TMP102_CONFIGURATION_REGISTER;
-    tmp102_data_1.Tx.dataSize = 2;
+    tmp102_data_1.Tx.dataSize = 1;
     tmp102_data_1.Tx.data[0] = TMP102_Configuration.Byte.byte0;
-    tmp102_data_1.Tx.data[1] = TMP102_Configuration.Byte.byte1;
-    status = I2C_Mem_Write_Generic(&tmp102_data_1);
+
+    // set to write data
+    tmp102_data_1.Tx.regSize = 1;
+	tmp102_data_1.Tx.registerAddr = TMP102_CONFIGURATION_REGISTER;
+	tmp102_data_1.Tx.dataSize = 2;
+	tmp102_data_1.Tx.data[0] = TMP102_Configuration.Byte.byte0;
+	tmp102_data_1.Tx.data[1] = TMP102_Configuration.Byte.byte1;
+	// write data
+    status = I2C_Master_Transmit_Generic(&tmp102_data_1);
     if(status != NO_ERROR)
     {
         return status;
