@@ -8,34 +8,45 @@
 #ifndef INC_I2C_GENERICHANDLER_STM32_H_
 #define INC_I2C_GENERICHANDLER_STM32_H_
 
-
-enum
-{
-	I2C_GENERIC_PORT_1 = 1,
-	I2C_GENERIC_PORT_2,
-	I2C_GENERIC_PORT_3
-};
-
+// USER Adustable
+#define I2C_RX_DATA_SIZE 8
+#define I2C_TX_DATA_SIZE 8
+#define I2C_RX_QUEUE_SIZE 2
+#define I2C_TX_QUEUE_SIZE 2
+// End USER Adjustable
 
 typedef struct
 {
 	I2C_HandleTypeDef *instance;
-	uint8_t slaveAddr;
 	struct
 	{
-		uint8_t *data;
-		uint32_t dataSize;
-		uint16_t registerAddr;
-		uint32_t regSize;
-		uint32_t timeout;
+		struct
+		{
+			uint8_t slaveAddr;
+			uint8_t data[I2C_RX_DATA_SIZE];
+			uint16_t registerAddr;
+			uint32_t dataSize;
+			uint32_t regSize;
+			uint32_t timeout;
+			uint32_t timeoutTick;
+			uint32_t deviceType;
+			bool rxBusy;
+		}Queue[I2C_RX_QUEUE_SIZE];
+		// RINGBUFF
 	}Rx;
 	struct
 	{
-		uint8_t *data;
-		uint32_t dataSize;
-		uint16_t registerAddr;
-		uint32_t regSize;
-		uint32_t timeout;
+		struct
+		{
+			uint8_t slaveAddr;
+			uint8_t data[I2C_TX_DATA_SIZE];
+			uint16_t registerAddr;
+			uint32_t dataSize;
+			uint32_t regSize;
+			uint32_t timeout;
+			uint32_t deviceType;
+		}Queue[I2C_TX_QUEUE_SIZE];
+	// RINGBUFF
 	}Tx;
 }I2C_DataStruct;
 
