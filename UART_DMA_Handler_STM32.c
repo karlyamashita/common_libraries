@@ -147,7 +147,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 	}
 	else if(huart == uart2.huart)
 	{
-		uart2.rx.queue[uart1.rx.ptr.index_IN].size = Size;
+		uart2.rx.queue[uart2.rx.ptr.index_IN].size = Size;
 		RingBuff_Ptr_Input(&uart2.rx.ptr, uart2.rx.queueSize);
 		UART_DMA_EnableRxInterrupt(&uart2);
 	}
