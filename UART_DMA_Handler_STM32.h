@@ -17,8 +17,8 @@
 // **************************************************
 typedef struct
 {
+	uint32_t size; // move to top to byte align
 	uint8_t data[UART_DMA_DATA_SIZE];
-	uint32_t size;
 }UART_DMA_Data; // this is used in queue structure
 
 typedef struct
@@ -37,7 +37,6 @@ typedef struct
 		UART_DMA_Data queue[UART_DMA_QUEUE_SIZE];
 		RING_BUFF_STRUCT ptr;
 		uint32_t queueSize;
-		bool txPending;
 	}tx;
 }UART_DMA_QueueStruct;
 

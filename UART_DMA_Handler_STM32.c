@@ -53,7 +53,7 @@ int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
 	if(msg->rx.ptr.cnt_Handle)
 	{
 		msg->rx.msgToParse = &msg->rx.queue[msg->rx.ptr.index_OUT];
-		RingBuff_Ptr_Output(&msg->rx.ptr, UART_DMA_QUEUE_SIZE);
+		RingBuff_Ptr_Output(&msg->rx.ptr, msg->rx.queueSize);
 		return 1;
 	}
 
@@ -70,7 +70,7 @@ void UART_DMA_TX_AddMessageToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, ui
 	memcpy(ptr->data, data, size);
 	ptr->size = size;
 
-    RingBuff_Ptr_Input(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
+    RingBuff_Ptr_Input(&msg->tx.ptr, msg->tx.queueSize);
 }
 
 /*
@@ -81,13 +81,9 @@ void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
 {
 	if(msg->tx.ptr.cnt_Handle)
 	{
-		if(!msg->tx.txPending) // If no message is being sent then send message in queue
+		if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
 		{
-			if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
-			{
-				msg->tx.txPending = true;
-				RingBuff_Ptr_Output(&msg->tx.ptr, UART_DMA_QUEUE_SIZE);
-			}
+			RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize);
 		}
 	}
 }
@@ -157,12 +153,10 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart == uart1.huart)
 	{
-		uart1.tx.txPending = false;
 		UART_DMA_SendMessage(&uart1);
 	}
 	else if(huart == uart2.huart)
 	{
-		uart2.tx.txPending = false;
 		UART_DMA_SendMessage(&uart2);
 	}
 }
