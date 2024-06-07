@@ -9,18 +9,7 @@
 
 #include "main.h"
 
-
-//extern UART_HandleTypeDef huart2;
-extern UART_HandleTypeDef hlpuart1;
-
-// Init uart2 or lpuart1
-UartBufferStruct uart1_msg =
-{
-	.huart = &hlpuart1,
-	.rx.uartType = UART_ASCII,
-	.rx.irqByte = 0
-};
-
+extern UartBufferStruct uart2;
 
 /*
  * Description: Enables the HAL_UART_Receive_IT interrupt. Call before main while loop and in HAL_UART_RxCpltCallback
@@ -38,36 +27,12 @@ void UART_CheckRxIntError(UartBufferStruct *msg)
 {
 	if(msg->rx.HAL_Status != HAL_OK)
 	{
-		msg->rx.HAL_Status = HAL_OK;
 		UART_EnableRxInterrupt(msg);
 	}
 }
 
 /*
- * Description: HAL UART callback.
- *
- */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart == uart1_msg.huart)
-	{
-		UART_AddByteToBuffer(&uart1_msg);
-		UART_EnableRxInterrupt(&uart1_msg);
-	}
-}
-
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-{
-	if(huart == uart1_msg.huart)
-	{
-		UART_TxMessage_IT(&uart1_msg); // transmit more if queue is not empty
-	}
-}
-
-
-/*
- * Description: Transmit any available messages. Call from main while loop
+ * Description: Transmit any available messages.
  */
 int UART_TxMessage_IT(UartBufferStruct *msg)
 {
@@ -80,10 +45,45 @@ int UART_TxMessage_IT(UartBufferStruct *msg)
 
 		if(HAL_UART_Transmit_IT(msg->huart, ptr->data, ptr->size) == HAL_OK)
 		{
-			RingBuff_Ptr_Output(&msg->tx.ptr, UART_TX_MESSAGE_QUEUE_SIZE);
+			RingBuff_Ptr_Output(&msg->tx.ptr, UART_TX_QUEUE_SIZE);
 		}
 	}
 
 	return status;
 }
 
+
+// Example callback that need to be created, usually in pollingroutine
+
+/*
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == uart2.huart)
+	{
+		UART_AddByteToBuffer(&uart2);
+		UART_EnableRxInterrupt(&uart2);
+	}
+}
+
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == uart2.huart)
+	{
+		UART_TxMessage_IT(&uart2); // transmit more if queue is not empty
+	}
+}
+
+// example create uart variable
+UartBufferStruct uart2 =
+{
+	.huart = &huart2,
+	.rx.queueSize = UART_RX_MESSAGE_QUEUE_SIZE,
+	.tx.queueSize = UART_TX_MESSAGE_QUEUE_SIZE,
+	.rx.uartType = UART_ASCII,
+	.rx.irqByte = 0
+};
+
+
+ */

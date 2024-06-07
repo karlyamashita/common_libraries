@@ -16,8 +16,9 @@ extern "C" {
 #endif
 
 
-void NotifyUser(UartBufferStruct *msg, char *str, bool lineFeed);
-
+void NotifyUser(UartBufferStruct *msg, char *str, uint32_t strlen, bool lineFeed);
+void NotifyUser_Error(UartBufferStruct *msg, char *msgCpy, uint32_t error);
+void NotifyUser_PrintReply(UartBufferStruct *msg, char *msgCpy, char *msg2);
 
 #ifdef	__cplusplus
 }

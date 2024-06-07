@@ -38,23 +38,23 @@ void UART_AddByteToBuffer(UartBufferStruct *msg)
 	if(msg->rx.uartType == UART_ASCII)
 	{
 		msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = msg->rx.irqByte; // save byte to current queue
-		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE); // increment byte pointer
+		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_DATA_SIZE); // increment byte pointer
 		if(msg->rx.irqByte == '\n') // check for LF
 		{
 			msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.bytePtr.index_IN] = 0; // add null
 			msg->rx.queue[msg->rx.ptr.index_IN].size = msg->rx.bytePtr.index_IN; // save size
-			RingBuff_Ptr_Input(&msg->rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE); // increment queue index
+			RingBuff_Ptr_Input(&msg->rx.ptr, UART_RX_QUEUE_SIZE); // increment queue index
 			RingBuff_Ptr_Reset(&msg->rx.bytePtr); // reset byte pointer
 		}
 	}
 	else if(msg->rx.uartType == UART_BINARY)
 	{
 		msg->rx.binaryBuffer[msg->rx.bytePtr.index_IN] = msg->rx.irqByte;
-		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_BYTE_BUFFER_SIZE); // increment byte pointer
+		RingBuff_Ptr_Input(&msg->rx.bytePtr, UART_RX_DATA_SIZE); // increment byte pointer
 		if(msg->rx.bytePtr.index_IN >= msg->rx.packetSize) // check if byte pointer equals packet size
 		{
 			msg->rx.queue[msg->rx.ptr.index_IN].size = msg->rx.bytePtr.index_IN; // save size
-			RingBuff_Ptr_Input(&msg->rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE); // increment queue index
+			RingBuff_Ptr_Input(&msg->rx.ptr, UART_RX_QUEUE_SIZE); // increment queue index
 			RingBuff_Ptr_Reset(&msg->rx.bytePtr); // reset byte pointer
 		}
 	}
@@ -157,7 +157,7 @@ bool UART_RxMessagePending(UartBufferStruct *msg)
 	if(msg->rx.ptr.cnt_Handle)
     {
 		msg->rx.msgToParse = &msg->rx.queue[msg->rx.ptr.index_OUT];
-        RingBuff_Ptr_Output(&msg->rx.ptr, UART_RX_MESSAGE_QUEUE_SIZE);
+        RingBuff_Ptr_Output(&msg->rx.ptr, UART_RX_QUEUE_SIZE);
         return true;
     }
 
@@ -183,7 +183,7 @@ void UART_TX_AddDataToBuffer(UartBufferStruct *msgOut, uint8_t *msgIN, uint32_t 
     	msgOut->tx.queue[msgOut->tx.ptr.index_IN].data[i] = *pData++;
     }
     msgOut->tx.queue[msgOut->tx.ptr.index_IN].size = size;
-    RingBuff_Ptr_Input(&msgOut->tx.ptr, UART_TX_MESSAGE_QUEUE_SIZE);
+    RingBuff_Ptr_Input(&msgOut->tx.ptr, UART_TX_QUEUE_SIZE);
 
     UART_TxMessage_IT(msgOut); // try sending if queue is empty
 }

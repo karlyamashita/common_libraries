@@ -11,7 +11,6 @@
 
 void UART_EnableRxInterrupt(UartBufferStruct *msg);
 void UART_CheckRxIntError(UartBufferStruct *msg);
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 int UART_TxMessage_IT(UartBufferStruct *msg);
 
 

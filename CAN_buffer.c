@@ -1,171 +1,108 @@
 // by Karl Yamashita September 2017
-#include "LSP.h"
 
-#ifdef USE_CAN_BUFFER
 #include "main.h"
-#include "CAN_Buffer.h"
-#include "ringBuff.h"
-
-CanTxMsgTypeDef TxMessageBuffer1[CAN_MAX_TX_BUFF];
-CanRxMsgTypeDef RxMessageBuffer1[CAN_MAX_TX_BUFF];
-RING_BUFF_INFO TxMessagePtr1;
-RING_BUFF_INFO RxMessagePtr1;
-
-#ifdef USE_CAN_BUFFER_2
-extern CAN_HandleTypeDef hcan2;
-CanTxMsgTypeDef TxMessageBuffer2[CAN_MAX_TX_BUFF];
-CanRxMsgTypeDef RxMessageBuffer2[CAN_MAX_TX_BUFF];
-RING_BUFF_INFO TxMessagePtr2;
-RING_BUFF_INFO RxMessagePtr2;
-#endif
 
 
-HAL_StatusTypeDef CAN_Status1; // make it global for debugger window
-int SendCanTxMessage1(CAN_HandleTypeDef *hcan) {
-	uint32_t CAN_Tx_Mailboxes; // indicates which tx buffer was used
-	if(TxMessagePtr1.iCnt_Handle) { // send available message
-		CAN_Status1 = HAL_CAN_AddTxMessage(hcan, &TxMessageBuffer1[TxMessagePtr1.iIndexOUT].CAN_TxHeaderTypeDef, TxMessageBuffer1[TxMessagePtr1.iIndexOUT].Data, &CAN_Tx_Mailboxes);
-		if (CAN_Status1 == HAL_OK)
-		{
-			DRV_RingBuffPtr__Output(&TxMessagePtr1, CAN_MAX_TX_BUFF); // increment output buffer ptr
-		}
-	}
-	return TxMessagePtr1.iCnt_Handle; // if no more message to handle then 0 will be returned
-}
-
-// add to Tx buffer
-void AddCanTxBuffer1(CanTxMsgTypeDef *canMsg) {
-	unsigned char i;
-	TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.ExtId = canMsg->CAN_TxHeaderTypeDef.ExtId;
-	TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.StdId = canMsg->CAN_TxHeaderTypeDef.StdId;
-	TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.RTR = canMsg->CAN_TxHeaderTypeDef.RTR;
-	TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.IDE = canMsg->CAN_TxHeaderTypeDef.IDE;
-	TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.DLC = canMsg->CAN_TxHeaderTypeDef.DLC;
-	for(i = 0; i < TxMessageBuffer1[TxMessagePtr1.iIndexIN].CAN_TxHeaderTypeDef.DLC; i++) {
-		TxMessageBuffer1[TxMessagePtr1.iIndexIN].Data[i] = canMsg->Data[i];
-	}
-	DRV_RingBuffPtr__Input(&TxMessagePtr1, CAN_MAX_TX_BUFF); // increment input buffer ptr
-}
-
-// add to Rx buffer
-void AddCanRxBuffer1(CanRxMsgTypeDef *canMsg) {
-	unsigned char i;
-	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.ExtId = canMsg->CAN_RxHeaderTypeDef.ExtId;
-	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.StdId = canMsg->CAN_RxHeaderTypeDef.StdId;
-	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.RTR = canMsg->CAN_RxHeaderTypeDef.RTR;
-	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.IDE = canMsg->CAN_RxHeaderTypeDef.IDE;
-	RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.DLC = canMsg->CAN_RxHeaderTypeDef.DLC;
-	for(i = 0; i < RxMessageBuffer1[RxMessagePtr1.iIndexIN].CAN_RxHeaderTypeDef.DLC; i++) {
-		RxMessageBuffer1[RxMessagePtr1.iIndexIN].Data[i] = canMsg->Data[i];
-	}
-	DRV_RingBuffPtr__Input(&RxMessagePtr1, CAN_MAX_TX_BUFF); // increment input buffer ptr
-}
-
+HAL_StatusTypeDef CAN_Status; // make it global for debugger window
 /*
- * Copy buffer to canMsg array
- * Input canMsg: pointer to array
- * Output: 1 if data available, 0 if no new data
+ * Description: Send available Tx queue
  */
-uint8_t Can1DataAvailable(CanRxMsgTypeDef *canMsg)
+int CAN_SendMessage(CAN_MsgStruct *msg)
 {
-	uint8_t i, canMsgAvailable = 0;
-	if(RxMessagePtr1.iCnt_Handle) {
-		canMsg->CAN_RxHeaderTypeDef.ExtId = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.ExtId;
-		canMsg->CAN_RxHeaderTypeDef.StdId = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.StdId;
-		canMsg->CAN_RxHeaderTypeDef.RTR = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.RTR;
-		canMsg->CAN_RxHeaderTypeDef.IDE = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.IDE;
-		canMsg->CAN_RxHeaderTypeDef.DLC = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.DLC;
-		for(i = 0; i < RxMessageBuffer1[RxMessagePtr1.iIndexOUT].CAN_RxHeaderTypeDef.DLC; i++) {
-			canMsg->Data[i] = RxMessageBuffer1[RxMessagePtr1.iIndexOUT].Data[i];
-		}
-		DRV_RingBuffPtr__Output(&RxMessagePtr1, CAN_MAX_RX_BUFF); // increment output buffer ptr
-		canMsgAvailable = 1;
-	}
-	return canMsgAvailable;
-}
+	uint32_t CAN_Tx_Mailboxes; // indicates which tx mailbox was used.
+	CanTxMsgTypeDef *ptr;
 
-#ifdef USE_CAN_BUFFER_2
-/*
- * CAN2 routines
- *
- */
-HAL_StatusTypeDef CAN_Status2; // make it global for debugger window
-int SendCanTxMessage2(CAN_HandleTypeDef *hcan) {
-	uint32_t CAN_Tx_Mailboxes; // indicates which tx buffer was used
-	if(TxMessagePtr2.iCnt_Handle) { // send available message
-		CAN_Status2 = HAL_CAN_AddTxMessage(hcan, &TxMessageBuffer2[TxMessagePtr2.iIndexOUT].CAN_TxHeaderTypeDef, TxMessageBuffer2[TxMessagePtr2.iIndexOUT].Data, &CAN_Tx_Mailboxes);
-		if (CAN_Status2 == HAL_OK)
+	if(msg->txPtr.cnt_Handle) // send available message
+	{
+		ptr = &msg->txQueue[msg->txPtr.index_OUT];
+		CAN_Status = HAL_CAN_AddTxMessage(msg->hcan, &ptr->header, ptr->data, &CAN_Tx_Mailboxes);
+		if (CAN_Status == HAL_OK)
 		{
-			DRV_RingBuffPtr__Output(&TxMessagePtr2, CAN_MAX_TX_BUFF); // increment output buffer ptr
+			RingBuff_Ptr_Output(&msg->txPtr, msg->txQueueSize); // increment queue ptr
 		}
 	}
-	return TxMessagePtr2.iCnt_Handle; // if no more message to handle then 0 will be returned
-}
 
-// add to Tx buffer
-void AddCanTxBuffer2(CanTxMsgTypeDef *canMsg) {
-	unsigned char i;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.ExtId = canMsg->CAN_TxHeaderTypeDef.ExtId;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.StdId = canMsg->CAN_TxHeaderTypeDef.StdId;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.RTR = canMsg->CAN_TxHeaderTypeDef.RTR;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.IDE = canMsg->CAN_TxHeaderTypeDef.IDE;
-	TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.DLC = canMsg->CAN_TxHeaderTypeDef.DLC;
-	for(i = 0; i < TxMessageBuffer2[TxMessagePtr2.iIndexIN].CAN_TxHeaderTypeDef.DLC; i++) {
-		TxMessageBuffer2[TxMessagePtr2.iIndexIN].Data[i] = canMsg->Data[i];
-	}
-	DRV_RingBuffPtr__Input(&TxMessagePtr2, CAN_MAX_TX_BUFF); // increment input buffer ptr
-}
-
-// add to Rx buffer
-void AddCanRxBuffer2(CanRxMsgTypeDef *canMsg) {
-	unsigned char i;
-	RxMessageBuffer2[RxMessagePtr2.iIndexIN].CAN_RxHeaderTypeDef.ExtId = canMsg->CAN_RxHeaderTypeDef.ExtId;
-	RxMessageBuffer2[RxMessagePtr2.iIndexIN].CAN_RxHeaderTypeDef.StdId = canMsg->CAN_RxHeaderTypeDef.StdId;
-	RxMessageBuffer2[RxMessagePtr2.iIndexIN].CAN_RxHeaderTypeDef.RTR = canMsg->CAN_RxHeaderTypeDef.RTR;
-	RxMessageBuffer2[RxMessagePtr2.iIndexIN].CAN_RxHeaderTypeDef.IDE = canMsg->CAN_RxHeaderTypeDef.IDE;
-	RxMessageBuffer2[RxMessagePtr2.iIndexIN].CAN_RxHeaderTypeDef.DLC = canMsg->CAN_RxHeaderTypeDef.DLC;
-	for(i = 0; i < RxMessageBuffer2[RxMessagePtr2.iIndexIN].CAN_RxHeaderTypeDef.DLC; i++) {
-		RxMessageBuffer2[RxMessagePtr2.iIndexIN].Data[i] = canMsg->Data[i];
-	}
-	DRV_RingBuffPtr__Input(&RxMessagePtr2, CAN_MAX_TX_BUFF); // increment input buffer ptr
+	return msg->txPtr.cnt_Handle; // if no more message to handle then 0 will be returned
 }
 
 /*
- * Copy buffer to canMsg array
- * Input canMsg: pointer to array
- * Output: 1 if data available, 0 if no new data
+ * Description: Add message to tx queue;
+ * Input:
+ * return: 1 if queue is full, 0 if successful
  */
-uint8_t Can2DataAvailable(CanRxMsgTypeDef *canMsg)
+int CAN_AddTxBuffer(CAN_MsgStruct *msg, CanTxMsgTypeDef *txData)
 {
-	uint8_t i, canMsgAvailable = 0;
-	if(RxMessagePtr2.iCnt_Handle) {
-		canMsg->CAN_RxHeaderTypeDef.ExtId = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.ExtId;
-		canMsg->CAN_RxHeaderTypeDef.StdId = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.StdId;
-		canMsg->CAN_RxHeaderTypeDef.RTR = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.RTR;
-		canMsg->CAN_RxHeaderTypeDef.IDE = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.IDE;
-		canMsg->CAN_RxHeaderTypeDef.DLC = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.DLC;
-		for(i = 0; i < RxMessageBuffer2[RxMessagePtr2.iIndexOUT].CAN_RxHeaderTypeDef.DLC; i++) {
-			canMsg->Data[i] = RxMessageBuffer2[RxMessagePtr2.iIndexOUT].Data[i];
-		}
-		DRV_RingBuffPtr__Output(&RxMessagePtr2, CAN_MAX_RX_BUFF); // increment output buffer ptr
-		canMsgAvailable = 1;
-	}
-	return canMsgAvailable;
-}
-#endif
+	CanTxMsgTypeDef *ptr;
+	int i;
 
-// todo - add CAN2 buffer
-void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg){
+	if(msg->txPtr.cnt_OverFlow) return 1; // queue is full
+
+	ptr = &msg->txQueue[msg->txPtr.index_IN];
+
+	ptr->header.DLC = txData->header.DLC;
+	ptr->header.ExtId = txData->header.ExtId;
+	ptr->header.IDE = txData->header.IDE;
+	ptr->header.RTR = txData->header.RTR;
+	ptr->header.StdId = txData->header.StdId;
+	ptr->header.TransmitGlobalTime = txData->header.TransmitGlobalTime;
+
+	for(i = 0; i < ptr->header.DLC; i++)
+	{
+		ptr->data[i] = txData->data[i];
+	}
+
+	RingBuff_Ptr_Input(&msg->txPtr, msg->txQueueSize); // increment input buffer ptr
+
+	CAN_SendMessage(msg);
+
+	return 0;
+}
+
+
+/*
+ * Description: msgToParse points to available message
+ * Input:
+ * Output: true if data available, false if no new data
+ */
+bool CAN_DataAvailable(CAN_MsgStruct *msg)
+{
+	if(msg->rxPtr.cnt_Handle)
+	{
+		msg->msgToParse = &msg->rxQueue[msg->rxPtr.index_OUT];
+		RingBuff_Ptr_Output(&msg->rxPtr, msg->rxQueueSize); // increment output buffer ptr
+		return true;
+	}
+
+	return false;
+}
+
+bool CAN_GetBusActivity(CAN_MsgStruct *msg)
+{
+	return msg->canBusActive;
+}
+
+void CAN_ClearBusActivity(CAN_MsgStruct *msg)
+{
+	msg->canBusActive = false;
+}
+
+/*
+ * Description: Copy the Rx data to the Tx data.
+ * 		note: The header is a different struct between Tx and Rx.
+ * 				We have to copy each header over instead of memcpy.
+ */
+void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg)
+{
 	int i = 0;
-	TxMsg->CAN_TxHeaderTypeDef.ExtId = RxMsg->CAN_RxHeaderTypeDef.ExtId;
-	TxMsg->CAN_TxHeaderTypeDef.StdId = RxMsg->CAN_RxHeaderTypeDef.StdId;
-	TxMsg->CAN_TxHeaderTypeDef.IDE = RxMsg->CAN_RxHeaderTypeDef.IDE;
-	TxMsg->CAN_TxHeaderTypeDef.RTR = RxMsg->CAN_RxHeaderTypeDef.RTR;
-	TxMsg->CAN_TxHeaderTypeDef.DLC = RxMsg->CAN_RxHeaderTypeDef.DLC;
-	for(i = 0; i < TxMsg->CAN_TxHeaderTypeDef.DLC; i++) {
-		TxMsg->Data[i] = RxMsg->Data[i];
+
+	TxMsg->header.ExtId = RxMsg->header.ExtId;
+	TxMsg->header.StdId = RxMsg->header.StdId;
+	TxMsg->header.IDE = RxMsg->header.IDE;
+	TxMsg->header.RTR = RxMsg->header.RTR;
+	TxMsg->header.DLC = RxMsg->header.DLC;
+	for(i = 0; i < TxMsg->header.DLC; i++)
+	{
+		TxMsg->data[i] = RxMsg->data[i];
 	}
 }
-
-#endif // USE_CAN_BUFFER
 
