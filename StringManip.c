@@ -6,7 +6,7 @@
  */
 
 #include "main.h"
-#include "StringManip.h"
+
 
 /*
  * Description: Removes all spaces from string
@@ -48,6 +48,9 @@ bool IsDigit(char chr)
     return false;
 }
 
+/*
+ * Description: tolower case the whole string
+ */
 void ToLower(char *str)
 {
     int i;
@@ -58,6 +61,9 @@ void ToLower(char *str)
     }
 }
 
+/*
+ * Description: toupper the whole string
+ */
 void ToUpper(char *str)
 {
     int i;
