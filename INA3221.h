@@ -10,6 +10,9 @@
 
 
 #define INA3221_SLAVE_ADDRESS 0x40
+#define INA3221_I2C_PORT_DEFAULT 1
+
+
 
 // register addresses
 enum{
@@ -81,17 +84,18 @@ typedef union{
 		unsigned vShCT2_0:3; // uses same conversion time as vBus_CT2_0
 		unsigned vBus_CT2_0:3;
 		unsigned avg2_0:3;
-		unsigned ch3_En:1;
-		unsigned ch2_En:1;
-		unsigned ch1_En:1;
+		unsigned ch3_1_En:3;
 		unsigned rst:1;
 	}Status;
 }INA3221_ConfigRegStruct;
 
 
 // Channel Shunt/Bus-Voltage defines
-#define SHUNT_VOLTAGE_FULL  0.1638 // mV
-#define SHUNT_VOLTAGE_LSB  0.00004 // uV
+#define SHUNT_VOLTAGE_FULL  (0.1638 / 0.01) // mV / 0.01 Ohms
+#define SHUNT_VOLTAGE_LSB  (0.00004 / 0.01) // uV / 0.01 Ohms
+#define SHUNT_VOLTAGE_FULL_VBAT  (0.1638 / 0.005) // mV / 0.005 Ohms
+#define SHUNT_VOLTAGE_LSB_VBAT  (0.00004 / 0.005) // uV / 0.005 Ohms
+
 #define BUS_VOLTAGE_FULL  32.76 // volts
 #define BUS_VOLTAGE_LSB  0.008 // mV
 // when reading from device
@@ -108,15 +112,17 @@ typedef struct{
 
 // prototypes
 int INA3221_Init(void);
-
-int INA3221_SetConfigReg(INA3221_ConfigRegStruct *config);
+int INA3221_SetConfigReg(char *msg);
 int INA3221_ChannelShuntBusVoltage(ShuntBusVoltage_struct *shuntBusVoltage);
-int INA3221_ReadVoltage(ShuntBusVoltage_struct *shuntBusVoltage, uint16_t *value_OUT);
-int INA3221_GetManufacturerID(uint8_t id, uint8_t *value_OUT);
-void INA3221_Reset(void);
-int INA3221_ReadConfigData(void);
+int INA3221_GetManufacturerID(uint32_t i2c_base, uint8_t slaveAddress, uint8_t id, uint8_t *value_OUT);
+void INA3221_Reset(uint32_t i2c_base, uint8_t slaveAddress);
+int INA3221_ReadConfigData(char *retStr);
 
-int GetINA3221Bus(char *message, char *str);
-int GetINA3221Shunt(char *message, char *str);
+int GetINA3221Bus(char *message, char *retStr);
+int GetINA3221Shunt(char *message, char *retStr);
+
+int INA3221_HexToVoltage(float resolution, uint16_t data, double *retValue);
+
+int INA3221_ReadVoltage(uint32_t i2c_base, uint8_t slaveAddress, ShuntBusVoltage_struct *shuntBusVoltage, uint16_t *value_OUT);
 
 #endif /* INC_INA3221_H_ */

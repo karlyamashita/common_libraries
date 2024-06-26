@@ -14,8 +14,9 @@
 #include "main.h"
 #include "INA3221.h"
 
+extern UartBufferStruct uart0_msg;
 
-static int INA3221_ReadVoltage(uint32_t i2c_base, uint8_t slaveAddress, ShuntBusVoltage_struct *shuntBusVoltage, uint16_t *value_OUT);
+
 static int INA3221_WriteConfigReg(uint32_t i2c_base, uint8_t slaveAddress, INA3221_ConfigRegStruct *config);
 
 //static void OnesCompliment(uint16_t *value);
@@ -40,7 +41,7 @@ int INA3221_Init(void){
 	status = INA3221_WriteConfigReg(INA3221_I2C_PORT_DEFAULT, INA3221_SLAVE_ADDRESS, &ina3221_ConfigRegStruct);
 	if(status != NO_ERROR){
 	    GetErrorString(status, str);
-	    NotifyUser(UART_PORT_0, str, true);
+	    NotifyUser(&uart0_msg, str, true);
 	}
 
 	return status;
@@ -133,7 +134,7 @@ static int INA3221_WriteConfigReg(uint32_t i2c_base, uint8_t slaveAddress, INA32
  *
  *
  */
-static int INA3221_ReadVoltage(uint32_t i2c_base, uint8_t slaveAddress, ShuntBusVoltage_struct *shuntBusVoltage, uint16_t *value_OUT)
+int INA3221_ReadVoltage(uint32_t i2c_base, uint8_t slaveAddress, ShuntBusVoltage_struct *shuntBusVoltage, uint16_t *value_OUT)
 {
 	int status = NO_ERROR;
     uint32_t readWriteSize = 0;
@@ -186,7 +187,9 @@ static int INA3221_ReadVoltage(uint32_t i2c_base, uint8_t slaveAddress, ShuntBus
 	if(status != NO_ERROR){
 		return status;
 	}
-	value = (data[0] << 8) | (data[1]); // return (int)rx[0]<<8|(int)rx[1];
+	//value = (data[0] << 8) | (data[1]); // return (int)rx[0]<<8|(int)rx[1];
+	//value = (data[0] << 8) | (data[1] >> 3); // return (int)rx[0]<<8|(int)rx[1]; // 1.2.11
+	value = ((data[0] << 8) | (data[1])) >> 3; // 1.2.12
 	*value_OUT = value;
 
 	return status;
@@ -439,7 +442,7 @@ int INA3221_VoltageToHex(float resolution, float voltage, uint16_t *wholeNumber)
  * Return: error status
  *
  */
-int INA3221_HexToVoltage(float resolution, uint16_t data, float *retValue)
+int INA3221_HexToVoltage(float resolution, uint16_t data, double *retValue)
 {
     uint8_t isNeg = 0;
     uint16_t negNumber = 0;
