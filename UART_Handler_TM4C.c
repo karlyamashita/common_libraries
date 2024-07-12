@@ -13,63 +13,118 @@
 /*
  * Description: Init uart0 buffers
  */
-UartBufferStruct uart0 =
+UartBufferStruct uart0_msg =
 {
-    .instance = UART0_BASE,
-    .rx.uartType = UART_ASCII
+    .rx.uartType = UART_ASCII,
+    .uart_base = UART0_BASE,
+    .rx.queueSize = UART_RX_QUEUE_SIZE,
+    .tx.queueSize = UART_TX_QUEUE_SIZE,
+    .rx.dataSize = UART_RX_DATA_SIZE,
+    .rx.RxIRQ = TM4C_UART_Rx_IRQ,
+    .tx.TxIRQ = TM4C_UART_Tx_IRQ,
+    .ErrorIRQ = TM4C_UART_ErrorCallback
 };
+
+UartBufferStruct uart6_msg =
+{
+    .rx.uartType = UART_ASCII,
+    .uart_base = UART6_BASE,
+    .rx.queueSize = UART_RX_QUEUE_SIZE,
+    .tx.queueSize = UART_TX_QUEUE_SIZE,
+    .rx.dataSize = UART_RX_DATA_SIZE,
+    .rx.RxIRQ = TM4C_UART_Rx_IRQ,
+    .tx.TxIRQ = TM4C_UART_Tx_IRQ,
+    .ErrorIRQ = TM4C_UART_ErrorCallback
+};
+
+bool echoMode = 0;
 
 static void UART_TransmitMessage(UartBufferStruct *msg);
 
-//*****************************************************************************
-//
-// The UART interrupt handler.
-//
-//*****************************************************************************
-// this function should be registered when initializing the UART, UARTIntRegister(UART0_BASE, USART0_IRQHandler);
 
-void USART0_IRQHandler(void)
+// Called from USART0_IRQHandler
+void TM4C_USART_IRQHandler(UartBufferStruct *msg)
 {
     uint32_t ui32Status;
+    uint32_t errorStatus;
 
-    //
-    // Get the interrupt status.
-    //
-    ui32Status = UARTIntStatus(UART0_BASE, true);
-
-    //
-    // Clear the asserted interrupts.
-    //
-    UARTIntClear(UART0_BASE, ui32Status);
-
-    if((ui32Status & UART_INT_TX) == UART_INT_TX)
+    // Get error status
+    errorStatus = UARTRxErrorGet(msg->uart_base);
+    UARTRxErrorClear(msg->uart_base);
+    if(errorStatus != 0)
     {
-        UART_TransmitMessage(&uart0);
-    }
-
-    if( (ui32Status & UART_INT_RT) == UART_INT_RT)
-    {
-        //
-        // Save available character in buffer.
-        //
-        if(UARTCharsAvail(UART0_BASE))
+        msg->errorStatus = errorStatus;
+        if(msg->ErrorIRQ != NULL)
         {
-            uart0.rx.irqByte = (uint8_t)UARTCharGetNonBlocking(UART0_BASE);
-            UART_AddByteToBuffer(&uart0);
+            msg->ErrorIRQ(msg);
         }
     }
 
-    if(UARTCharsAvail(UART0_BASE))
+    // Get interrupt status
+    ui32Status = UARTIntStatus(msg->uart_base, true);
+    UARTIntClear(msg->uart_base, ui32Status);
+
+    // test for tx interrupt flag
+    if( (ui32Status & UART_INT_TX) == UART_INT_TX)
     {
-        uart0.rx.irqByte = (uint8_t)UARTCharGetNonBlocking(UART0_BASE);
-        UART_AddByteToBuffer(&uart0);
+        if(msg->tx.TxIRQ != NULL)
+        {
+            msg->tx.TxIRQ(msg);
+        }
+    }
+    // test for rx/rt interrupt flag
+    else if(((ui32Status & UART_INT_RX) == UART_INT_RX) || ((ui32Status & UART_INT_RT) == UART_INT_RT))
+    {
+        if(msg->rx.RxIRQ != NULL)
+        {
+            msg->rx.RxIRQ(msg);
+        }
+    }
+}
+
+__weak void TM4C_UART_Rx_IRQ(UartBufferStruct *msg)
+{
+    while (UARTCharsAvail(msg->uart_base))
+    {
+        msg->rx.irqByte = (uint8_t)UARTCharGet(msg->uart_base);
+        if(echoMode == 1)
+        {
+            UARTCharPut(msg->uart_base, (unsigned char)msg->rx.irqByte); // echo character
+        }
+
+        UART_AddByteToBuffer(msg); // save character to char buffer
+    }
+}
+
+/*
+ * Description: Transmit byte done.
+ */
+__weak void TM4C_UART_Tx_IRQ(UartBufferStruct *msg)
+{
+    UART_TransmitMessage(msg);
+}
+
+__weak void TM4C_UART_ErrorCallback(UartBufferStruct *msg)
+{
+    if((msg->errorStatus & UART_RXERROR_OVERRUN) == UART_RXERROR_OVERRUN)
+    {
+        // There is an overrun. Get the byte from data register fast! But we'll discard it, so the message will be corrupted.
+        if(UARTCharsAvail(msg->uart_base))
+        {
+           (uint8_t)UARTCharGet(msg->uart_base);
+        }
+        ToggleLedRed();
+    }
+
+    if((msg->errorStatus & UART_RXERROR_FRAMING) == UART_RXERROR_FRAMING)
+    {
+
     }
 }
 
 
 /*
- * Description: This will enable TX interrupt start the first byte transmit and continue interrupts until done.
- *              Must call from polling routine
+ * Description: This will enable TX interrupt, start the first byte transmit and continue interrupts until done.
  * Input: the UART data structure
  *
  */
@@ -88,12 +143,7 @@ int UART_TxMessage_IT(UartBufferStruct *msg)
         {
             msg->tx.msgToSend_BytePtr = 0;
             msg->tx.msgToSend_Pending = true;
-            UARTIntEnable(msg->instance, UART_INT_TX); // enable tx interrupts
             UART_TransmitMessage(msg); // start the transmit
-        }
-        else if(msg->tx.msgToSend->size == 1) // we can poll since this only 1 byte
-        {
-            UART_TxMessage(msg); // non interrupt send
         }
         else // the queue has no bytes to send.
         {
@@ -105,97 +155,95 @@ int UART_TxMessage_IT(UartBufferStruct *msg)
 }
 
 /*
- * Description:
- */
-static void UART_TransmitMessage(UartBufferStruct *msg)
-{
-    if(msg->tx.msgToSend_BytePtr < msg->tx.msgToSend->size)
-    {
-        if(UARTCharPutNonBlocking(msg->instance, msg->tx.msgToSend->data[msg->tx.msgToSend_BytePtr]) == true)
-        {
-            if(++msg->tx.msgToSend_BytePtr == msg->tx.msgToSend->size)
-            {
-                msg->tx.msgToSend_Pending = false; // clear for next message to be sent
-                UARTIntDisable(msg->instance, UART_INT_TX); // done transmitting bytes, so disable the Tx interrupt
-            }
-        }
-    }
-}
-
-/*
- * Description: UART Blocking method
+ * Description: This will transmit using DMA
+ * Input: the UART data structure
  *
  */
-int UART_TxMessage(UartBufferStruct *msg)
-{
-    int i = 0;
-
-    if(msg->tx.ptr.cnt_Handle)
-    {
-        msg->tx.msgToSend = &msg->tx.queue[msg->tx.ptr.index_OUT];
-
-        RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize);
-
-        for(i = 0; i < msg->tx.msgToSend->size; i++)
-        {
-            UARTCharPut(msg->instance, msg->tx.msgToSend->data[i]);
-        }
-    }
-
-    return 0;
-}
-
-
-/*
- * Description: Check for a new messsage then Find instance, then call appropriate parser
- */
-int UART_Parse(UartBufferStruct *msg)
+int UART_TxMessage_DMA(UartBufferStruct *msg)
 {
     int status = 0;
-
-    if(UART_RxMessagePending(msg))
+/*
+    if(msg->uart.tx.ptr.cnt_Handle) // message in queue
     {
-        switch (msg->instance)
-        {
-        case UART0_BASE:
-            UART0_Parse(msg);
-            break;
-        }
-    }
+        msg->uart.tx.msgToSend = &msg->uart.tx.queue[msg->uart.tx.ptr.index_OUT]; // point to queue
 
+        RingBuff_Ptr_Output(&msg->uart.tx.ptr, msg->uart.tx.queueSize); // increment pointer
+
+        MAP_uDMAChannelTransferSet(msg->config.udma_tx_channel | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
+                                   msg->uart.tx.msgToSend->data, (void *)(msg->instance), msg->uart.tx.msgToSend->size);
+
+        msg->uart.tx.msgToSend_Pending = true; // flag that DMA is sending
+        MAP_uDMAChannelEnable(msg->config.udma_tx_channel); // enable
+    }
+*/
     return status;
 }
 
 
 /*
+ * Description: Called from UART_TxMessage_IT and Tx Interrupt
+ */
+static void UART_TransmitMessage(UartBufferStruct *msg)
+{
+    if(msg->tx.msgToSend_BytePtr < msg->tx.msgToSend->size)
+    {
+        if(UARTCharPutNonBlocking(msg->uart_base, msg->tx.msgToSend->data[msg->tx.msgToSend_BytePtr]) == true)
+        {
+            if(++msg->tx.msgToSend_BytePtr == msg->tx.msgToSend->size)
+            {
+                msg->tx.msgToSend_Pending = false; // clear for next message to be sent
+                UART_TxMessage_IT(msg); // transmit next message in queue if available
+            }
+        }
+    }
+}
+
+void SetEchoMode(bool mode)
+{
+    echoMode = mode;
+}
+
+bool GetEchoMode(void)
+{
+    return echoMode;
+}
+
+
+void UART_NotifyUser(UartBufferStruct *msg, char *str, uint32_t size, bool lineFeed)
+{
+    uint8_t strMsg[UART_TX_DATA_SIZE] = {0};
+
+    memcpy(&strMsg, str, size);
+
+    if(lineFeed == true)
+    {
+        strcat((char*)strMsg, "\r\n");
+        size += 2;
+    }
+
+    UART_TX_AddDataToBuffer(msg, strMsg, size);
+}
+
+
+
+
+/*
  * How to use:
- * 	You can use pointers to the buffers or you can use fixed size buffers. Use USE_BUFFER_POINTERS in UartCharBuffer.h file to enable/disable.
  *
- * 	Initializing buffers and passing the address to the pointers.
+ * 	Below is an example on how to Initialize a buffer
  *
 
 // define the UART0 Rx buffers
-uint8_t uart0RxIrqByteBuffer[UART_RX_IRQ_BYTE_SIZE] = {0}; // irq array
-uint8_t uart0RxByteBuffer[UART_RX_BYTE_BUFFER_SIZE] = {0}; // byte array
-UartMsgQueueStruct uart0RxMsgQueue[UART_RX_MESSAGE_QUEUE_SIZE] = {0}; // message array
-UartRxBufferStruct uart0Rx =
+UartBufferStruct uart0_msg =
 {
-	.instance = UART0_BASE,
-	.uartIRQ_ByteBuffer = uart0RxIrqByteBuffer,
-	.uartIRQ_ByteSize = UART_RX_IRQ_BYTE_SIZE, // optional
-	.byteBuffer = uart0RxByteBuffer,
-	.byteBufferSize = UART_RX_BYTE_BUFFER_SIZE, // optional
-	.msgQueue = uart0RxMsgQueue
-	.msgQueueSize = UART_RX_MESSAGE_QUEUE_SIZE // optional
-};
-
-// define the UART0 Tx buffers
-UartMsgQueueStruct uart0TxMsgQueue[UART_TX_MESSAGE_QUEUE_SIZE] = {0};
-UartTxBufferStruct uart0Tx =
-{
-	.instance = UART0_BASE,
-	.msgQueue = uart0TxMsgQueue
-	.msgQueueSize = UART_TX_MESSAGE_QUEUE_SIZE // optional
+    .rx.uartType = UART_ASCII,
+    .uart_base = UART0_BASE, // The UART base
+    .rx.queueSize = UART_RX_QUEUE_SIZE,
+    .tx.queueSize = UART_TX_QUEUE_SIZE,
+    .rx.dataSize = UART_RX_DATA_SIZE,
+    .rx.RxIRQ = TM4C_UART_Rx_IRQ, // The interrupt Function
+    .tx.TxIRQ = TM4C_UART_Tx_IRQ, // The interrupt Function
+    .ErrorIRQ = TM4C_UART_ErrorCallback // The interrupt Function
 };
 
 */
