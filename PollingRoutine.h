@@ -25,7 +25,9 @@
 #define Nop() asm(" NOP ")
 
 */
-
+#ifndef __weak
+#define __weak __attribute__((weak))
+#endif
 
 void PollingInit(void);
 void PollingRoutine(void);
