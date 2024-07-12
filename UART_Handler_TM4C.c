@@ -113,7 +113,6 @@ __weak void TM4C_UART_ErrorCallback(UartBufferStruct *msg)
         {
            (uint8_t)UARTCharGet(msg->uart_base);
         }
-        ToggleLedRed();
     }
 
     if((msg->errorStatus & UART_RXERROR_FRAMING) == UART_RXERROR_FRAMING)
