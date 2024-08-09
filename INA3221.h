@@ -121,8 +121,4 @@ int INA3221_ReadConfigData(char *retStr);
 int GetINA3221Bus(char *message, char *retStr);
 int GetINA3221Shunt(char *message, char *retStr);
 
-int INA3221_HexToVoltage(float resolution, uint16_t data, double *retValue);
-
-int INA3221_ReadVoltage(uint32_t i2c_base, uint8_t slaveAddress, ShuntBusVoltage_struct *shuntBusVoltage, uint16_t *value_OUT);
-
 #endif /* INC_INA3221_H_ */
