@@ -1,15 +1,23 @@
 /*
  * INA3221_Handler.h
  *
- *  Created on: Aug 17, 2023
+ *  Created on: Jun 17, 2024
  *      Author: karl.yamashita
  */
 
-#ifndef INA3221_HANDLER_H_
-#define INA3221_HANDLER_H_
-
-void INA3221_Read(void);
+#ifndef INC_INA3221_HANDLER_H_
+#define INC_INA3221_HANDLER_H_
 
 
+#define INA3221_SLAVE_ADDRESS_0 0x40
 
-#endif /* INA3221_HANDLER_H_ */
+
+int INA3221_SetConfigReg(I2C_GenericDef *i2c, char *msg);
+int INA3221_GetConfigReg(I2C_GenericDef *i2c, char *retStr);
+int INA3221_GetBusVoltage(I2C_GenericDef *i2c, char *msg, char *retStr);
+int INA3221_GetShuntVoltage(I2C_GenericDef *i2c, char *msg, char *retStr);
+
+void INA3221_ConfigCallback(I2C_GenericDef *i2c);
+void INA3221_VoltageCallback(I2C_GenericDef *i2c);
+
+#endif /* INC_INA3221_HANDLER_H_ */

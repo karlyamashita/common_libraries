@@ -10,33 +10,6 @@
 #include "main.h"
 
 
-/*
- * Description: Init uart0 buffers
- */
-UartBufferStruct uart0_msg =
-{
-    .rx.uartType = UART_ASCII,
-    .uart_base = UART0_BASE,
-    .rx.queueSize = UART_RX_QUEUE_SIZE,
-    .tx.queueSize = UART_TX_QUEUE_SIZE,
-    .rx.dataSize = UART_RX_DATA_SIZE,
-    .rx.RxIRQ = TM4C_UART_Rx_IRQ,
-    .tx.TxIRQ = TM4C_UART_Tx_IRQ,
-    .ErrorIRQ = TM4C_UART_ErrorCallback
-};
-
-UartBufferStruct uart6_msg =
-{
-    .rx.uartType = UART_ASCII,
-    .uart_base = UART6_BASE,
-    .rx.queueSize = UART_RX_QUEUE_SIZE,
-    .tx.queueSize = UART_TX_QUEUE_SIZE,
-    .rx.dataSize = UART_RX_DATA_SIZE,
-    .rx.RxIRQ = TM4C_UART_Rx_IRQ,
-    .tx.TxIRQ = TM4C_UART_Tx_IRQ,
-    .ErrorIRQ = TM4C_UART_ErrorCallback
-};
-
 bool echoMode = 0;
 
 static void UART_TransmitMessage(UartBufferStruct *msg);
@@ -162,16 +135,16 @@ int UART_TxMessage_DMA(UartBufferStruct *msg)
 {
     int status = 0;
 /*
-    if(msg->uart.tx.ptr.cnt_Handle) // message in queue
+    if(msg->tx.ptr.cnt_Handle) // message in queue
     {
-        msg->uart.tx.msgToSend = &msg->uart.tx.queue[msg->uart.tx.ptr.index_OUT]; // point to queue
+        msg->tx.msgToSend = &msg->tx.queue[msg->tx.ptr.index_OUT]; // point to queue
 
-        RingBuff_Ptr_Output(&msg->uart.tx.ptr, msg->uart.tx.queueSize); // increment pointer
+        RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize); // increment pointer
 
         MAP_uDMAChannelTransferSet(msg->config.udma_tx_channel | UDMA_PRI_SELECT, UDMA_MODE_BASIC,
-                                   msg->uart.tx.msgToSend->data, (void *)(msg->instance), msg->uart.tx.msgToSend->size);
+                                   msg->tx.msgToSend->data, (void *)(msg->instance), msg->tx.msgToSend->size);
 
-        msg->uart.tx.msgToSend_Pending = true; // flag that DMA is sending
+        msg->tx.msgToSend_Pending = true; // flag that DMA is sending
         MAP_uDMAChannelEnable(msg->config.udma_tx_channel); // enable
     }
 */

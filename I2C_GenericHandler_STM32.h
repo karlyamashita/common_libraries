@@ -9,67 +9,63 @@
 #define INC_I2C_GENERICHANDLER_STM32_H_
 
 
-// this should be defined in ErrorStatus.h, if not then assign 100 to avoid build error
-#ifndef I2C_REGISTRATION_FULL
-#define ERROR_I2C_REGISTRATION_FULL 100
-#endif
-
-#ifndef I2C_KEY_SIZE
-#define I2C_KEY_SIZE 5 // default 5. Define in main.h to override this value
-#endif
-
-enum I2C_TransferType
+enum TransferType_enum
 {
-	I2C_POLLING_TRANSFER,
-	I2C_INTERRUPT_TRANSFER,
-	I2C_DMA_TRANSFER
+	I2C_POLLING,
+	I2C_INTERRUPT,
+	I2C_DMA
 };
 
-typedef struct __I2C_GenericDef
+
+#ifdef HAL_MODULE_ENABLED // STM32
+typedef struct
 {
-	I2C_HandleTypeDef *instance;
+	uint32_t pin;
+	GPIO_TypeDef *port; // port base
+}GPIO_CS_t; // chip select
+#endif
+
+#ifndef XMEGA
+typedef struct __I2C_GenericDef_ // Microchip Studio compiler doesn't work with __I2C_GenericDef_
+#else
+typedef struct
+#endif
+{
+#ifdef XMEGA
+	TWI_t *twi_t;
+#endif
+#ifdef HAL_MODULE_ENABLED // STM32
+	I2C_HandleTypeDef *i2c_instance;
+#endif
+#ifdef TARGET_IS_TM4C123_RB1
+	uint32_t i2c_base;
+#endif
 
 	uint8_t deviceAddr; // the slave address of device
 	uint8_t *dataPtr; // pointer to data array
-	uint16_t registerAddr; // register address
-	uint32_t dataSize; // data size
-	uint32_t regSize; //register size
-	uint32_t timeout; // timeout in ms
-	uint32_t transferType; // polling, interrupt, DMA
-	// There can be multiple devices on the same I2C port.
-	// So we need a key identifier for each device to distinguish them apart when getting an interrupt callback.
-	uint32_t key;
-}I2C_GenericDef;
+	uint8_t registerAddr[2]; // 8 or 16 bit address
+	uint32_t dataSize;
+	uint32_t regSize; // the size of the registerAddr, 1 or 2 bytes
+	uint32_t timeout; // typically for STM32 that uses HAL timeout
+	uint32_t transferType; // I2C_POLLING, I2C_INTERRUPT, I2C_DMA
+	// TODO - define CS for TI and XMEGA
+#ifdef HAL_MODULE_ENABLED // STM32
+	GPIO_CS_t cs; // chip select
+#endif
+#ifndef XMEGA // all but XMEGA can use these callbacks
+	void (*RxISR)(struct __I2C_GenericDef_ *i2c);
+	void (*TxISR)(struct __I2C_GenericDef_ *i2c); // probably not needed but here nonetheless
+#endif
+	char *cmdPtr; // pointer to copy of command message
+}__attribute__((aligned(32))) I2C_GenericDef;
 
-typedef struct
-{
-	uint32_t keyCount; // keep track of how many I2C devices are registered
-	uint32_t keyIndex[I2C_KEY_SIZE];
-	RING_BUFF_STRUCT ptr;
-}I2C_KeyTypeDef;
+
+int I2C_Master_Receive_Generic_Method(I2C_GenericDef *i2c);
+int I2C_Master_Transmit_Generic_Method(I2C_GenericDef *i2c);
+int I2C_Mem_Read_Generic_Method(I2C_GenericDef *i2c);
+int I2C_Mem_Write_Generic_Method(I2C_GenericDef *i2c);
 
 
-int I2C_InitGeneric(I2C_GenericDef *i2c, I2C_HandleTypeDef *hi2c, volatile uint8_t *data, uint8_t deviceAddress);
-int I2C_SetTransferType(I2C_GenericDef *i2c, uint32_t transferType);
 
-int I2C_Master_Receive_Generic(I2C_GenericDef *i2c);
-int I2C_Master_Transmit_Generic(I2C_GenericDef *i2c);
-
-int I2C_Master_Receive_Generic_IT(I2C_GenericDef *i2c);
-int I2C_Master_Transmit_Generic_IT(I2C_GenericDef *i2c);
-
-int I2C_Master_Receive_Generi_DMA(I2C_GenericDef *i2c);
-int I2C_Master_Transmit_Generic_DMA(I2C_GenericDef *i2c);
-
-int I2C_Mem_Read_Generic(I2C_GenericDef *i2c);
-int I2C_Mem_Write_Generic(I2C_GenericDef *i2c);
-
-int I2C_Mem_Read_Generic_IT(I2C_GenericDef *i2c);
-int I2C_Mem_Write_Generic_IT(I2C_GenericDef *i2c);
-
-int I2C_Mem_Read_Generic_DMA(I2C_GenericDef *i2c);
-int I2C_Mem_Write_Generic_DMA(I2C_GenericDef *i2c);
-
-int I2C_AssignKey(I2C_GenericDef *i2c);
 
 #endif /* INC_I2C_GENERICHANDLER_STM32_H_ */
