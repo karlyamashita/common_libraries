@@ -7,9 +7,7 @@
 
 #include "main.h"
 
-extern I2C_HandleTypeDef hi2c1;
 extern UART_DMA_QueueStruct uart2_msg;
-extern char msgCpy[];
 
 /*
  * Description: initialize TMP10x sensor
@@ -60,31 +58,33 @@ int TMP10x_GetRegisterHandle(I2C_GenericDef *i2c, char *msg, char *retStr)
 	char *rest = msg;
 	char delim[] =":,\r";
 	bool noAck = false;
+	uint16_t reg;
+	void (*callback) (struct __I2C_GenericDef_ *i2c);
 
 	token = strtok(rest, delim);
 
 	if(strncmp(token, "temp", strlen("temp")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_TEMPERATURE_REGISTER; // register address to read
-		i2c->RxISR = TMP10x_TemperatureCallback; // assign callback
+		reg = TMP10x_TEMPERATURE_REGISTER;
+		callback = TMP10x_TemperatureCallback;
 		noAck = true;
 	}
 	else if(strncmp(token, "config", strlen("config")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_CONFIGURATION_REGISTER;
-		i2c->RxISR = TMP10x_ConfigCallback;
+		reg = TMP10x_CONFIGURATION_REGISTER;
+		callback = TMP10x_ConfigCallback;
 		noAck = true;
 	}
 	else if(strncmp(token, "low", strlen("low")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_TEMP_LOW_REGISTER;
-		i2c->RxISR = TMP10x_LowCallback;
+		reg = TMP10x_TEMP_LOW_REGISTER;
+		callback = TMP10x_LowCallback;
 		noAck = true;
 	}
 	else if(strncmp(token, "high", strlen("high")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_TEMP_HIGH_REGISTER;
-		i2c->RxISR = TMP10x_HighCallback;
+		reg = TMP10x_TEMP_HIGH_REGISTER;
+		callback = TMP10x_HighCallback;
 		noAck = true;
 	}
 	else
@@ -92,10 +92,9 @@ int TMP10x_GetRegisterHandle(I2C_GenericDef *i2c, char *msg, char *retStr)
 		return VALUE_NOT_VALID;
 	}
 
-	i2c->regSize = 1;
 	i2c->dataSize = 2;
 
-	status = I2C_Mem_Read_Generic_Method(i2c);
+	status = TMP10x_Read(i2c, reg, callback);
 	if(status != NO_ERROR)
 	{
 		return status;
@@ -122,30 +121,32 @@ int TMP10x_SetRegisterHandle(I2C_GenericDef *i2c, char *msg)
 	char delim[] =":,\r";
 	float fValue;
 	uint16_t regValue;
+	uint16_t regAdd;
 	bool noAck = false;
+	void (*callback) (struct __I2C_GenericDef_ *i2c);
 
 	token = strtok(rest, delim); // register
 	token2 = strtok(NULL, delim); // data value
 
 	if(strncmp(token, "temp", strlen("temp")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_TEMPERATURE_REGISTER;
-		i2c->TxISR = NULL;
+		regAdd = TMP10x_TEMPERATURE_REGISTER;
+		callback = NULL;
 	}
 	else if(strncmp(token, "config", strlen("config")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_CONFIGURATION_REGISTER;
-		i2c->TxISR = NULL;
+		regAdd = TMP10x_CONFIGURATION_REGISTER;
+		callback = NULL;
 	}
 	else if(strncmp(token, "low", strlen("low")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_TEMP_LOW_REGISTER;
-		i2c->TxISR = NULL;
+		regAdd = TMP10x_TEMP_LOW_REGISTER;
+		callback = NULL;
 	}
 	else if(strncmp(token, "high", strlen("high")) == 0)
 	{
-		i2c->registerAddr[0] = TMP10x_TEMP_HIGH_REGISTER;
-		i2c->TxISR = NULL;
+		regAdd = TMP10x_TEMP_HIGH_REGISTER;
+		callback = NULL;
 	}
 	else
 	{
@@ -160,7 +161,7 @@ int TMP10x_SetRegisterHandle(I2C_GenericDef *i2c, char *msg)
 	i2c->dataPtr[0] = regValue >> 8;
 	i2c->dataPtr[1] = regValue;
 
-	status = I2C_Mem_Write_Generic_Method(i2c);
+	status = TMP10x_Write(i2c, regAdd, callback);
 	if(status != NO_ERROR)
 	{
 		return status;

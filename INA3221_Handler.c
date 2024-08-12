@@ -7,7 +7,7 @@
 
 #include "main.h"
 
-extern UartBufferStruct uart0_msg;
+extern UART_DMA_QueueStruct uart2_msg;
 
 int INA3221_SetConfigReg(I2C_GenericDef *i2c, char *msg)
 {
@@ -76,6 +76,8 @@ int INA3221_SetConfigReg(I2C_GenericDef *i2c, char *msg)
 int INA3221_GetConfigReg(I2C_GenericDef *i2c, char *retStr)
 {
     int status = NO_ERROR;
+
+    i2c->dataSize = 2;
 
     status = INA3221_Read(i2c, INA3221_CONFIG, INA3221_ConfigCallback);
     if(status != NO_ERROR)
@@ -154,6 +156,8 @@ int INA3221_GetBusVoltage(I2C_GenericDef *i2c, char *msg, char *retStr)
     	break;
     }
 
+    i2c->dataSize = 2;
+
     status = INA3221_Read(i2c, busShunt, INA3221_VoltageCallback);
     if(status != NO_ERROR)
     {
@@ -177,7 +181,7 @@ void INA3221_ConfigCallback(I2C_GenericDef *i2c)
 	sprintf(str2, "= ch1-3= %d, mode3_1= %d", config.Status.ch_En, config.Status.mode3_1);
 	strcat(i2c->cmdPtr, str2);
 
-	UART_NotifyUser(&uart0_msg, i2c->cmdPtr, strlen(i2c->cmdPtr), true);
+	UART_DMA_NotifyUser(&uart2_msg, i2c->cmdPtr, strlen(i2c->cmdPtr), true);
 }
 
 void INA3221_VoltageCallback(I2C_GenericDef *i2c)
@@ -191,7 +195,7 @@ void INA3221_VoltageCallback(I2C_GenericDef *i2c)
 	sprintf(str2, "= %f", (voltage.Status.shuntBusVoltage * BUS_VOLTAGE_LSB));
 	strcat(i2c->cmdPtr, str2);
 
-	UART_NotifyUser(&uart0_msg, i2c->cmdPtr, strlen(i2c->cmdPtr), true);
+	UART_DMA_NotifyUser(&uart2_msg, i2c->cmdPtr, strlen(i2c->cmdPtr), true);
 }
 
 

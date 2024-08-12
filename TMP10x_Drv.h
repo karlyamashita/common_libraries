@@ -128,5 +128,7 @@ typedef struct __TMP10x_HandleTypeDef
     char *commandCopy;
 }TMP10x_HandleTypeDef;
 
+int TMP10x_Read(I2C_GenericDef *i2c, uint16_t reg, void (*callback)(struct __I2C_GenericDef_ *i2c));
+int TMP10x_Write(I2C_GenericDef *i2c, uint16_t reg, void (*callback)(struct __I2C_GenericDef_ *i2c));
 
 #endif /* INC_TMP10x_DRV_H_ */

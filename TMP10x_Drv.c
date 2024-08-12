@@ -13,7 +13,39 @@
 #include "main.h"
 
 
+int TMP10x_Read(I2C_GenericDef *i2c, uint16_t reg, void (*callback)(struct __I2C_GenericDef_ *i2c))
+{
+	int status = NO_ERROR;
 
-// currently no functions. Use I2C_GenericHandler_xxx.c/h for I2C read/write
+	i2c->registerAddr[0] = reg;
+	i2c->regSize = 1;
+	i2c->RxISR = callback;
 
+	status = I2C_Mem_Read_Generic_Method(i2c);
+	if(status != NO_ERROR)
+	{
+		return status;
+	}
 
+	return status;
+}
+
+/*
+ * Description: Be sure to initialize I2C data pointer with data and data size prior to calling this.
+ */
+int TMP10x_Write(I2C_GenericDef *i2c, uint16_t reg, void (*callback)(struct __I2C_GenericDef_ *i2c))
+{
+	int status = NO_ERROR;
+
+	i2c->registerAddr[0] = reg;
+	i2c->regSize = 1;
+	i2c->RxISR = callback;
+
+	status = I2C_Mem_Write_Generic_Method(i2c);
+	if(status != NO_ERROR)
+	{
+		return status;
+	}
+
+	return status;
+}

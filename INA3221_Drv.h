@@ -182,8 +182,8 @@ typedef struct __INA3221_HandleTypeDef
 }INA3221_HandleTypeDef;
 
 
-int INA3221_Read(I2C_GenericDef *i2c, uint16_t reg, void (*callback));
-int INA3221_Write(I2C_GenericDef *i2c, uint16_t reg, void (*callback));
+int INA3221_Read(I2C_GenericDef *i2c, uint16_t reg, void (*callback)(struct __I2C_GenericDef_ *i2c));
+int INA3221_Write(I2C_GenericDef *i2c, uint16_t reg, void (*callback)(struct __I2C_GenericDef_ *i2c));
 
 int INA3221_EnableCh(I2C_GenericDef *i2c, uint32_t channels);
 
