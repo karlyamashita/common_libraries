@@ -9,40 +9,51 @@
 #include "PeripheralsInit.h"
 
 
-//#pragma DATA_ALIGN(pui8ControlTable, 1024)
-//uint8_t pui8ControlTable[1024];
 
-//static uint16_t pui16ADCBuffer1[ADC_SAMPLE_BUF_SIZE];
-//static uint16_t pui16ADCBuffer2[ADC_SAMPLE_BUF_SIZE];
+uint8_t i2c_dataRx[8] = {0};
+uint8_t i2c_dataTx[8] = {0};
 
-
-
+/*
+ * Description: Enable system tick with 1ms interrupt
+ *
+ *
+ */
 void SystemTickInit(void){
     // set tick period ms
-    SysTickPeriodSet(SysCtlClockGet() / 1000);
+    MAP_SysTickPeriodSet(SysCtlClockGet() / 1000);
 
     // Enable SysTick.
-    SysTickEnable();
+    MAP_SysTickEnable();
 
     // Enable the SysTick Interrupt.
-    SysTickIntEnable();
+    MAP_SysTickIntEnable();
 
     //register a handler
     SysTickIntRegister(SysTick_Handler);
 
     // enable interrupt to processor
-    IntMasterEnable();
+    MAP_IntMasterEnable();
 }
 
-
+/*
+ * Description: Configure the clock
+ *
+ *
+ */
 void SystemClock_Config(void){
     // setup clock
     //
     // Configure the device to run at 25 MHz
     //
     //
-    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN);
+#ifdef LAUNCH_PAD
+    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN); // Launchpad
+#else
+    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN); // SIB
+#endif
 }
+
+// Avenger
 
 /*
  * Description:
@@ -51,6 +62,16 @@ void SystemClock_Config(void){
  * Output:
  */
 void MX_GPIO_Init(void){
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOA))
+    {
+    }
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
+    {
+    }
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC))
@@ -72,180 +93,86 @@ void MX_GPIO_Init(void){
     {
     }
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOA))
-    {
-    }
 
     //  set as outputs
-    // PORTF
-    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY; // unlock first
-    HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= Debug_Grn_Pin;
-    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0; // lock
-    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, Debug_Grn_Pin | Debug_Red_Pin | Led_Red_Pin | Led_Grn_Pin | Load4En_Pin);
+    // PORTA
+    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_3 );
+    //MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTA_BASE, GPIO_PIN_3 ); // open drain
+
+    // PORTB
+    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, USB_VBUS_Enable_Pin | RETIMER_DIS_N_Pin_PB7);
+    ///MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTB_BASE, USB_VBUS_Enable_Pin); // open drain
+
+    // PORTC
+    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, TC_RST_N_OUT_PC5 | RETIMER_P_POL_Pin_PC6 | USBHUB_Reset_Pin);
+    MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTC_BASE, USBHUB_Reset_Pin);
 
     // PORTD
     HWREG(GPIO_PORTD_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY; // unlock first
-    HWREG(GPIO_PORTD_BASE + GPIO_O_CR) |= Load3En_Pin;
+    HWREG(GPIO_PORTD_BASE + GPIO_O_CR) |= FT4232_Reset_3_Pin;
     HWREG(GPIO_PORTD_BASE + GPIO_O_LOCK) = 0; // lock
-    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, Load3En_Pin);
+    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, FT4232_Reset_1_Pin | FT4232_Reset_2_Pin | FT4232_Reset_3_Pin);
+    MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTD_BASE, FT4232_Reset_1_Pin | FT4232_Reset_2_Pin | FT4232_Reset_3_Pin); // make open drain
 
     // PORTE
-    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, Load1En_Pin | Load2En_Pin);
+    MAP_GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, PMIC_S_Pin | PMIC_M_Pin | SSD_Alart_Pin_PE5);
+
+    // PORTF
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = GPIO_LOCK_KEY; // unlock first
+    HWREG(GPIO_PORTF_BASE + GPIO_O_CR) |= TIB_TYPE_Pin_PF0;
+    HWREG(GPIO_PORTF_BASE + GPIO_O_LOCK) = 0; // lock
+    MAP_GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, UART_ENABLE_Pin_PF4 | TIB_TYPE_Pin_PF0 | Led_Red_Pin | Led_Grn_Pin | VBAT_EN_Pin);
+    //MAP_GPIOPinTypeGPIOOutputOD(GPIO_PORTC_BASE, VBAT_EN_Pin);
 
     //
     // Set each of the button GPIO pins as an input with a pull-up.
     //
-    // PORTD
-    MAP_GPIODirModeSet(GPIO_PORTD_BASE, Load3_48V_FLTn_Pin | Alert1_Pin | Alert2_Pin, GPIO_DIR_MODE_IN);
-    MAP_GPIOPadConfigSet(GPIO_PORTD_BASE, Load3_48V_FLTn_Pin | Alert1_Pin | Alert2_Pin, GPIO_STRENGTH_10MA, GPIO_PIN_TYPE_STD_WPU);
-
     // PORTA
-    MAP_GPIODirModeSet(GPIO_PORTA_BASE, I2C1_SCL_Pin | I2C1_SDA_Pin, GPIO_DIR_MODE_IN);
-    MAP_GPIOPadConfigSet(GPIO_PORTA_BASE, I2C1_SCL_Pin | I2C1_SDA_Pin, GPIO_STRENGTH_10MA, GPIO_PIN_TYPE_STD_WPU);
+    //MAP_GPIODirModeSet(GPIO_PORTA_BASE, LTM4675_Alert_Pin, GPIO_DIR_MODE_IN);
+    //MAP_GPIOPadConfigSet(GPIO_PORTA_BASE, LTM4675_Alert_Pin, GPIO_STRENGTH_10MA, GPIO_PIN_TYPE_STD_WPU);
 
+    // PORTB
+    MAP_GPIODirModeSet(GPIO_PORTB_BASE, USB_VBUS_FLAG_Pin | TMP101_Alert_Pin, GPIO_DIR_MODE_IN);
+    MAP_GPIOPadConfigSet(GPIO_PORTB_BASE, USB_VBUS_FLAG_Pin | TMP101_Alert_Pin, GPIO_STRENGTH_10MA, GPIO_PIN_TYPE_STD_WPU);
 
+    // PORTC
+    MAP_GPIODirModeSet(GPIO_PORTC_BASE, SPI_DAV_V_Pin_PC4, GPIO_DIR_MODE_IN);
+    MAP_GPIOPadConfigSet(GPIO_PORTC_BASE, SPI_DAV_V_Pin_PC4, GPIO_STRENGTH_10MA, GPIO_PIN_TYPE_STD_WPU);
+
+    // PORTE
+    MAP_GPIODirModeSet(GPIO_PORTE_BASE, SSD_Alart_Pin_PE5, GPIO_DIR_MODE_IN);
+    MAP_GPIOPadConfigSet(GPIO_PORTE_BASE, SSD_Alart_Pin_PE5 , GPIO_STRENGTH_10MA, GPIO_PIN_TYPE_STD_WPU);
+
+    // Init interrupts
     //set interrupt pins
-    GPIOIntTypeSet(GPIO_PORTD_BASE, Load3_48V_FLTn_Pin | Alert1_Pin | Alert2_Pin, GPIO_BOTH_EDGES);
     // PORTA
-   // GPIOIntTypeSet(GPIO_PORTA_BASE, I2C1_SCL_Pin | I2C1_SDA_Pin, GPIO_BOTH_EDGES);
+    //GPIOIntTypeSet(GPIO_PORTA_BASE, LTM4675_Alert_Pin, GPIO_BOTH_EDGES);
+    // PORTB
+    GPIOIntTypeSet(GPIO_PORTB_BASE, TMP101_Alert_Pin | USB_VBUS_FLAG_Pin, GPIO_BOTH_EDGES);
+    // PORTE
+    GPIOIntTypeSet(GPIO_PORTE_BASE, SSD_Alart_Pin_PE5, GPIO_BOTH_EDGES);
 
     //register a handler
-    GPIOIntRegister(GPIO_PORTD_BASE, PortDIntHandler);
     // PORTA
     //GPIOIntRegister(GPIO_PORTA_BASE, PortAIntHandler);
+    // PORTB
+    GPIOIntRegister(GPIO_PORTB_BASE, GPIO_PortB_Handler);
+    // PORTE
+    GPIOIntRegister(GPIO_PORTE_BASE, GPIO_PortE_Handler);
 
     // enable interrupts for pins
-    GPIOIntEnable(GPIO_PORTD_BASE, Load3_48V_FLTn_Pin | Alert1_Pin | Alert2_Pin);
     // PORTA
-    //GPIOIntEnable(GPIO_PORTA_BASE, I2C1_SCL_Pin | I2C1_SDA_Pin);
+    //GPIOIntEnable(GPIO_PORTA_BASE, LTM4675_Alert_Pin);
+    // PORTB
+    GPIOIntEnable(GPIO_PORTB_BASE, TMP101_Alert_Pin | USB_VBUS_FLAG_Pin);
+    // PORTE
+    GPIOIntEnable(GPIO_PORTE_BASE, SSD_Alart_Pin_PE5);
+
+
 }
 
 /*
- * Description: also PWM
- *
- *
- */
-/*
-void MX_TIM1_Init(void){
-
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
-
-    //
-    // Enable the GPIO pin for the LED (PF3) as an output.
-    //
-    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);
-
-    //
-    // Enable the GPIO port that is used for the PWM output.
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-
-    //
-    // Configure the PWM function for this pin.
-    //
-    GPIOPinConfigure(GPIO_PB6_M0PWM0);
-    GPIOPinTypePWM(GPIO_PORTB_BASE, GPIO_PIN_6);
-
-    //
-    // Configure PWM0 to count down without synchronization.
-    //
-    PWMGenConfigure(PWM0_BASE, PWM_GEN_0, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
-
-    //
-    // Set the PWM period to 250Hz.  To calculate the appropriate parameter
-    // use the following equation: N = (1 / f) * SysClk.  Where N is the
-    // function parameter, f is the desired frequency, and SysClk is the
-    // system clock frequency.
-    //
-    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, (SysCtlClockGet() / 250));
-
-    //
-    // For this example the PWM0 duty cycle will be variable.  The duty cycle
-    // will start at 0.1% and will increase to 75%. After a duty cycle of 75%
-    // is reached, it is reset back to 0.1%.  This dynamic adjustment of the
-    // pulse width is done in the PWM0 load interrupt, which increases the
-    // duty cycle by 0.1% every time the reload interrupt is received.
-    //
-
-    //
-    // Set the PWM increment variable based on the System Clock. Since this
-    // is a 250 Hz PWM, continue to use the equation N = (1 / f) * SysClk.
-    // Then to set the initial period to 0.1% by dividing (N / 1000).
-    // This variable will be used to increment PWM0 by 0.1% on each
-    // interrupt.
-    //
-    g_ui32PWMIncrement = ((SysCtlClockGet() / 250) / 1000);
-
-    //
-    // Set the initial PWM0 Pulse Width with the calculated increment variable
-    // to start at 0.1% duty cycle.
-    //
-    MAP_PWMPulseWidthSet(PWM0_BASE, PWM_OUT_0, g_ui32PWMIncrement);
-
-    //
-    // Enable processor interrupts.
-    //
-    MAP_IntMasterEnable();
-
-    //
-    // Allow PWM0 generated interrupts.  This configuration is done to
-    // differentiate fault interrupts from other PWM0 related interrupts.
-    //
-    MAP_PWMIntEnable(PWM0_BASE, PWM_INT_GEN_0);
-
-    //
-    // Enable the PWM0 LOAD interrupt on PWM Gen 0.
-    //
-    MAP_PWMGenIntTrigEnable(PWM0_BASE, PWM_GEN_0, PWM_INT_CNT_LOAD);
-
-    //
-    // Enable the interrupt for PWM Gen 0 on the processor (NVIC).
-    //
-    MAP_IntEnable(INT_PWM0_0);
-
-    //
-    // Enable the PWM Out Bit 0 (PB6) output signal.
-    //
-    MAP_PWMOutputState(PWM0_BASE, PWM_OUT_0_BIT, true);
-
-    //
-    // Enable the PWM generator block.
-    //
-    MAP_PWMGenEnable(PWM0_BASE, PWM_GEN_0);
-
-}
-*/
-
-
-/*
- * Description: Master for TMP101 sensors
- *
- *
- */
-void MX_I2C0_Init(void){
-
-    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_I2C0))
-    {
-    }
-
-    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
-    {
-    }
-
-    GPIOPinConfigure(GPIO_PB2_I2C0SCL);
-    GPIOPinConfigure(GPIO_PB3_I2C0SDA);
-
-    GPIOPinTypeI2CSCL(GPIO_PORTB_BASE, GPIO_PIN_2);
-    GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3);
-
-    I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), false);
-}
-
-/*
- * Description: Master for FPGA communication
+ * Description: Master for MCDP6200, INA3221 and TMP108 sensors
  *
  *
  *
@@ -268,10 +195,47 @@ void MX_I2C1_Init(void){
 
     // init the master module clock and 100kbps
     I2CMasterInitExpClk(I2C1_BASE, SysCtlClockGet(), false);
+
+    MAP_IntEnable(INT_I2C1);
+
+    // Register Handler
+    I2CIntRegister(I2C1_BASE, I2C1_EV_IRQHandler);
+
+}
+
+//tI2CMInstance i2cm = {0};
+
+void pvCallbackData(void)
+{
+
+}
+
+void MX_I2CMInit(void)
+{
+   // I2CMInit(&i2cm, I2C1_BASE, INT_I2C1, UDMA_CHANNEL_UART0TX, UDMA_CHANNEL_UART0RX,SysCtlClockGet());
+
+
+
+   // I2CMRead(&i2cm, 0x40, i2c_dataTx, 1, i2c_dataRx, 2, &I2C1M_Rx_Callback, pvCallbackData);
+
+}
+
+void I2C1M_Rx_Callback(void)
+{
+
+}
+
+void I2C1_Reset_Bus(void)
+{
+    // peripheral = SYSCTL_PERIPH_I2C1
+    SysCtlPeripheralDisable(SYSCTL_PERIPH_I2C1);
+    SysCtlPeripheralReset(SYSCTL_PERIPH_I2C1);
+
+    MX_I2C1_Init();
 }
 
 /*
- * Description: Port for Telemetry data
+ * Description: Port for protocol messages
  *
  * Input:
  * Output:
@@ -283,63 +247,66 @@ void MX_USART0_UART_Init(void){
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_UART0))
     {
     }
-   /*
-    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOA))
-    {
-    }
-*/
-    MAP_IntMasterEnable();
 
     //
     // Set GPIO A0 and A1 as UART pins.
     //
     GPIOPinConfigure(GPIO_PA0_U0RX);
     GPIOPinConfigure(GPIO_PA1_U0TX);
-    MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, Uart0_PIN_RX | Uart0_PIN_TX);
+    MAP_GPIOPinTypeUART(GPIO_PORTA_BASE, UART0_PIN_RX | UART0_PIN_TX);
 
     MAP_UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 
     MAP_IntEnable(INT_UART0);
-    MAP_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
+    UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT | UART_INT_TX);
+
+    MAP_UARTTxIntModeSet(UART0_BASE, UART_TXINT_MODE_EOT); // 6-12-2024, finally found how to get Tx to interrupt
+
+    UARTFIFOLevelSet(UART0_BASE, UART_FIFO_TX4_8, UART_FIFO_RX4_8);
+    UARTFIFOEnable(UART0_BASE);
 
     //register a handler
     UARTIntRegister(UART0_BASE, USART0_IRQHandler);
 }
 
 /*
- * Description: Debug port
+ * Description: Port for protocol messages
  *
  * Input:
  * Output:
  */
-void MX_USART3_UART_Init(void){
+void MX_USART6_UART_Init(void)
+{
 
     // enable peripheral
-    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART3);
-    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-
-    MAP_IntMasterEnable();
+    MAP_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART6);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_UART6))
+    {
+    }
 
     //
-    // Set GPIO A0 and A1 as UART pins.
+    // Set GPIO PD4 and PD5 as UART pins.
     //
-    GPIOPinConfigure(GPIO_PC6_U3RX);
-    GPIOPinConfigure(GPIO_PC7_U3TX);
-    MAP_GPIOPinTypeUART(GPIO_PORTC_BASE, Uart3_PIN_RX | Uart3_PIN_TX);
+    GPIOPinConfigure(GPIO_PD4_U6RX);
+    GPIOPinConfigure(GPIO_PD5_U6TX);
+    MAP_GPIOPinTypeUART(GPIO_PORTD_BASE, Uart6_PIN_RX_PD4 | Uart6_PIN_TX_PD5);
 
-    MAP_UARTConfigSetExpClk(UART3_BASE, SysCtlClockGet(), 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+    MAP_UARTConfigSetExpClk(UART6_BASE, SysCtlClockGet(), 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 
-    MAP_IntEnable(INT_UART3);
-    MAP_UARTIntEnable(UART3_BASE, UART_INT_RX | UART_INT_RT);
+    MAP_IntEnable(INT_UART6);
+    MAP_UARTIntEnable(UART6_BASE, UART_INT_RX | UART_INT_RT | UART_INT_TX);
+
+    MAP_UARTTxIntModeSet(UART6_BASE, UART_TXINT_MODE_EOT); // 6-12-2024, finally found how to get Tx to interrupt
+
+    UARTFIFOLevelSet(UART6_BASE, UART_FIFO_TX4_8, UART_FIFO_RX4_8);
+    UARTFIFOEnable(UART6_BASE);
 
     //register a handler
-    UARTIntRegister(UART3_BASE, USART3_IRQHandler);
-
+    UARTIntRegister(UART6_BASE, USART6_IRQHandler);
 }
 
 /*
- * Description: Set AIN1 and AIN4
+ * Description: SIB REV0/1, PMIC S, PMIC M, SIB ID
  *
  * Input:
  * Output:
@@ -350,11 +317,15 @@ void MX_ADC0_Init(void){
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_ADC0));
 
-    // enable port the ADC CH0 is on
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD));
+    // enable PORTB the ADC is on
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
 
-    // enable port the ADC CH1 is on
+    // enable PORTD the ADC is on
+    //SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    //while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD));
+
+    // enable PORTE the ADC is on
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE));
 
@@ -362,11 +333,11 @@ void MX_ADC0_Init(void){
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER0));
 
-    // set ADC pin CH4
-    GPIOPinTypeADC(GPIO_PORTE_BASE, _48V_VMon_Pin);
+    // set ADC pin PORTB
+    GPIOPinTypeADC(GPIO_PORTB_BASE, VBUS_5V_CON_PRES_Pin);
 
-    // set ADC pin CH0
-    GPIOPinTypeADC(GPIO_PORTD_BASE, load3_IMON_Pin);
+    // set ADC pin PORTE
+    GPIOPinTypeADC(GPIO_PORTE_BASE, SIB_Rev1_Pin | SIB_Rev2_Pin | SIB_ID_Pin | PMIC_S_Pin | PMIC_M_Pin);
 
     // Use ADC0 to sample once for each timer period.
     ADCClockConfigSet(ADC0_BASE, ADC_CLOCK_SRC_PIOSC | ADC_CLOCK_RATE_HALF, 1);
@@ -374,76 +345,51 @@ void MX_ADC0_Init(void){
     SysCtlDelay(10);
 
     // ******************************************************************************************************************************
-    //                Setup Channel 4 for sequence 0, iMON
+    //                Setup Channels for sequencer 0
     // ******************************************************************************************************************************
 
-    //Disable the ADC0 sequence 3 interrupt on the processor (NVIC)
-    IntDisable(INT_ADC0SS3);
+    //Disable the ADC0 sequencer 0 interrupt on the processor (NVIC)
+    IntDisable(INT_ADC0SS0);
 
-    // Disable interrupts for ADC0 sample sequence 3 to configure it.
-    ADCIntDisable(ADC0_BASE, SEQ_3);
+    // Disable interrupts for ADC0 sample sequencer 0 to configure it.
+    ADCIntDisable(ADC0_BASE, SEQ_0);
 
-    // disable ADC0 sample sequence 3
-    ADCSequenceDisable(ADC0_BASE, SEQ_3);
+    // disable ADC0 sample sequencer 0
+    ADCSequenceDisable(ADC0_BASE, SEQ_0);
 
-    // sample sequence 3 with a processor signal trigger
-    ADCSequenceConfigure(ADC0_BASE, SEQ_3, ADC_TRIGGER_TIMER, 0);
+    // sample sequencer 0 with a processor signal trigger
+    //ADCSequenceConfigure(ADC0_BASE, SEQ_0, ADC_TRIGGER_TIMER, 0);
+    ADCSequenceConfigure(ADC0_BASE, SEQ_0, ADC_TRIGGER_PROCESSOR, 0); // no longer using interrupts to get ADC values. Sequence init by MCU.
 
-    // configure sequence 3, step,  sample channel 4, interrupt flag, last conversion on sequence 0. PD3 = CH4, PE2 = CH1
-    ADCSequenceStepConfigure(ADC0_BASE, SEQ_3, 0, ADC_CTL_CH4 | ADC_CTL_IE | ADC_CTL_END);
+    // configure sequencer 0 , step,  sample channels, interrupt flag, last conversion on sequencer 0.
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 0, ADC_VBUS);
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 1, ADC_SIB_ID);
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 2, ADC_SIB_REV0);
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 3, ADC_SIB_REV1);
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 4, ADC_PMIC_S);
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 5, ADC_PMIC_M);
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 6, ADC_CTL_TS); // channel FIFO 6 and 7 are the same reading
+    ADCSequenceStepConfigure(ADC0_BASE, SEQ_0, 7, ADC_CTL_TS | ADC_CTL_IE | ADC_CTL_END); // internal temperature sensor ADC_CTL_TS
 
-    // enable sequence 3
-    ADCSequenceEnable(ADC0_BASE, SEQ_3);
+    // enable sequencer 0
+    ADCSequenceEnable(ADC0_BASE, SEQ_0);
 
     // clear interrupt prior to sampling
-    ADCIntClear(ADC0_BASE, SEQ_3);
+    ADCIntClear(ADC0_BASE, SEQ_0);
+
+
+    // ******************** No longer using timer interrupts to get ADC values so below is not used. Sequence init by MCU. ***********************************
 
     //register a handler
-    ADCIntRegister(ADC0_BASE, SEQ_3, ADC_iMon_IRQHandler);
+    //ADCIntRegister(ADC0_BASE, SEQ_0, ADC0_IRQHandler);
 
     // enable interrupt
-    ADCIntEnable(ADC0_BASE, SEQ_3);
+    //ADCIntEnable(ADC0_BASE, SEQ_0);
 
-    // Enable the interrupt for ADC0 sequence 3 on the processor (NVIC).
-    IntEnable(INT_ADC0SS3);
-
-    // *********************************** END Setup for Channel 0 ******************************************
-
-    // ******************************************************************************************************************************
-    //                Setup Channel 1 for sequence 1, 48v monitor
-    // ******************************************************************************************************************************
-
-    //Disable the ADC0 sequence 1 interrupt on the processor (NVIC)
-    IntDisable(INT_ADC0SS1);
-
-    // Disable interrupts for ADC0 sample sequence 1 to configure it.
-    ADCIntDisable(ADC0_BASE, 1);
-
-    // disable ADC0 sample sequence 1
-    ADCSequenceDisable(ADC0_BASE, 1);
-
-    // sample sequence 1 with a processor signal trigger
-    ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_TIMER, 0);
-
-    // configure sequence 1, step,  sample channel 1, interrupt flag, last conversion on sequence 1. PD3 = CH4, PE2 = CH1
-    ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADC_CTL_CH1 | ADC_CTL_IE | ADC_CTL_END);
-
-    // enable sequence 1
-    ADCSequenceEnable(ADC0_BASE, 1);
-
-    // clear interrupt prior to sampling
-    ADCIntClear(ADC0_BASE, 1);
-
-    //register a handler
-    ADCIntRegister(ADC0_BASE, 1, ADC_48V_MON_IRQHandler);
-
-    // enable interrupt
-    ADCIntEnable(ADC0_BASE, 1);
-
-    // Enable the interrupt for ADC0 sequence 1 on the processor (NVIC).
-    IntEnable(INT_ADC0SS1);
-    // *********************************** END Setup for Channel 1 ******************************************
-
+    // Enable the interrupt for ADC0 sequence 0 on the processor (NVIC).
+    //IntEnable(INT_ADC0SS0);
+    /*
+    // Configure timer for A/D
     // Configure a 16-bit periodic timer.
     TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC);
 
@@ -458,47 +404,188 @@ void MX_ADC0_Init(void){
 
     // Enable Timer 0 which will start the whole application process.
     TimerEnable(TIMER0_BASE, TIMER_A);
+*/
 }
 
-void MX_EEPROM_Init(void){
+/*
+ * Description: DUT SITE ID0/1/2,
+ *
+ * Input:
+ * Output:
+ */
+void MX_ADC1_Init(void){
 
-    uint32_t errorCode;
+    // Enable ADC1
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_ADC1));
+
+    // enable PORTB the ADC is on
+    //SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    //while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
+
+    // enable PORTD the ADC is on
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD));
+
+    // enable PORTE the ADC is on
+    //SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+    //while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE));
+
+    // enable timer
+    //SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+    //while(!SysCtlPeripheralReady(SYSCTL_PERIPH_TIMER0));
+
+    // set ADC pin PORTD
+    GPIOPinTypeADC(GPIO_PORTD_BASE, DUT_SITE_ID0_Pin | DUT_SITE_ID1_Pin | DUT_SITE_ID2_Pin);
+
+    // Use ADC0 to sample once for each timer period.
+    ADCClockConfigSet(ADC1_BASE, ADC_CLOCK_SRC_PIOSC | ADC_CLOCK_RATE_HALF, 1);
+
+    SysCtlDelay(10);
+
+    // ******************************************************************************************************************************
+    //                Setup Channels for sequencer 1
+    // ******************************************************************************************************************************
+
+    //Disable the ADC1 sequencer 1 interrupt on the processor (NVIC)
+    IntDisable(INT_ADC1SS0);
+
+    // Disable interrupts for ADC1 sample sequencer 1 to configure it.
+    ADCIntDisable(ADC1_BASE, SEQ_0);
+
+    // disable ADC1 sample sequencer 1
+    ADCSequenceDisable(ADC1_BASE, SEQ_0);
+
+    // sample sequencer 1 with a processor signal trigger
+    //ADCSequenceConfigure(ADC1_BASE, SEQ_1, ADC_TRIGGER_TIMER, 0);
+    ADCSequenceConfigure(ADC1_BASE, SEQ_0, ADC_TRIGGER_PROCESSOR, 0);
+
+    // configure sequencer 1 , step,  sample channels, interrupt flag, last conversion on sequencer 1.
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 0, ADC_DUT_ID0);
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 1, ADC_DUT_ID1);
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 2, ADC_DUT_ID2);
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 3, ADC_DUT_ID0);
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 4, ADC_DUT_ID1);
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 5, ADC_DUT_ID2);
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 6, ADC_CTL_TS);
+    ADCSequenceStepConfigure(ADC1_BASE, SEQ_0, 7, ADC_CTL_TS  | ADC_CTL_IE | ADC_CTL_END); // for SEQ1, number of samples is 4,
+                                                                                            // so read channel again else i believe values will get out of sync?
+    // enable sequencer 1
+    ADCSequenceEnable(ADC1_BASE, SEQ_0);
+
+    // clear interrupt prior to sampling
+    ADCIntClear(ADC1_BASE, SEQ_0);
+
+
+    //register a handler
+    //ADCIntRegister(ADC1_BASE, SEQ_1, ADC1_IRQHandler);
+
+    // enable interrupt
+    //ADCIntEnable(ADC1_BASE, SEQ_1);
+
+    // Enable the interrupt for ADC1 sequence 1 on the processor (NVIC).
+    //IntEnable(INT_ADC1SS1);
     /*
-    uint32_t eepromValue = 0;
-    uint32_t wData = 0;
-    uint32_t rData = 0;
-*/
+    // Configure timer for A/D
+    // Configure a 16-bit periodic timer.
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC);
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_EEPROM0));
+    // Set ADC sampling frequency to be 25KHz i.e. every 40uS.
+    TimerLoadSet(TIMER0_BASE, TIMER_A, (SysCtlClockGet()/25000) - 1);
 
-    errorCode = EEPROMInit();
-    if(errorCode != EEPROM_INIT_OK){
-        return;
-    }
-    /*
-    wData = TEMP_HIGH_LIMIT;
-    errorCode = EEPROMProgram(&wData, 0, 4);
-    EEPROMRead(&rData, 0, 4);
-    errorCode = memcmp(&wData, &rData, 4);
+    // Enable the ADC trigger output for Timer A.
+    TimerControlTrigger(TIMER0_BASE, TIMER_A, true);
 
-    wData = TEMP_LOW_LIMIT;
-    errorCode = EEPROMProgram(&wData, 1, 4);
+    // Enable processor interrupts.
+    IntMasterEnable();
 
-    //EEPROMRead(&rData, 1, 4);
-    EEPROMRead(&rData, 0, 4);
-    eepromValue = rData;
-    EEPROMRead(&rData, 1, 4);
-    eepromValue |= rData << 16;
+    // Enable Timer 0 which will start the whole application process.
+    TimerEnable(TIMER0_BASE, TIMER_A);
 
-    errorCode = memcmp(&wData, &rData, 4);
-
-    if(errorCode != 0){
-        asm(" nop");
-    }
     */
 }
 
+/*
+ * Description: TC communication
+ *
+ *
+ */
+void MX_SPI_Init(void)
+{
+    //
+    // The SSI0 peripheral must be enabled for use.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_SSI0))
+    {
+    }
+
+    //
+    // For this example SSI0 is used with PortA[5:2].  The actual port and pins
+    // used may be different on your part, consult the data sheet for more
+    // information.  GPIO port A needs to be enabled so these pins can be used.
+    // TODO: change this to whichever GPIO port you are using.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+    //
+    // Configure the pin muxing for SSI0 functions on port A2, A3, A4, and A5.
+    // This step is not necessary if your part does not support pin muxing.
+    // TODO: change this to select the port/pin you are using.
+    //
+    GPIOPinConfigure(GPIO_PA2_SSI0CLK);
+    //GPIOPinConfigure(GPIO_PA3_SSI0FSS); // controlled by spi_utilites.c
+
+    GPIOPinConfigure(GPIO_PA4_SSI0RX);
+    GPIOPinConfigure(GPIO_PA5_SSI0TX);
+
+
+    //
+    // Configure the GPIO settings for the SSI pins.  This function also gives
+    // control of these pins to the SSI hardware.  Consult the data sheet to
+    // see which functions are allocated per pin.
+    // The pins are assigned as follows:
+    //      PA5 - SSI0Tx (TM4C123x) / SSI0XDAT1 (TM4C129x)
+    //      PA4 - SSI0Rx (TM4C123x) / SSI0XDAT0 (TM4C129x)
+    //      PA3 - SSI0Fss
+    //      PA2 - SSI0CLK
+    // TODO: change this to select the port/pin you are using.
+    //
+    GPIOPinTypeSSI(GPIO_PORTA_BASE, GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_2);
+
+    //
+    // Configure and enable the SSI port for SPI master mode.  Use SSI0,
+    // system clock supply, idle clock level low and active low clock in
+    // freescale SPI mode, master mode, 1MHz SSI frequency, and 8-bit data.
+    // For SPI mode, you can set the polarity of the SSI clock when the SSI
+    // unit is idle.  You can also configure what clock edge you want to
+    // capture data on.  Please reference the datasheet for more information on
+    // the different SPI modes.
+    //
+    SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_3,
+                       SSI_MODE_MASTER, 2000000, 8);
+
+    // init uDMA
+   // uDMAEnable();
+
+    // set up DMA
+   // SSIDMAEnable(SSI0_BASE, SSI_DMA_RX | SSI_DMA_TX);
+
+    // enable interrupt
+    SSIIntRegister(SSI0_BASE, SPI_Handler);
+    SSIIntEnable(SSI0_BASE, SSI_RXFF);
+
+    //
+    // Enable the SSI0 module.
+    //
+    SSIEnable(SSI0_BASE);
+}
+
+/*
+ * Description: Initialize Watch Dog
+ *
+ *
+ */
 void MX_WDOG_Init(void){
 
     //
@@ -526,3 +613,15 @@ void MX_WDOG_Init(void){
     //
     MAP_WatchdogEnable(WATCHDOG0_BASE);
 }
+
+void MX_EEPROM_Init(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_EEPROM0);
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_EEPROM0))
+    {
+    }
+
+    EEPROMInit();
+}
+
+
