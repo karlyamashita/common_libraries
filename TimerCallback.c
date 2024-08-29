@@ -533,4 +533,11 @@ static void TimerCallbackSort(TimerCallbackStruct *timerInstance)
 	}
 }
 
+/*
+ * Description: Used for situations where you can't pass the timer instance. Otherwise call TimerCallbackTick(&timerCallback) instead
+ */
+void TimerCallbackHandlerTick(void)
+{
+    TimerCallbackTick(timerCallback); // TimerCallback.c
+}
 

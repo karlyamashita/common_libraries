@@ -71,5 +71,6 @@ int TimerCallbackExists(TimerCallbackStruct *timerCallback, TimerCallback callba
 void TimerCallbackTick(TimerCallbackStruct *timerCallback);
 void TimerCallbackCheck(TimerCallbackStruct *timerCallback);
 
+void TimerCallbackHandlerTick(void);
 
 #endif // TIMER_CALLBACK_H
