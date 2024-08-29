@@ -3,6 +3,10 @@
  *
  *  Created on: May 12, 2021
  *      Author: karl.yamashita
+ * 
+ * 
+ *      This was made for Microblaze because Standar C library used too much memory. 
+ *          Later found out Xilinx has their own Standard C library.
  *
  *
  *      Credit to: https://www.techiedelight.com/implement-itoa-function-in-c/
@@ -20,7 +24,7 @@ static void swap(char *x, char *y) {
     char t = *x; *x = *y; *y = t;
 }
 
-// Function to reverse `buffer[i…j]`
+// Function to reverse `buffer[iï¿½j]`
 static char* reverse(char *buffer, int i, int j)
 {
     while (i < j) {
