@@ -66,7 +66,8 @@ int INA3221_SetConfigReg(I2C_GenericDef *i2c, char *msg)
     }
     ina.config.Status.mode3_1 = atoi(mode3_1);
 
-    memcpy(i2c, ina.config.Bytes.data, 2);
+    i2c->dataPtr[0] = ina.config.Bytes.data[1]; // swap bytes when copying
+    i2c->dataPtr[1] = ina.config.Bytes.data[0];
 
     status = INA3221_Write(i2c, INA3221_CONFIG, NULL);
 
@@ -90,7 +91,7 @@ int INA3221_GetConfigReg(I2C_GenericDef *i2c, char *retStr)
     return status;
 }
 
-int INA3221_GetBusVoltage(I2C_GenericDef *i2c, char *msg, char *retStr)
+int INA3221_GetBusShunt(I2C_GenericDef *i2c, char *msg, char *retStr)
 {
     int status = NO_ERROR;
     char *token; // channel
@@ -98,7 +99,9 @@ int INA3221_GetBusVoltage(I2C_GenericDef *i2c, char *msg, char *retStr)
     char *rest = msg;
     char delim[] = ":,\r";
     uint32_t chan;
-    uint32_t busShunt;
+    uint32_t busShunt; // 0 or 1
+    uint32_t busShuntReg; // register values
+    INA3221_ShuntBusVoltDef busShunt_voltage = {0};
 
     token = strtok(rest, delim); // TM4C12x does not support strtok_r library
     token2 = strtok(NULL, delim);
@@ -127,58 +130,78 @@ int INA3221_GetBusVoltage(I2C_GenericDef *i2c, char *msg, char *retStr)
     case 1:
     	if(busShunt) // shunt
     	{
-    		busShunt = INA3221_CH1_SHUNT;
+    		busShuntReg = INA3221_CH1_SHUNT;
     	}
     	else // bus
     	{
-    		busShunt = INA3221_CH1_BUS;
+    		busShuntReg = INA3221_CH1_BUS;
     	}
     	break;
     case 2:
     	if(busShunt) // shunt
     	{
-    		busShunt = INA3221_CH2_SHUNT;
+    		busShuntReg = INA3221_CH2_SHUNT;
     	}
     	else // bus
     	{
-    		busShunt = INA3221_CH2_BUS;
+    		busShuntReg = INA3221_CH2_BUS;
     	}
     	break;
     case 3:
     	if(busShunt) // shunt
     	{
-    		busShunt = INA3221_CH3_SHUNT;
+    		busShuntReg = INA3221_CH3_SHUNT;
     	}
     	else // bus
     	{
-    		busShunt = INA3221_CH3_BUS;
+    		busShuntReg = INA3221_CH3_BUS;
     	}
     	break;
     }
 
     i2c->dataSize = 2;
-
-    status = INA3221_Read(i2c, busShunt, INA3221_VoltageCallback);
+#ifdef USING_CALLBACK
+    status = INA3221_Read(i2c, busShuntReg, INA3221_VoltageCallback);
     if(status != NO_ERROR)
     {
     	return status;
     }
 
     status = NO_ACK;
+#else
+    status = INA3221_Read(i2c, busShuntReg, NULL);
+	if(status != NO_ERROR)
+	{
+		return status;
+	}
+
+    busShunt_voltage.Bytes.data[0] = i2c->dataPtr[1]; // swap bytes
+	busShunt_voltage.Bytes.data[1] = i2c->dataPtr[0];
+
+	if(busShunt == 0) // bus
+	{
+		sprintf(retStr, "%d", (uint16_t) ((busShunt_voltage.Status.shuntBusVoltage * BUS_VOLTAGE_LSB) * 1000));
+	}
+	else if(busShunt == 1) // shunt
+	{
+		sprintf(retStr, "%d", (uint16_t) ((busShunt_voltage.Status.shuntBusVoltage * SHUNT_VOLTAGE_LSB) * 1000000)); // current = (voltage * SHUNT_VOLTAGE_LSB) * 1M
+	}
+#endif
 
     return status;
 }
 
+// ************ CALLBACK *****************
 void INA3221_ConfigCallback(I2C_GenericDef *i2c)
 {
-	char str2[32] = {0};
+	char str2[64] = {0};
 	INA3221_ConfigRegDef config = {0};
 
 	// reading INA3221 registers start with MSB then LSB. So we need to swap bytes when copying to config struct.
 	config.Bytes.data[0] = i2c->dataPtr[1];
 	config.Bytes.data[1] = i2c->dataPtr[0];
 
-	sprintf(str2, "= ch1-3= %d, mode3_1= %d", config.Status.ch_En, config.Status.mode3_1);
+	sprintf(str2, "= data[1]=0x%X,data[0]=0x%X, ch1-3= %d, mode3_1= %d", config.Bytes.data[1], config.Bytes.data[0], config.Status.ch_En, config.Status.mode3_1);
 	strcat(i2c->cmdPtr, str2);
 
 	UART_DMA_NotifyUser(&uart2_msg, i2c->cmdPtr, strlen(i2c->cmdPtr), true);
@@ -189,10 +212,18 @@ void INA3221_VoltageCallback(I2C_GenericDef *i2c)
 	char str2[32] = {0};
 	INA3221_ShuntBusVoltDef voltage = {0};
 
-	voltage.Bytes.data[0] = i2c->dataPtr[1];
+	voltage.Bytes.data[0] = i2c->dataPtr[1]; // swap bytes when copying
 	voltage.Bytes.data[1] = i2c->dataPtr[0];
 
-	sprintf(str2, "= %f", (voltage.Status.shuntBusVoltage * BUS_VOLTAGE_LSB));
+	if(i2c->deviceAddr == INA3221_CH1_BUS || INA3221_CH2_BUS || INA3221_CH3_BUS)
+	{
+		sprintf(str2, "= %d", (uint16_t) ((voltage.Status.shuntBusVoltage * BUS_VOLTAGE_LSB) * 1000));
+	}
+	else if(i2c->deviceAddr == INA3221_CH1_SHUNT || INA3221_CH2_SHUNT || INA3221_CH3_SHUNT)
+	{
+		sprintf(str2, "= %d", (uint16_t) ((voltage.Status.shuntBusVoltage * SHUNT_VOLTAGE_LSB) * 1000000)); // current = (voltage * SHUNT_VOLTAGE_LSB) * 1M
+	}
+
 	strcat(i2c->cmdPtr, str2);
 
 	UART_DMA_NotifyUser(&uart2_msg, i2c->cmdPtr, strlen(i2c->cmdPtr), true);

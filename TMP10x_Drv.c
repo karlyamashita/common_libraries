@@ -39,7 +39,7 @@ int TMP10x_Write(I2C_GenericDef *i2c, uint16_t reg, void (*callback)(struct __I2
 
 	i2c->registerAddr[0] = reg;
 	i2c->regSize = 1;
-	i2c->RxISR = callback;
+	i2c->TxISR = callback;
 
 	status = I2C_Mem_Write_Generic_Method(i2c);
 	if(status != NO_ERROR)
