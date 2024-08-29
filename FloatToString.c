@@ -4,12 +4,14 @@
  *  Created on: May 21, 2021
  *      Author: karl.yamashita
  *
+ *      This was made for Microblaze because Standar C library used too much memory. 
+ *          Later found out Xilinx has their own Standard C library.
+ * 
  *
  *  Credit: https://stackoverflow.com/questions/7228438/convert-double-float-to-string
  *
  */
 
-#include <FloatToString.h>
 #include "main.h"
 
 
