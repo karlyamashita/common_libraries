@@ -24,6 +24,8 @@
 #include <ctype.h>
 #define Nop() asm(" NOP ")
 
+#include "PollingRoutine.h"
+
 */
 #ifndef __weak
 #define __weak __attribute__((weak))
