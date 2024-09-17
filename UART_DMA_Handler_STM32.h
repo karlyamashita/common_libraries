@@ -37,6 +37,7 @@ typedef struct
 		UART_DMA_Data queue[UART_DMA_QUEUE_SIZE];
 		RING_BUFF_STRUCT ptr;
 		uint32_t queueSize;
+		bool txPending;
 	}tx;
 }UART_DMA_QueueStruct;
 
