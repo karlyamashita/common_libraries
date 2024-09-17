@@ -45,7 +45,7 @@ int UART_TxMessage_IT(UartBufferStruct *msg)
 
 		if(HAL_UART_Transmit_IT(msg->huart, ptr->data, ptr->size) == HAL_OK)
 		{
-			RingBuff_Ptr_Output(&msg->tx.ptr, UART_TX_QUEUE_SIZE);
+			RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize);
 		}
 	}
 
