@@ -84,7 +84,7 @@ int TimerCallbackRegisterOnly(TimerCallbackStruct *timer, TimerCallback callback
 }
 
 /*
- * Description: Register a 2nd callback that will be called after the timer is disabled usually from a timetout or repetition.
+ * Description: Register a 2nd callback that will be called after the timer is disabled usually from a timeout or repetition.
  * 				The 2nd callback is automatically enabled when this function is called.
  * 					However the 2nd callback will not be called until a timer (one shot, timeout or repetition) is started and has been disabled at the end of it's cycle.
  * 				Use TimerCallbackRegister2ndDisable to disable the 2nd callback at any time.
