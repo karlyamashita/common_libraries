@@ -162,7 +162,7 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timer, TimerCallbackStruct
     timer->Instance[i].timerRepeat = timerInstanceAdd->Instance[i].timerRepeat;
     timer->Instance[i].timerCallback2Enabled = timerInstanceAdd->Instance[i].timerCallback2Enabled;
 
-    timer[0].timerLastIndex = i + 1; // only stored in first callback, index 0.
+    timer->timerLastIndex = i + 1; // only stored in first callback, index 0.
     
     return i;
 }
@@ -176,7 +176,7 @@ int TimerCallbackTimeoutStart(TimerCallbackStruct *timer, TimerCallback callback
 {
 	int i = 0;
 
-	while(timer[i].Instance[i].callback != callback) {
+	while(timer->Instance[i].callback != callback) {
 		if( i == timer->timerLastIndex) {
 			return 1;// callback not found
 		}
@@ -187,14 +187,14 @@ int TimerCallbackTimeoutStart(TimerCallbackStruct *timer, TimerCallback callback
 	    timerTimeoutValue = timerValue + 1;
 	}
 
-	timer[i].Instance[i].timerValue = timerValue;
-    timer[i].Instance[i].timerTick = 0;// clear the timer count
-    timer[i].Instance[i].timerRepeat = true;
-    timer[i].Instance[i].timerEnabled = 1;
+	timer->Instance[i].timerValue = timerValue;
+    timer->Instance[i].timerTick = 0;// clear the timer count
+    timer->Instance[i].timerRepeat = true;
+    timer->Instance[i].timerEnabled = 1;
 
-	timer[i].Instance[i].timerTimeoutValue = timerTimeoutValue;
-	timer[i].Instance[i].timerTimeoutTick = 0; // clear shutdown timer count
-	timer[i].Instance[i].timerTimeoutEnable = true;
+	timer->Instance[i].timerTimeoutValue = timerTimeoutValue;
+	timer->Instance[i].timerTimeoutTick = 0; // clear shutdown timer count
+	timer->Instance[i].timerTimeoutEnable = true;
 
 	return i;
 }
@@ -208,7 +208,7 @@ int TimerCallbackTimeoutDisable(TimerCallbackStruct *timer, TimerCallback callba
 {
     uint8_t i = 0;
 
-    while (timer[i].Instance[i].callback != callback)
+    while (timer->Instance[i].callback != callback)
     {
         if (i == timer->timerLastIndex)
         {
@@ -216,7 +216,7 @@ int TimerCallbackTimeoutDisable(TimerCallbackStruct *timer, TimerCallback callba
         }
         i++;
     };
-    timer[i].Instance[i].timerTimeoutEnable = 0; // not enabled
+    timer->Instance[i].timerTimeoutEnable = 0; // not enabled
     return 0;
 }
 
@@ -228,13 +228,13 @@ int TimerCallbackTimeoutReset(TimerCallbackStruct *timer, TimerCallback callback
 {
     uint8_t i = 0;
 
-    while(timer[i].Instance[i].callback != callback) {
+    while(timer->Instance[i].callback != callback) {
         if(i == timer->timerLastIndex) {
             return 1;// callback not found
         }
         i++;
     };
-    timer[i].Instance[i].timerTimeoutTick = 0; // clear timerShutDownCount
+    timer->Instance[i].timerTimeoutTick = 0; // clear timerShutDownCount
     return 0;
 }
 
@@ -254,20 +254,20 @@ int TimerCallbackRepetitionStart(TimerCallbackStruct *timer, TimerCallback callb
 {
     uint8_t i = 0;
 
-    while(timer[i].Instance[i].callback != callback) {
+    while(timer->Instance[i].callback != callback) {
         if( i == timer->timerLastIndex) {
             return 1;// callback not found
         }
         i++;
     };
 
-    timer[i].Instance[i].timerRepetitionValue = repetition;
-    timer[i].Instance[i].timerRepetitionTick = 0;
-    timer[i].Instance[i].timerRepetitionEnable = true;
+    timer->Instance[i].timerRepetitionValue = repetition;
+    timer->Instance[i].timerRepetitionTick = 0;
+    timer->Instance[i].timerRepetitionEnable = true;
 
-    timer[i].Instance[i].timerValue = time;
-    timer[i].Instance[i].timerRepeat = true;
-    timer[i].Instance[i].timerEnabled = true;
+    timer->Instance[i].timerValue = time;
+    timer->Instance[i].timerRepeat = true;
+    timer->Instance[i].timerEnabled = true;
 
     return 0;
 }
@@ -280,14 +280,14 @@ int TimerCallbackRepetitionDisable(TimerCallbackStruct *timer, TimerCallback cal
 {
     uint8_t i = 0;
 
-    while(timer[i].Instance[i].callback != callback) {
+    while(timer->Instance[i].callback != callback) {
         if( i == timer->timerLastIndex) {
             return 1;// callback not found
         }
         i++;
     };
 
-    timer[i].Instance[i].timerEnabled = true;
+    timer->Instance[i].timerEnabled = true;
 
     return 0;
 }
@@ -300,14 +300,14 @@ int TimerCallbackRepetitionResetTimer(TimerCallbackStruct *timer, TimerCallback 
 {
     uint8_t i = 0;
 
-    while(timer[i].Instance[i].callback != callback) {
+    while(timer->Instance[i].callback != callback) {
         if( i == timer->timerLastIndex) {
             return 1;// callback not found
         }
         i++;
     };
 
-    timer[i].Instance[i].timerRepetitionTick = 0;
+    timer->Instance[i].timerRepetitionTick = 0;
 
     return 0;
 }
@@ -322,16 +322,16 @@ int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, 
 {
 	uint8_t i = 0;
 
-	while(timer[i].Instance[i].callback != callback) {
+	while(timer->Instance[i].callback != callback) {
 		if( i == timer->timerLastIndex) {
 			return 1;// callback not found
 		}
 		i++;
 	};
-	timer[i].Instance[i].timerValue = timerValue; // new timer value
-	timer[i].Instance[i].timerRepeat = repeat;
-	timer[i].Instance[i].timerTick = 0;// clear the timer count
-	timer[i].Instance[i].timerEnabled = true;
+	timer->Instance[i].timerValue = timerValue; // new timer value
+	timer->Instance[i].timerRepeat = repeat;
+	timer->Instance[i].timerTick = 0;// clear the timer count
+	timer->Instance[i].timerEnabled = true;
 	return 0;
 }
 
@@ -344,13 +344,13 @@ int TimerCallbackDisable(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-	while(timer[i].Instance[i].callback != callback) {
+	while(timer->Instance[i].callback != callback) {
 		if( i == timer->timerLastIndex) {
 			return 1;// callback not found
 		}
 		i++;
 	};
-    timer[i].Instance[i].timerEnabled = 0; // disable
+    timer->Instance[i].timerEnabled = 0; // disable
 	return 0;
 }
 
@@ -363,13 +363,13 @@ int TimerCallbackResetTimer(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-	while(timer[i].Instance[i].callback != callback) {
+	while(timer->Instance[i].callback != callback) {
 		if( i == timer->timerLastIndex) {
 			return 1;// callback not found
 		}
 		i++;
 	};
-	timer[i].Instance[i].timerTick = 0;
+	timer->Instance[i].timerTick = 0;
 	return 0;
 }
 
@@ -383,13 +383,13 @@ int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timer, TimerCallback 
 {
 	uint8_t i = 0;
 
-	while(timer[i].Instance[i].callback != callback) {
+	while(timer->Instance[i].callback != callback) {
 		if( i == timer->timerLastIndex) {
 			return 1;// callback not found
 		}
 		i++;
 	};
-	*timerValue = timer[i].Instance[i].timerTick;
+	*timerValue = timer->Instance[i].timerTick;
 	return 0;
 }
 
@@ -402,7 +402,7 @@ int TimerCallbackExists(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-	while(timer[i].Instance[i].callback != callback) {
+	while(timer->Instance[i].callback != callback) {
 		if( i == timer->timerLastIndex) {
 			return 0;// callback not found
 		}
@@ -420,13 +420,13 @@ int TimerCallbackDelete(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-    while(timer[i].Instance[i].callback != callback) {
+    while(timer->Instance[i].callback != callback) {
 		if( i == timer->timerLastIndex) {
 			return 1; // callback not found
 		}
 		i++;
 	};
-	timer[i].Instance[i].callback = 0; // deinit callback routine
+	timer->Instance[i].callback = 0; // deinit callback routine
 	TimerCallbackSort(timer);// sort the array
     timer->timerLastIndex -= 1; // one less callback
 	return 0;
@@ -443,16 +443,16 @@ void TimerCallbackTick(TimerCallbackStruct *timer)
 	int i = 0;
 
 	while(i != timer->timerLastIndex) { // iterate through all arrays
-        if (timer[i].Instance[i].callback != 0)
+        if (timer->Instance[i].callback != 0)
         {
-            if (timer[i].Instance[i].timerTimeoutEnable) // check if shutdown is enabled
+            if (timer->Instance[i].timerTimeoutEnable) // check if shutdown is enabled
             {
-                timer[i].Instance[i].timerTimeoutTick += 1; // increment the timerShutDownCount
+                timer->Instance[i].timerTimeoutTick += 1; // increment the timerShutDownCount
             }
 
-            if (timer[i].Instance[i].timerEnabled) // check if callback is enabled.
+            if (timer->Instance[i].timerEnabled) // check if callback is enabled.
             {
-            	timer[i].Instance[i].timerTick += 1; // increment the timerCount
+            	timer->Instance[i].timerTick += 1; // increment the timerCount
             }
         }
 		i++;
@@ -471,40 +471,40 @@ void TimerCallbackCheck(TimerCallbackStruct *timer)
 	int i = 0; // the array pointer
 
 	while(i != timer->timerLastIndex) {
-	    if(timer[i].Instance[i].timerTimeoutEnable == 1) { // check for shutdown first
-	        if(timer[i].Instance[i].timerTimeoutTick >= timer[i].Instance[i].timerTimeoutValue) {
-	        	timer[i].Instance[i].timerTimeoutTick = 0;
-	        	timer[i].Instance[i].timerEnabled = 0; // disable timer
+	    if(timer->Instance[i].timerTimeoutEnable == 1) { // check for shutdown first
+	        if(timer->Instance[i].timerTimeoutTick >= timer[i].Instance[i].timerTimeoutValue) {
+	        	timer->Instance[i].timerTimeoutTick = 0;
+	        	timer->Instance[i].timerEnabled = 0; // disable timer
 
-	        	if(timer[i].Instance[i].timerCallback2Enabled)// new 12-25-2022
+	        	if(timer->Instance[i].timerCallback2Enabled)// new 12-25-2022
 	        	{
-	        		timer[i].Instance[i].callback2();// jump to secondary callback function
+	        		timer->Instance[i].callback2();// jump to secondary callback function
 	        	}
 	        }
 	    }
 
-		if(timer[i].Instance[i].timerEnabled) {// timer or repetition is enabled
-			if(timer[i].Instance[i].timerTick >= timer[i].Instance[i].timerValue) {
-				timer[i].Instance[i].timerTick = 0;// clear timer
-				timer[i].Instance[i].callback();// jump to callback function
-				if(timer[i].Instance[i].timerRepetitionEnable) // new 4-27-2022
+		if(timer->Instance[i].timerEnabled) {// timer or repetition is enabled
+			if(timer->Instance[i].timerTick >= timer->Instance[i].timerValue) {
+				timer->Instance[i].timerTick = 0;// clear timer
+				timer->Instance[i].callback();// jump to callback function
+				if(timer->Instance[i].timerRepetitionEnable) // new 4-27-2022
 				{
-				    if(++timer[i].Instance[i].timerRepetitionTick >= timer[i].Instance[i].timerRepetitionValue)
+				    if(++timer->Instance[i].timerRepetitionTick >= timer->Instance[i].timerRepetitionValue)
 				    {
-				        timer[i].Instance[i].timerEnabled = 0; // disable timer
+				        timer->Instance[i].timerEnabled = 0; // disable timer
 
-				        if(timer[i].Instance[i].timerCallback2Enabled) // new 12-25-2022
+				        if(timer->Instance[i].timerCallback2Enabled) // new 12-25-2022
 						{
-							timer[i].Instance[i].callback2();// jump to secondary callback function
+							timer->Instance[i].callback2();// jump to secondary callback function
 						}
 				    }
 				}
-				if(timer[i].Instance[i].timerRepeat == TIMER_NO_REPEAT) {// if no repeat then disable timer for this function
-					timer[i].Instance[i].timerEnabled = 0; // disable timer
+				if(timer->Instance[i].timerRepeat == TIMER_NO_REPEAT) {// if no repeat then disable timer for this function
+					timer->Instance[i].timerEnabled = 0; // disable timer
 
-					if(timer[i].Instance[i].timerCallback2Enabled)// new 12-25-2022
+					if(timer->Instance[i].timerCallback2Enabled)// new 12-25-2022
 					{
-						timer[i].Instance[i].callback2();// jump to secondary callback function
+						timer->Instance[i].callback2();// jump to secondary callback function
 					}
 				}
 				i++;
