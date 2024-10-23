@@ -77,7 +77,7 @@ int TimerCallbackRegisterOnly(TimerCallbackStruct *timer, TimerCallback callback
     timer->Instance[i].timerRepetitionEnable = false;
     timer->Instance[i].timerEnabled = false;
 
-    timer->timerLastIndex = i + 1; // only stored in first callback, index 0.
+    timer->timerLastIndex = i + 1; // save number of callbacks registered
 
     return 0;
 }
@@ -95,7 +95,7 @@ int TimerCallbackRegister2nd(TimerCallbackStruct *timer, TimerCallback callback,
 	int i = 0;
 
 	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+		if(i == timer->timerLastIndex) {
 			return 1;// callback not found
 		}
 		i++;
@@ -528,7 +528,7 @@ static void TimerCallbackSort(TimerCallbackStruct *timer)
 		if(timer->Instance[i].callback == 0) { // found zero at this index
 			if(timer->Instance[i+1].callback != 0) { // make sure next index is not zero.
 				timer->Instance[i].callback = timer->Instance[i+1].callback;// shift following callback down one index
-				timer->Instance[i+1].callback = 0; // now delete callback from this index
+				timer->Instance[i+1].callback = 0; // now delete callback that was copied
 			}
 		}
 		i++;
