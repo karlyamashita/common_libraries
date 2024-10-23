@@ -45,6 +45,15 @@ void JVCSendCommand(unsigned char command)
 		command >>= 1;
 	}	
 }
+
+/*
+* Description: Older JVC radrios need a start bit on the first packet only.
+*				Then no start bit on the 2nd/3rd packet.
+*				The counter only allows 3 packets to be sent.   
+*				After the button is release, then the counter is reset.
+*				This method will still work on newer JVC that have start bit on all packets.
+*				
+*/
 void JVC(unsigned char command, unsigned char repeatFlag)
 {
 	if(repeatFlag || ((repeatFlag == 0) && (repeatCounter < 2))) {
