@@ -12,9 +12,8 @@ Good for
 
 
 
-- Define timer instance some where in main or polling file. // TimerCallbackStruct timerInstanceMilliSeconds[MAX_TIMER_CALLBACK] = {0};
+- Define timer instance some where in main or polling file. // TimerCallbackStruct timerInstanceMilliSeconds = {0};
 - Create a callback passing timer instance and parameters. // TimerCallbackRegister(timerInstanceMilliSeconds, <function to callback>, 100, TIMER_REPEAT);
-					Note: The very first callback that is registered holds the timerLastIndex value. This callback should never be deleted or the index value will be lost.
 - Call this function "TimerCallbackRegister(&timerCallback, <the function name>) to register a function.
 - Call this function "TimerCallbackTick(&timerCallback)" from SysTick_Handler() in stm32f1xx_it.c which will increment a timer for each function that is registered.
 - Call this function "TimerCallbackCheck(&timerCallback)" from polling routine. This will go through each function and call the function if the timer is >= desired time.
@@ -44,7 +43,7 @@ Rev 3.0 - 09/11/2024, Added Instance buffer in data structure instead of declari
 #include "TimerCallback.h"
 
 
-TimerCallbackStruct timerCallback; // default instance. Use extern where needed
+TimerCallbackStruct timerCallback; // default instance. Try adding to main.h after including TimerCallback.h
 
 
 
