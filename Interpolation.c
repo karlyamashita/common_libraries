@@ -20,6 +20,9 @@
  * Description: Calculates the y value.
  * 				x1, x2, y1 and y2 must be initiated with values by calling Interpolation_Set_X1_X2
  * 				and Interpolation_Set_Y1_Y2. Before getting y value, Interpolation_Set_X must be called.
+ * 	Input: Interpolation data structure
+ * 	Output: The y value is updated in the data structure.
+ * 	Return: Error status
  */
 int Interpolation_Get_Y(Interpolation_t *interpol)
 {
@@ -39,6 +42,8 @@ int Interpolation_Get_Y(Interpolation_t *interpol)
 
 /*
  * Description: User must initiate the x1 and x2 value ranges.
+ * Input: the interpolation data structure. The x1 and x2 values.
+ * Return: Error status, though currently no error.
  */
 int Interpolation_Set_X1_X2(Interpolation_t *interpol, double _x1, double _x2)
 {
@@ -50,6 +55,8 @@ int Interpolation_Set_X1_X2(Interpolation_t *interpol, double _x1, double _x2)
 
 /*
  * Description: User must initiate the y1 and y2 value ranges.
+ * Input: the interpolation data structure. The y1 and y2 values.
+ * Return: Error status, though currently no error.
  */
 int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, double _y1, double _y2)
 {
@@ -61,6 +68,8 @@ int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, double _y1, double _y2)
 
 /*
  * Description: User must set the x value before calculating and getting the y value.
+ * Input: the interpolation data structure. The x value.
+ * Return: Error status, though currently no error.
  */
 int Interpolation_Set_X(Interpolation_t *interpol, double _x)
 {
@@ -71,6 +80,7 @@ int Interpolation_Set_X(Interpolation_t *interpol, double _x)
 
 /*
  * Description: Function to parse string message and set the appropriate x or y Set function
+ * Input: The interpolation data structure. The string message containing the command and values.
  */
 int Interpolation_SetMsg(Interpolation_t *interpol, char *msg)
 {
