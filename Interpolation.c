@@ -22,19 +22,10 @@
  * 				and Interpolation_Set_Y1_Y2. Before getting y value, Interpolation_Set_X must be called.
  * 	Input: Interpolation data structure
  * 	Output: The y value is updated in the data structure.
- * 	Return: Error status
+ * 	Return: No Error
  */
 int Interpolation_Get_Y(Interpolation_t *interpol)
 {
-	if(interpol->x1 == 0 && interpol->x2 == 0)
-	{
-		return INTERPOLATION_ERROR_VALUE_INVALID;
-	}
-	else if(interpol->y1 == 0 && interpol->y2 == 0)
-	{
-		return INTERPOLATION_ERROR_VALUE_INVALID;
-	}
-
 	interpol->y = (interpol->x - interpol->x1) * (interpol->y2 - interpol->y1) / (interpol->x2 - interpol->x1) + interpol->y1;
 
 	return 0;
@@ -43,10 +34,15 @@ int Interpolation_Get_Y(Interpolation_t *interpol)
 /*
  * Description: User must initiate the x1 and x2 value ranges.
  * Input: the interpolation data structure. The x1 and x2 values.
- * Return: Error status, though currently no error.
+ * Return: Error status
  */
 int Interpolation_Set_X1_X2(Interpolation_t *interpol, double _x1, double _x2)
 {
+	if(_x1 == 0 && _x2 == 0)
+	{
+		return INTERPOLATION_ERROR_VALUE_INVALID;
+	}
+
 	interpol->x1 = _x1;
 	interpol->x2 = _x2;
 
@@ -56,10 +52,15 @@ int Interpolation_Set_X1_X2(Interpolation_t *interpol, double _x1, double _x2)
 /*
  * Description: User must initiate the y1 and y2 value ranges.
  * Input: the interpolation data structure. The y1 and y2 values.
- * Return: Error status, though currently no error.
+ * Return: Error status
  */
 int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, double _y1, double _y2)
 {
+	if(_y1 == 0 && _y2 == 0)
+	{
+		return INTERPOLATION_ERROR_VALUE_INVALID;
+	}
+
 	interpol->y1 = _y1;
 	interpol->y2 = _y2;
 
@@ -73,6 +74,11 @@ int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, double _y1, double _y2)
  */
 int Interpolation_Set_X(Interpolation_t *interpol, double _x)
 {
+	if(_x > interpol->x2)
+	{
+		return INTERPOLATION_ERROR_VALUE_INVALID;
+	}
+
 	interpol->x = _x + 0.000005; // round up
 
 	return 0;
