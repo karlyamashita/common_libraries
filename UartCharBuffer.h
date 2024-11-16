@@ -17,10 +17,10 @@
  */
 #define UART_RX_IRQ_BYTE_SIZE 1 // Typically this is 1 byte for most uC.
 
-#define UART_RX_BYTE_BUFFER_SIZE 128 // this holds all the IRQ data
-#define UART_TX_BYTE_BUFFER_SIZE 128
-#define UART_RX_MESSAGE_QUEUE_SIZE 8// buffer size of complete strings or packets.
-#define UART_TX_MESSAGE_QUEUE_SIZE 8 // buffer size of complete strings or packets.
+#define UART_RX_DATA_SIZE 128 // this holds all the IRQ data
+#define UART_TX_DATA_SIZE 128
+#define UART_RX_QUEUE_SIZE 8// buffer size of complete strings or packets.
+#define UART_TX_QUEUE_SIZE 8 // buffer size of complete strings or packets.
 
 // end user defines
 
@@ -46,26 +46,37 @@ typedef enum CheckSumType
 
 typedef struct
 {
-	uint8_t data[UART_RX_BYTE_BUFFER_SIZE];
+    uint32_t sys_ctl_peripheral;
+    uint32_t baudRate;
+    uint32_t sysClock;
+}UART_Config_t;
+
+typedef struct
+{
+	uint8_t data[UART_RX_DATA_SIZE];
 	uint32_t size;
 }UartDataStruct;
 
-typedef struct
+typedef struct __UartBufferStruct
 {
 #ifdef USE_HAL_DRIVER
 	UART_HandleTypeDef *huart;
 #else
-    uint32_t instance; // Can be TI's or Xilinx UART base
     uint32_t uartType;
+    uint32_t uart_base;
+    void (*RxIRQ)(struct  __UartBufferStruct *msg); /*!< Function pointer on Rx IRQ handler */
+    void (*TxIRQ)(struct __UartBufferStruct *msg); /*!< Function pointer on Tx IRQ handler */
+    void (*ErrorIRQ)(struct __UartBufferStruct *msg); /*!< Function pointer on Error IRQ handler */
+    uint32_t errorCode;
 #endif
     struct
 	{
     	uint8_t irqByte; // UART IRQ needs to save Rx byte to this variable
-		UartDataStruct queue[UART_RX_MESSAGE_QUEUE_SIZE];
+		UartDataStruct queue[UART_RX_QUEUE_SIZE];
 		uint32_t queueSize;
 		UartDataStruct *msgToParse;
 
-    	uint8_t binaryBuffer[UART_RX_BYTE_BUFFER_SIZE]; // For binary data, bytes saved here as they come in from uartIRQ_ByteBuffer.
+    	uint8_t binaryBuffer[UART_RX_DATA_SIZE]; // For binary data, bytes saved here as they come in from uartIRQ_ByteBuffer.
 		uint32_t packetSize; // for binary packets
 
 		RING_BUFF_STRUCT bytePtr; // pointer for byteBuffer
@@ -77,7 +88,7 @@ typedef struct
 	}rx;
 	struct
 	{
-		UartDataStruct queue[UART_TX_MESSAGE_QUEUE_SIZE];
+		UartDataStruct queue[UART_TX_QUEUE_SIZE];
 		uint32_t queueSize;
 		UartDataStruct *msgToSend;
 		uint32_t msgToSend_BytePtr;
