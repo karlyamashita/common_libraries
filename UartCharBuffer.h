@@ -62,7 +62,6 @@ typedef struct __UartBufferStruct
 #ifdef USE_HAL_DRIVER
 	UART_HandleTypeDef *huart;
 #else
-    uint32_t uartType;
     uint32_t uart_base;
     void (*RxIRQ)(struct  __UartBufferStruct *msg); /*!< Function pointer on Rx IRQ handler */
     void (*TxIRQ)(struct __UartBufferStruct *msg); /*!< Function pointer on Tx IRQ handler */
@@ -74,6 +73,7 @@ typedef struct __UartBufferStruct
     	uint8_t irqByte; // UART IRQ needs to save Rx byte to this variable
 		UartDataStruct queue[UART_RX_QUEUE_SIZE];
 		uint32_t queueSize;
+		uint32_t bytePtrSize; // also used in binaryQueue
 		UartDataStruct *msgToParse;
 
     	uint8_t binaryBuffer[UART_RX_DATA_SIZE]; // For binary data, bytes saved here as they come in from uartIRQ_ByteBuffer.
@@ -82,6 +82,7 @@ typedef struct __UartBufferStruct
 		RING_BUFF_STRUCT bytePtr; // pointer for byteBuffer
 		RING_BUFF_STRUCT ptr; // pointer for queue
 		uint8_t uartType; // UART_ASCII or UART_BINARY, default UART_ASCII
+		uint8_t checksumType; // For use with binary packets. 0 = MOD256, 1 = 16 bit (not implemented yet)
 #ifdef USE_HAL_DRIVER
 		HAL_StatusTypeDef HAL_Status;
 #endif
