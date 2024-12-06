@@ -24,8 +24,15 @@
  * 	Output: The y value is updated in the data structure.
  * 	Return: No Error
  */
-int Interpolation_Get_Y(Interpolation_t *interpol)
+int Interpolation_Get_Y(Interpolation_t *interpol, double x)
 {
+	if(x < interpol->x1 || x > interpol->x2)
+    {
+        return INTERPOLATION_ERROR;
+    }
+
+	interpol->x = x;
+
 	interpol->y = (interpol->x - interpol->x1) * (interpol->y2 - interpol->y1) / (interpol->x2 - interpol->x1) + interpol->y1;
 
 	return 0;
@@ -40,7 +47,7 @@ int Interpolation_Set_X1_X2(Interpolation_t *interpol, double _x1, double _x2)
 {
 	if(_x1 == 0 && _x2 == 0)
 	{
-		return INTERPOLATION_ERROR_VALUE_INVALID;
+		return INTERPOLATION_ERROR;
 	}
 
 	interpol->x1 = _x1;
@@ -58,7 +65,7 @@ int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, double _y1, double _y2)
 {
 	if(_y1 == 0 && _y2 == 0)
 	{
-		return INTERPOLATION_ERROR_VALUE_INVALID;
+		return INTERPOLATION_ERROR;
 	}
 
 	interpol->y1 = _y1;
@@ -67,21 +74,13 @@ int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, double _y1, double _y2)
 	return 0;
 }
 
-/*
- * Description: User must set the x value before calculating and getting the y value.
- * Input: the interpolation data structure. The x value.
- * Return: Error status, though currently no error.
- */
-int Interpolation_Set_X(Interpolation_t *interpol, double _x)
+int Interpolation_GetMsg_Y(Interpolation_t *interpol, char *retStr)
 {
-	if(_x > interpol->x2)
-	{
-		return INTERPOLATION_ERROR_VALUE_INVALID;
-	}
+	int status = NO_ERROR;
 
-	interpol->x = _x + 0.000005; // round up
+	sprintf(retStr, "%lf", interpol->y);
 
-	return 0;
+	return status;
 }
 
 /*
