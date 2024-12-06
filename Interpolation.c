@@ -80,7 +80,7 @@ int Interpolation_GetMsg_Y(Interpolation_t *interpol, char *retStr)
 {
 	int status = NO_ERROR;
 
-	sprintf(retStr, "%lf", interpol->y);
+	sprintf(retStr, "%f", interpol->y);
 
 	return status;
 }
