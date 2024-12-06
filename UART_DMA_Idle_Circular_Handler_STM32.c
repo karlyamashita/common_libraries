@@ -203,7 +203,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 // Be sure to initialize UART instance in polling routine
  *
-UART_DMA_QueueStruct uart2 =
+UART_DMA_QueueStruct uart2_msg =
 {
 	.huart = &huart2,
 	.rx.queueSize = UART_DMA_QUEUE_SIZE,
