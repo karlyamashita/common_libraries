@@ -5,7 +5,7 @@
 
 
 /*
- Description: Checks to see if value is a string hex number and converts to a decimal number. 
+ * Description: Checks to see if string is a hex value and converts to a decimal number.
  * Input: The string to check
  * Output: The decimal number
  * Return: False if not a hex number and save integer value to address pointer.
