@@ -76,9 +76,27 @@ int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, float _y1, float _y2)
 	return 0;
 }
 
+int Interpolation_Set_X(Interpolation_t *interpol, float _x)
+{
+	int status = NO_ERROR;
+
+	interpol->x = _x;
+
+	return status;
+}
+
+/*
+ * Description: Be sure to send message to set X prior to getting Y
+ */
 int Interpolation_GetMsg_Y(Interpolation_t *interpol, char *retStr)
 {
 	int status = NO_ERROR;
+
+	status = Interpolation_Get_Y(interpol, interpol->x);
+	if(status != NO_ERROR)
+	{
+		return INTERPOLATION_ERROR;
+	}
 
 	sprintf(retStr, "%f", interpol->y);
 
