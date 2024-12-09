@@ -23,7 +23,6 @@ void LTM46xx_Init(void);
 int LTM46xx_GetPwrMod(char *msg, char *retStr);
 int LTM46xx_SetPwrMod(char *msg);
 
-
 #ifdef	__cplusplus
 }
 #endif

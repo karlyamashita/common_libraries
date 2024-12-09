@@ -130,141 +130,139 @@ static int LTM46xx_AddrInit(LTM_SlaveRail_t *addr)
 int LTM46xx_GetPwrMod(char *msg, char *retStr)
 {
     int status = NO_ERROR;
-    char str[64] = {0};
-    char *token;
-    char *token2;
-    char *token3;
+    char *token; // command
+    char *token2; // page
+    char *token3; // for command reg, this is the register address
     char *rest = msg;
-    char delim[] = ":\r";
+    char delim[] = ":,\r";
+    LTM46xx_RegisterPageInfo_t regPage = {0};
     
+    // get strings
     token = strtok_r(rest, delim, &rest); // command
     token2 = strtok_r(rest, delim, &rest); // page
     
+    // update data structure
+    regPage.Status.page = atoi(token2);
     
     // start parsing
     if(strncmp(token, "reg", strlen("reg")) == 0)
     {
-       token3 = strtok_r(rest, delim, &rest); // register
-       sprintf(str, "%s,%s", token2, token3);
-       status = LTM46xx_GetRegisterData(str, retStr);
-    }
-	else if(strncmp(msg, "enablerailaddress", strlen("enablerailaddress")) == 0)
-    {
-        sprintf(retStr, "%d", slaveRailAddress.useMfrRailAddressFlag);
-        return NO_ERROR;
+    	token3 = strtok_r(rest, delim, &rest);
+    	regPage.Status.regAddress = atoi(token3);
+    	status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if(strncmp(token, "statusword", strlen("statusword")) == 0)
     {
-    	sprintf(str, "%s,0x%X", token2, STATUS_WORD_paged);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = STATUS_WORD_paged;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if(strncmp(token, "statusvout", strlen("statusvout")) == 0)
 	{
-    	sprintf(str, "%s,0x%X", token2, STATUS_VOUT_paged);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = STATUS_VOUT_paged;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
     else if(strncmp(token, "statusiout", strlen("statusiout")) == 0)
 	{
-    	sprintf(str, "%s,0x%X", token2, STATUS_IOUT_paged);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = STATUS_IOUT_paged;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
     else if(strncmp(token, "statusinput", strlen("statusinput")) == 0)
 	{
-    	sprintf(str, "%s,0x%X", token2, STATUS_INPUT);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = STATUS_INPUT;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
     else if(strncmp(token, "statustemperature", strlen("statustemperature")) == 0)
 	{
-    	sprintf(str, "%s,0x%X", token2, STATUS_TEMPERATURE_paged);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = STATUS_TEMPERATURE_paged;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
     else if(strncmp(token, "statuscml", strlen("statuscml")) == 0)
 	{
-    	sprintf(str, "%s,0x%X", token2, STATUS_CML);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = STATUS_CML;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
     else if(strncmp(token, "statusmfrspecific", strlen("statusmfrspecific")) == 0)
 	{
-		sprintf(str, "%s,0x%X", token2, STATUS_MFR_SPECIFIC_paged);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = STATUS_MFR_SPECIFIC_paged;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
 
     else if(strncmp(token, "mfrpads", strlen("mfrpads")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, MFR_PADS);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = MFR_PADS;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }     
     else if(strncmp(token, "mfrspecialid", strlen("mfrspecialid")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, MFR_SPECIAL_ID);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = MFR_SPECIAL_ID;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if(strncmp(token, "mfrcommon", strlen("mfrcommon")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, MFR_COMMON);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = MFR_COMMON;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "readvin", strlen("readvin")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, READ_VIN);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = READ_VIN;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "voutcommand", strlen("voutcommand")) == 0) // L16 format
     {
     	// todo - interpolation if needed
-        sprintf(str, "%s,0x%X", token2, VOUT_COMMAND_paged);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = VOUT_COMMAND_paged;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "voutovfaultlimit", strlen("voutovfaultlimit")) == 0) // L16 format
     {
-        sprintf(str, "%s,0x%X", token2, VOUT_OV_FAULT_LIMIT_paged);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = VOUT_OV_FAULT_LIMIT_paged;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "voutuvfaultlimit", strlen("voutuvfaultlimit")) == 0) // L16 format
 	{
-		sprintf(str, "%s,0x%X", token2, VOUT_UV_FAULT_LIMIT_paged);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = VOUT_UV_FAULT_LIMIT_paged;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
     else if (strncmp(token, "readvout", strlen("readvout")) == 0) // L16 format
     {
-        sprintf(str, "%s,0x%X", token2, READ_VOUT_paged);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = READ_VOUT_paged;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "readiin", strlen("readiin")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, READ_IIN);
-        status = LTM46xx_GetRegisterData(str, retStr);    
+    	regPage.Status.regAddress = READ_IIN;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "readiout", strlen("readiout")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, READ_IOUT_paged);
-        status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = READ_IOUT_paged;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "readpout", strlen("readpout")) == 0)
 	{
-	   sprintf(str, "%s,0x%X", token2, READ_POUT_paged);
-	   status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = READ_POUT_paged;
+	   status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
 
     else if (strncmp(token, "readtemperature_1", strlen("readtemperature_1")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, READ_TEMPERATURE1_paged);
-        status = LTM46xx_GetRegisterData(str, retStr); 
+    	regPage.Status.regAddress = READ_TEMPERATURE1_paged;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "readtemperature_2", strlen("readtemperature_2")) == 0) 
     {
-        sprintf(str, "%s,0x%X", token2, READ_TEMPERATURE2);
-        status = LTM46xx_GetRegisterData(str, retStr); 
+    	regPage.Status.regAddress = READ_TEMPERATURE2;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "operation", strlen("operation")) == 0) 
     {
-        sprintf(str, "%s,0x%X", token2, OPERATION_paged);
-        status = LTM46xx_GetRegisterData(str, retStr); 
+    	regPage.Status.regAddress = OPERATION_paged;
+        status = LTM46xx_GetRegisterData(&regPage, retStr);
     }
     else if (strncmp(token, "slaveaddress0", strlen("slaveaddress0")) == 0)
 	{
-		sprintf(str, "%s,0x%X", token2, MFR_ADDRESS);
-		status = LTM46xx_GetRegisterData(str, retStr);
+    	regPage.Status.regAddress = MFR_ADDRESS;
+		status = LTM46xx_GetRegisterData(&regPage, retStr);
 	}
     else
     {
@@ -283,25 +281,23 @@ int LTM46xx_GetPwrMod(char *msg, char *retStr)
 int LTM46xx_SetPwrMod(char *msg)
 {
     int status = NO_ERROR;
-    char str[64] = {0};
-    char str2[16] = {0};
     char *token;
     char *token2;
     char *token3;
-    char *token4;
+    char *token4; // only used for direct register
     char *rest = msg;
-    
+    char delim[] = ":,\r";
+    LTM46xx_RegisterPageInfo_t regPage = {0};
     LTM46xx_MfrCommon ltm4675_MfrCommon = {0};
+    uint32_t regData = 0;
+    
+    // get strings
+    token = strtok_r(rest, delim, &rest); // command
+    token2 = strtok_r(rest, delim, &rest); // page
+    token3 = strtok_r(rest, delim, &rest); // parameter or register
 
-    token = strtok_r(rest, ":", &rest); // command
-    token2 = strtok_r(rest, ",", &rest); // page
-    token3 = strtok_r(rest, "\r", &rest); // parameter or register
-     
-    if(strncmp(token, "enablerailaddress", strlen("enablerailaddress")) == 0)
-    {
-    	LTM46xx_SetEnableRailAddress(atoi(token3));
-        return NO_ERROR;
-    }    
+    // update data structure
+    regPage.Status.page = atoi(token2);
     
     // The rest of commands continue
     status = LTM46xx_GetMFR_COMMON(&i2c, atoi(token2));
@@ -319,88 +315,93 @@ int LTM46xx_SetPwrMod(char *msg)
         return LTM46xx_BUSY;
     }
     
-    if (strncmp(token, (char*)"storeuserall", strlen("storeuserall")) == 0)
+    // copy register data to data structure
+    IsHex(token3, &regData); // convert string to uint32_t
+    memcpy(&regPage.Status.regData, &regData, 2);
+
+    if (strncmp(token, (char*)"reg", strlen("reg")) == 0) // direct register programming
+	{
+		// register address
+		IsHex(token3, &regData); // convert string to uint32_t
+		regPage.Status.regAddress = (uint8_t)regData;
+		// register data
+		token4 = strtok_r(rest, delim, &rest); // parameter
+		IsHex(token4, &regData); // convert string to uint32_t
+		memcpy(&regPage.Status.regData, &regData, 2);
+		status = LTM46xx_SetRegisterData(&regPage);
+	}
+    else if (strncmp(token, (char*)"storeuserall", strlen("storeuserall")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, STORE_USER_ALL);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+    	regPage.Status.regAddress = STORE_USER_ALL;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     else if (strncmp(token, (char*)"clrfaults", strlen("clrfaults")) == 0)
     {
-        sprintf(str, "%s,0x%X", token2, CLEAR_FAULTS);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
-    }
-    else if (strncmp(token, (char*)"reg", strlen("reg")) == 0)
-    {
-        token4 = strtok_r(rest, "\r", &rest); //if direct reg then this is the parameter 
-        sprintf(str, "%s,%s,%s", token2, token3, token4);
-        Nop();
-        status = LTM46xx_SetRegisterData(str, L16_L5_CONVERTED);
+    	regPage.Status.regAddress = CLEAR_FAULTS;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     else if (strncmp(token, (char*)"freqswitch", strlen("freqswitch")) == 0) // frequency of 350 can't be passed as 350,000 so we need special command
     {
-        sprintf(str, "%s,0x%X,%s", token2, FREQUENCY_SWITCH, token3);
-        status = LTM46xx_SetRegisterData(str, L16_L5_CONVERTED);
+    	regPage.Status.regAddress = FREQUENCY_SWITCH;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     // vout0
     else if (strncmp(token, (char*)"voutcommand", strlen("voutcommand")) == 0)
     {          
-    //    status = CalibrationGetVoltage(&ltm_cal_vset, atoi(token3)); // calibrate mV value
     	// May need interpolation?
         if(status != NO_ERROR)
         {
             return status;
         }
-        sprintf(str2, "%d", atoi(token3)); // save mV to str2
-        sprintf(str, "%s,0x%X,%s", token2, VOUT_COMMAND_paged, str2); // write new mV to register
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+        regPage.Status.regAddress = VOUT_COMMAND_paged;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     // over voltage
     else if(strncmp(token, "voutovfaultlimit", strlen("voutovfaultlimit")) == 0)
     {
-        sprintf(str, "%s,0x%X,%s", token2, VOUT_OV_FAULT_LIMIT_paged, token3);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+    	regPage.Status.regAddress = VOUT_OV_FAULT_LIMIT_paged;
+        status = LTM46xx_SetRegisterData(&regPage);
     }    
     // under voltage
     else if(strncmp(token, "voutuvfaultlimit", strlen("voutuvfaultlimit")) == 0)
     {
-        sprintf(str, "%s,0x%X,%s", token2, VOUT_UV_FAULT_LIMIT_paged, token3);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+    	regPage.Status.regAddress = VOUT_UV_FAULT_LIMIT_paged;
+        status = LTM46xx_SetRegisterData(&regPage);
     }    
     // temperature limit
     else if(strncmp(token, "otfaultlimit", strlen("otfaultlimit")) == 0)
     {
-        sprintf(str, "%s,0x%X,%s", token2, OT_FAULT_LIMIT_paged, token3);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+    	regPage.Status.regAddress = OT_FAULT_LIMIT_paged;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     // over current   
     else if(strncmp(token, "ioutocfaultlimit", strlen("ioutocfaultlimit")) == 0)
     {
-        sprintf(str, "%s,0x%X,%s", token2, IOUT_OC_FAULT_LIMIT_paged, token3);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+    	regPage.Status.regAddress = IOUT_OC_FAULT_LIMIT_paged;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     else if(strncmp(token, "mfrpwmmode", strlen("mfrpwmmode")) == 0)
     {
-        sprintf(str, "%s,0x%X,%s", token2, MFR_PWM_MODE_paged, token3);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+    	regPage.Status.regAddress = MFR_PWM_MODE_paged;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     else if(strncmp(token, "mfrreset", strlen("mfrreset")) == 0)
     {
-        sprintf(str, "%s,0x%X,%s", token2, MFR_RESET, token3);
-        status = LTM46xx_SetRegisterData(str, L16_L5_NOT_CONVERTED);
+    	regPage.Status.regAddress = MFR_RESET;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     else if(strncmp(token, "operationonoff", strlen("operationonoff")) == 0)
     {
         if(atoi(token3) == 0)
         {
-            sprintf(str2, "0x00");
+            regPage.Status.regData[0] = 0;
         }
         else if(atoi(token3) == 1)
         {
-            sprintf(str2, "0x80");
+            regPage.Status.regData[0] = 0x80;
         }
-        sprintf(str, "%s,0x%X,%s", token2, OPERATION_paged, str2);
-        Nop();
-        status = LTM46xx_SetRegisterData(str, L16_L5_CONVERTED);
+        regPage.Status.regAddress = OPERATION_paged;
+        status = LTM46xx_SetRegisterData(&regPage);
     }
     else
     {
@@ -409,7 +410,4 @@ int LTM46xx_SetPwrMod(char *msg)
 
     return status;
 }
-
-
-
 

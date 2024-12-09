@@ -8,20 +8,6 @@
 #ifndef LTM4675_H_
 #define LTM4675_H_
 
-// user changeable values
-// Need to define which I2C peripheral is being used.
-#define LTM4681_I2C_BASE 2 // I2C2 for Microchip
-// end user changeable values
-
-//#define LTM46xx_SLAVE_ADDRESS_A 0x40 // see page 22 and 26 of data sheet
-//#define LTM46xx_SLAVE_ADDRESS_B 0x41 // see page 22 and 26 of data sheet
-// MFR_RAIL_ADDRESS
-//#define LTM46xx_RAIL_SLAVE_ADDRESS 0x30 // see page 22 and 26 of data sheet
-
-// Global address
-//#define LTM46xx_SLAVE_ADDRESS_A 0x5A // see page 41 of data sheet
-//#define LTM46xx_SLAVE_ADDRESS_B 0x5B // see page 41 of data sheet
-
 typedef struct
 {
 	uint8_t slave_1; // 1 LTM46xx connected to STM32
@@ -34,7 +20,6 @@ typedef struct
 	bool useMfrRailAddressFlag;
 	uint8_t ltmCount;
 }LTM_SlaveRail_t;
-
 
 // commands register address
 enum LTM46xx_Commands{
@@ -180,13 +165,13 @@ enum Format{
     L5_11_FORMAT,
     L16_FORMAT,
     ASCII_FORMAT
-} ;
+};
 
 enum ReadWriteType{
     READ_WRITE,
     READ_ONLY,
     WRITE_ONLY
-} ;
+};
 
 
 typedef struct{
@@ -198,7 +183,6 @@ typedef struct{
     uint8_t readWriteType;
 } LTM46xx_RegLookUpType;
 
-
 /*
  * Description: Use for parsing message to get Register address, data, paging and data length
  *
@@ -206,14 +190,15 @@ typedef struct{
  */
 typedef union{
     struct{
-        uint8_t data[3];
+        uint8_t data[4];
     }Byte;
     struct{
         unsigned page:2;
         unsigned :6;
+        uint8_t regAddress;
         uint8_t regData[2];
     }Status;
-}LTM46xx_DirectRegisterInfoType;
+}__attribute__((aligned(32))) LTM46xx_RegisterPageInfo_t;
 
 // default 0x1f
 typedef union{
@@ -339,14 +324,11 @@ enum NumOfBytes
     NUM_OF_BYTES_3
 };
 
-
 enum DataType
 {
     L16_L5_CONVERTED,
     L16_L5_NOT_CONVERTED
 };
-
-
 
 // prototypes
 int LTM46xx_SetSlaveAddress(char *page, char *slaveAddr);
@@ -357,12 +339,11 @@ int LTM46xx_GetMFR_COMMON(I2C_GenericDef *i2c, uint8_t page);
 int LTM46xx_GetPwrMod(char *msg, char *retStr);
 int LTM46xx_SetPwrMod(char *msg);
 
-int LTM46xx_SetRegisterData(char *msg, uint8_t dataType);
-int LTM46xx_GetRegisterData(char *msg, char *dataOut);
-
+int LTM46xx_GetRegisterData(LTM46xx_RegisterPageInfo_t *regPage, char *retStr);
+int LTM46xx_SetRegisterData(LTM46xx_RegisterPageInfo_t *regPage);
 int LTM46xx_RegisterLookp(uint8_t regAddr, LTM46xx_RegLookUpType *regLookup);
 
-int LTM46xx_SetEnableRailAddress(int mode);
+int LTM46xx_SetMFR_RailAddressFlag(char *msg);
 int LTM46xx_GetMFR_RailAddressFlag(void);
 int LTM46xx_CheckSlaveAddressSet(void);
 
