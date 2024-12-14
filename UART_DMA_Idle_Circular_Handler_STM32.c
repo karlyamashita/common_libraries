@@ -16,7 +16,7 @@
  * 	example: UART_DMA_RxInit(&uartDMA_RXMsg, &huart2);
  *
  */
-void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
+void UART_DMA_Init(UART_DMA_Struct_t *msg, UART_HandleTypeDef *huart)
 {
 	msg->huart = huart;
 }
@@ -25,7 +25,7 @@ void UART_DMA_Init(UART_DMA_QueueStruct *msg, UART_HandleTypeDef *huart)
  * Description: Enable rx interrupt
  *
  */
-void UART_DMA_EnableRxInterruptIdle(UART_DMA_QueueStruct *msg)
+void UART_DMA_EnableRxInterruptIdle(UART_DMA_Struct_t *msg)
 {
 	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.dma_data, DMA_BUFFER_SIZE);
 }
@@ -34,21 +34,24 @@ void UART_DMA_EnableRxInterruptIdle(UART_DMA_QueueStruct *msg)
  * Description: Parses circular buffer and places bytes into queue until LF is reached.
  * 				Call from Polling Routine.
  */
-void UART_DMA_ParseCircularBuffer(UART_DMA_QueueStruct *msg)
+void UART_DMA_ParseCircularBuffer(UART_DMA_Struct_t *msg)
 {
-	while(msg->rx.circularPtr.cnt_Handle)
+	while(msg->ringBuffer.circularPtr.cnt_Handle)
 	{
-		msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.queueBytePtr] = msg->rx.circularBuffer[msg->rx.circularPtr.index_OUT];
-		RingBuff_Ptr_Output(&msg->rx.circularPtr, UART_DMA_DATA_SIZE);
-		if(msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.queueBytePtr] == '\n') // Line Feed
+		msg->rx.msgQueue[msg->ringBuffer.rxQueuePtr.index_IN].data[msg->ringBuffer.queueBytePtr] = msg->rx.circularBuffer[msg->ringBuffer.circularPtr.index_OUT];
+		RingBuff_Ptr_Output(&msg->ringBuffer.circularPtr, UART_DMA_CIRCULAR_SIZE);
+		if(msg->rx.msgQueue[msg->ringBuffer.rxQueuePtr.index_IN].data[msg->ringBuffer.queueBytePtr] == '\n') // Line Feed
 		{
-			msg->rx.queueBytePtr += 1;
-			msg->rx.queue[msg->rx.ptr.index_IN].data[msg->rx.queueBytePtr] = '\0'; // add null
-			msg->rx.queue[msg->rx.ptr.index_IN].size = msg->rx.queueBytePtr;
-			msg->rx.queueBytePtr = 0; // reset
-			RingBuff_Ptr_Input(&msg->rx.ptr, msg->rx.queueSize); // increment queue
+			msg->ringBuffer.queueBytePtr += 1;
+			msg->rx.msgQueue[msg->ringBuffer.rxQueuePtr.index_IN].data[msg->ringBuffer.queueBytePtr] = '\0'; // add null
+			msg->rx.msgQueue[msg->ringBuffer.rxQueuePtr.index_IN].size = msg->ringBuffer.queueBytePtr;
+			msg->ringBuffer.queueBytePtr = 0; // reset
+			RingBuff_Ptr_Input(&msg->ringBuffer.rxQueuePtr, msg->rx.queueSize); // increment queue
 		}
-		else msg->rx.queueBytePtr++;
+		else
+		{
+			msg->ringBuffer.queueBytePtr++;
+		}
 	}
 }
 
@@ -57,20 +60,20 @@ void UART_DMA_ParseCircularBuffer(UART_DMA_QueueStruct *msg)
  * 				Size is the HAL pointer to where the last byte of data is in the data array
  * Return: size, the amount of data to copy
  */
-uint32_t UART_DMA_GetSize(UART_DMA_QueueStruct *msg, uint32_t Size)
+uint32_t UART_DMA_GetSize(UART_DMA_Struct_t *msg, uint32_t Size)
 {
 	uint32_t size = 0;
 
-	if(Size < msg->rx.dma_ptrLast)
+	if(Size < msg->ringBuffer.dma_ptrLast)
 	{
-		size = (DMA_BUFFER_SIZE - msg->rx.dma_ptrLast) + Size;
+		size = (DMA_BUFFER_SIZE - msg->ringBuffer.dma_ptrLast) + Size;
 	}
 	else
 	{
-		size = Size - msg->rx.dma_ptrLast;
+		size = Size - msg->ringBuffer.dma_ptrLast;
 	}
 
-	msg->rx.dma_ptrLast = Size; // update the pointer
+	msg->ringBuffer.dma_ptrLast = Size; // update the pointer
 
 	return size;
 }
@@ -78,12 +81,12 @@ uint32_t UART_DMA_GetSize(UART_DMA_QueueStruct *msg, uint32_t Size)
 /*
  * Description: Return 0 if no new message, 1 if there is message in msgOut
  */
-int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
+int UART_DMA_MsgRdy(UART_DMA_Struct_t *msg)
 {
-	if(msg->rx.ptr.cnt_Handle)
+	if(msg->ringBuffer.rxQueuePtr.cnt_Handle)
 	{
-		msg->rx.msgToParse = &msg->rx.queue[msg->rx.ptr.index_OUT];
-		RingBuff_Ptr_Output(&msg->rx.ptr, msg->rx.queueSize);
+		msg->rx.msgToParse = &msg->rx.msgQueue[msg->ringBuffer.rxQueuePtr.index_OUT];
+		RingBuff_Ptr_Output(&msg->ringBuffer.rxQueuePtr, msg->rx.queueSize);
 		return 1;
 	}
 
@@ -93,14 +96,14 @@ int UART_DMA_MsgRdy(UART_DMA_QueueStruct *msg)
 /*
 * Description: Add message to TX buffer
 */
-void UART_DMA_TX_AddDataToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint32_t size)
+void UART_DMA_TX_AddDataToBuffer(UART_DMA_Struct_t *msg, uint8_t *data, uint32_t size)
 {
-	UART_DMA_Data *ptr = &msg->tx.queue[msg->tx.ptr.index_IN];
+	UART_DMA_Data *ptr = &msg->tx.msgQueue[msg->ringBuffer.txQueuePtr.index_IN];
 
 	memcpy(ptr->data, data, size);
 	ptr->size = size;
 
-    RingBuff_Ptr_Input(&msg->tx.ptr, msg->tx.queueSize);
+    RingBuff_Ptr_Input(&msg->ringBuffer.txQueuePtr, msg->tx.queueSize);
 
     UART_DMA_SendMessage(msg); // Try to send message if !msg->tx.txPending
 }
@@ -109,17 +112,16 @@ void UART_DMA_TX_AddDataToBuffer(UART_DMA_QueueStruct *msg, uint8_t *data, uint3
  * Description: This will be called from UART_DMA_TX_AddDataToBuffer or from HAL_UART_TxCpltCallback
  *
  */
-void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
+void UART_DMA_SendMessage(UART_DMA_Struct_t * msg)
 {
-	if(msg->tx.ptr.cnt_Handle)
+	if(msg->ringBuffer.txQueuePtr.cnt_Handle)
 	{
-		//if(msg->huart->gState == HAL_UART_STATE_READY) // this hasn't been tested yet but could take place of txPending
 		if(!msg->tx.txPending) // If no message is being sent then send message in queue
 		{
-			if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.queue[msg->tx.ptr.index_OUT].data, msg->tx.queue[msg->tx.ptr.index_OUT].size) == HAL_OK)
+			if(HAL_UART_Transmit_DMA(msg->huart, msg->tx.msgQueue[msg->ringBuffer.txQueuePtr.index_OUT].data, msg->tx.msgQueue[msg->ringBuffer.txQueuePtr.index_OUT].size) == HAL_OK)
 			{
 				msg->tx.txPending = true;
-				RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.queueSize);
+				RingBuff_Ptr_Output(&msg->ringBuffer.txQueuePtr, msg->tx.queueSize);
 			}
 		}
 	}
@@ -128,9 +130,9 @@ void UART_DMA_SendMessage(UART_DMA_QueueStruct * msg)
 /*
 * Description: Add string to TX structure
 */
-void UART_DMA_NotifyUser(UART_DMA_QueueStruct *msg, char *str, uint32_t size, bool lineFeed)
+void UART_DMA_NotifyUser(UART_DMA_Struct_t *msg, char *str, uint32_t size, bool lineFeed)
 {
-	uint8_t strMsg[UART_DMA_DATA_SIZE] = {0};
+	uint8_t strMsg[UART_DMA_QUEUE_DATA_SIZE] = {0};
 
     strcpy((char*)strMsg, str);
     
@@ -185,16 +187,21 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
 		for(i = 0; i < size; i++)
 		{
-			uart2_msg.rx.circularBuffer[uart2_msg.rx.circularPtr.index_IN] = uart2_msg.rx.dma_data[uart2_msg.rx.dma_ptr.index_IN];
-			RingBuff_Ptr_Input(&uart2_msg.rx.circularPtr, UART_DMA_DATA_SIZE);
-			RingBuff_Ptr_Input(&uart2_msg.rx.dma_ptr, DMA_BUFFER_SIZE);
+			uart2_msg.rx.circularBuffer[uart2_msg.ringBuffer.circularPtr.index_IN] = uart2_msg.rx.dma_data[uart2_msg.ringBuffer.dmaPtr.index_IN];
+			RingBuff_Ptr_Input(&uart2_msg.ringBuffer.circularPtr, UART_DMA_CIRCULAR_SIZE);
+			RingBuff_Ptr_Input(&uart2_msg.ringBuffer.dmaPtr, DMA_BUFFER_SIZE);
 		}
 	}
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == uart2_msg.huart)
+	if(huart == uart1_msg.huart)
+	{
+		uart1_msg.tx.txPending = false;
+		UART_DMA_SendMessage(&uart1_msg);
+	}
+	else if(huart == uart2_msg.huart)
 	{
 		uart2_msg.tx.txPending = false;
 		UART_DMA_SendMessage(&uart2_msg);
@@ -203,12 +210,12 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 // Be sure to initialize UART instance in polling routine
  *
-UART_DMA_QueueStruct uart2_msg =
+UART_DMA_Struct_t uart2_msg =
 {
 	.huart = &huart2,
 	.rx.queueSize = UART_DMA_QUEUE_SIZE,
 	.tx.queueSize = UART_DMA_QUEUE_SIZE,
-	.rx.dma_ptr.SkipOverFlow = true
+	.ringBuffer.dmaPtr.SkipOverFlow = true // ignore overflow
 };
 
 
