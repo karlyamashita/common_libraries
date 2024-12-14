@@ -81,7 +81,7 @@ uint32_t UART_DMA_GetSize(UART_DMA_Struct_t *msg, uint32_t Size)
 /*
  * Description: Return 0 if no new message, 1 if there is message in msgOut
  */
-int UART_DMA_MsgRdy(UART_DMA_Struct_t *msg)
+int UART_DMA_RxMsgRdy(UART_DMA_Struct_t *msg)
 {
 	if(msg->ringBuffer.rxQueuePtr.cnt_Handle)
 	{
