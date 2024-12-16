@@ -77,7 +77,6 @@ typedef struct
 }__attribute__ ((aligned (32))) UART_DMA_Struct_t;
 
 
-void UART_DMA_Init(UART_DMA_Struct_t *msg, UART_HandleTypeDef *huart);
 void UART_DMA_EnableRxInterruptIdle(UART_DMA_Struct_t *msg);
 void UART_DMA_ParseCircularBuffer(UART_DMA_Struct_t *msg);
 uint32_t UART_DMA_GetSize(UART_DMA_Struct_t *msg, uint32_t Size);

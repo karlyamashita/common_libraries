@@ -12,16 +12,6 @@
 
 
 /*
- * Description: assign uart instance to data structure, if variable was not assigned during instantiation
- * 	example: UART_DMA_RxInit(&uartDMA_RXMsg, &huart2);
- *
- */
-void UART_DMA_Init(UART_DMA_Struct_t *msg, UART_HandleTypeDef *huart)
-{
-	msg->huart = huart;
-}
-
-/*
  * Description: Enable rx interrupt
  *
  */
