@@ -186,12 +186,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == uart1_msg.huart)
-	{
-		uart1_msg.tx.txPending = false;
-		UART_DMA_SendMessage(&uart1_msg);
-	}
-	else if(huart == uart2_msg.huart)
+	if(huart == uart2_msg.huart)
 	{
 		uart2_msg.tx.txPending = false;
 		UART_DMA_SendMessage(&uart2_msg);
@@ -204,8 +199,7 @@ UART_DMA_Struct_t uart2_msg =
 {
 	.huart = &huart2,
 	.rx.queueSize = UART_DMA_QUEUE_SIZE,
-	.tx.queueSize = UART_DMA_QUEUE_SIZE,
-	.ringBuffer.dmaPtr.SkipOverFlow = true // ignore overflow
+	.tx.queueSize = UART_DMA_QUEUE_SIZE
 };
 
 
