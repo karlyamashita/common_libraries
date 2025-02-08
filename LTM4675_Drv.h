@@ -198,7 +198,7 @@ typedef union{
         uint8_t regAddress;
         uint8_t regData[2];
     }Status;
-}__attribute__((aligned(32))) LTM46xx_RegisterPageInfo_t;
+}__attribute__ ((aligned (32))) LTM46xx_RegisterPageInfo_t;
 
 // default 0x1f
 typedef union{

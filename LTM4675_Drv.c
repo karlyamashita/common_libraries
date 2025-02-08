@@ -14,7 +14,7 @@
 
 #include "main.h"
 
-
+extern UART_DMA_Struct_t uart2_msg;
 
 #define TABLE_SIZE 6
 
@@ -35,7 +35,7 @@ const uint8_t LTM46xx_RegLookupTable[][TABLE_SIZE] =
     { STORE_USER_ALL, NO_PAGE, LEN_0, NO_NVM, REG_FORMAT, WRITE_ONLY},
     { RESTORE_USER_ALL, NO_PAGE, LEN_0, NO_NVM, REG_FORMAT, WRITE_ONLY}, // same as MFR_RESET (0xFD)
     { CAPABILITY, NO_PAGE, LEN_1, NO_NVM, REG_FORMAT, READ_WRITE},
-    { SMBALERT_MASK_paged, IS_PAGED, LEN_1, IS_NVM, READ_WRITE}, // TODO - need to read data sheet thoroughly
+    { SMBALERT_MASK_paged, IS_PAGED, LEN_1, IS_NVM, REG_FORMAT, READ_WRITE}, // TODO - need to read data sheet thoroughly
     { VOUT_MODE_paged, IS_PAGED, LEN_1, NO_NVM, REG_FORMAT, READ_ONLY},
     { VOUT_COMMAND_paged, IS_PAGED, LEN_2, NO_NVM, L16_FORMAT, READ_WRITE},
     { VOUT_MAX_paged, IS_PAGED, LEN_2, USER_NVM, L16_FORMAT, READ_WRITE},
@@ -141,6 +141,16 @@ const uint8_t LTM46xx_RegLookupTable[][TABLE_SIZE] =
     { MFR_RAIL_ADDRESS_paged, IS_PAGED, LEN_1, IS_NVM, REG_FORMAT, READ_WRITE},
     { MFR_RESET, NO_PAGE, LEN_0, NO_NVM, NO_FORMAT, WRITE_ONLY}, // Identical to RESTORE_USER_ALL.
 };
+
+
+bool regInMicroValueFlag = false;
+// These registers use millisecond values, but when writing other commands we convert values from ms to s or mV to V.
+// So usually we write 1000mV which gets converted to 1V.
+// But for these registers, when we write 100, we don't multiply by 0.001.
+// The reason is because we use a 16 bit register variable, so using a value of 100000 is beyond the 16 bit range and causes errors.
+// Note: When reading these registers, we return the value X 1000. So 100000 is in micro seconds or 100ms
+const uint8_t regInMicroValue[] = {TON_RISE_paged, TON_MAX_FAULT_LIMIT_paged, TOFF_FALL_paged, TOFF_MAX_WARN_LIMIT_paged};
+
 
 
 /*
@@ -292,31 +302,17 @@ int LTM46xx_GetRegisterData(LTM46xx_RegisterPageInfo_t *regPage, char *retStr)
     	{
     		return status;
     	}
-
-    	// init for read
-    	i2c.registerAddr[0] = regLookUp.regAddress;
-    	i2c.dataSize = regLookUp.dataLen;
-
-    	status = I2C_Mem_Read_Generic_Method(&i2c);
-    	if(status != NO_ERROR)
-		{
-			return status;
-		}
-
-    	Nop();
     }
-    else // regular I2C read
-    {
-    	// init for read
-		i2c.registerAddr[0] = regLookUp.regAddress;
-		i2c.dataSize = regLookUp.dataLen;
 
-        status = I2C_Mem_Read_Generic_Method(&i2c);
-        if(status != NO_ERROR)
-		{
-			return status;
-		}
-    }
+	// Read register
+	i2c.registerAddr[0] = regLookUp.regAddress;
+	i2c.dataSize = regLookUp.dataLen;
+
+	status = I2C_Mem_Read_Generic_Method(&i2c);
+	if(status != NO_ERROR)
+	{
+		return status;
+	}
 
     if(regLookUp.dataLen == 2)
 	{
@@ -347,18 +343,21 @@ int LTM46xx_GetRegisterData(LTM46xx_RegisterPageInfo_t *regPage, char *retStr)
 }
 
 /*
- * Description: Write 16bit data to register.
- *
+ * Description: Write data to register.
+ *				In most cases Rail Address is enabled to write to all page registers.
+ *				However, if some channels are split with different voltages,
+ *				then Rail Address is disabled and you would write individually to each page
  *
  */
 int LTM46xx_SetRegisterData(LTM46xx_RegisterPageInfo_t *regPage)
 {
     int status = NO_ERROR;
     double result = 0;
-    static uint32_t regVal = 0;
+    uint32_t regVal = 0;
     uint8_t slaveAddress = 0;
     uint8_t page = 0;
     LTM46xx_RegLookUpType regLookUp = {0};
+    int i = 0;
 
     status = LTM46xx_CheckSlaveAddressSet();
     if(status != NO_ERROR)
@@ -452,27 +451,7 @@ int LTM46xx_SetRegisterData(LTM46xx_RegisterPageInfo_t *regPage)
     	}
     }
 
-    i2c.deviceAddr = slaveAddress;
-    
-    regVal = regPage->Status.regData[0];
-    regVal |= (regPage->Status.regData[1] << 8) & 0xFF00;
-        
-    result = (double)regVal;
-    
-    if(regLookUp.fmt == L16_FORMAT)
-    {
-        result *= 0.001; // convert from mV to V
-        regVal = Float_to_L16(result);  
-    }
-    else if(regLookUp.fmt == L5_11_FORMAT)
-    {    
-        if(regLookUp.regAddress != FREQUENCY_SWITCH)
-        {
-            result *= 0.001;
-        }
-        regVal = Float_to_L11(result);
-    }
-
+    // write page number if needed.
     if(regLookUp.isPaged) // Page plus write. See data sheet, page 85
     {
     	// Write page number
@@ -485,35 +464,55 @@ int LTM46xx_SetRegisterData(LTM46xx_RegisterPageInfo_t *regPage)
 		{
 			return I2C_ERROR_WRITE;
 		}
+    }
 
-    	// write register and data
+    // prep to write to register
+    i2c.deviceAddr = slaveAddress;
+    
+    regVal = regPage->Status.regData[0];
+    regVal |= (regPage->Status.regData[1] << 8) & 0xFF00;
+
+    result = (double)regVal;
+    
+    if(regLookUp.fmt == L16_FORMAT)
+    {
+        result *= 0.001; // convert from mV to V
+        regVal = Float_to_L16(result);  
+    }
+    else if(regLookUp.fmt == L5_11_FORMAT)
+    {    
+    	// loop through regInMicroValue table to validate if not to convert user value
+    	for(i = 0; i < sizeof(regInMicroValue); i++)
+    	{
+    		if(regLookUp.regAddress == regInMicroValue[i])
+    		{
+    			regInMicroValueFlag = true;
+    			break;
+    		}
+    	}
+        if(!regInMicroValueFlag) // Only multiply by 0.001 if milli value, not micro value.
+        {
+            result *= 0.001;
+        }
+
+        regVal = Float_to_L11(result);
+    }
+
+	if(regLookUp.dataLen == LEN_0)
+	{
+		i2c.dataPtr[0] = regLookUp.regAddress;
+		i2c.dataSize = 1; // only sending register, no data
+		status = I2C_Master_Transmit_Generic_Method(&i2c);
+	}
+	else
+	{
+	    // now write to register
 		i2c.registerAddr[0] = regLookUp.regAddress;
 		i2c.dataPtr[0] = regVal;
 		i2c.dataPtr[1] = regVal >> 8;
 		i2c.dataSize = regLookUp.dataLen;
-
 		status = I2C_Mem_Write_Generic_Method(&i2c);
-    }
-    else
-    {
-		if(regLookUp.fmt == REG_FORMAT)
-		{
-			i2c.dataPtr[0] = regLookUp.regAddress;
-			i2c.dataPtr[1] = regVal >> 8;
-			i2c.dataSize = regLookUp.dataLen + 1;
-
-			status = I2C_Master_Transmit_Generic_Method(&i2c);
-		}
-		else
-		{
-			i2c.registerAddr[0] = regLookUp.regAddress;
-			i2c.dataPtr[0] = regVal;
-			i2c.dataPtr[1] = regVal >> 8;
-			i2c.dataSize = regLookUp.dataLen;
-
-			status = I2C_Mem_Write_Generic_Method(&i2c);
-		}
-    }
+	}
 
     return status;
 }
