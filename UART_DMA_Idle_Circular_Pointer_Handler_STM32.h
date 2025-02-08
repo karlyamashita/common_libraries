@@ -33,8 +33,14 @@ typedef enum CheckSumType
 typedef struct
 {
 	uint32_t size; // the amount of data in the data buffer
-	uint8_t *data; // create uint8_t queueData_xx[UART_DMA_QUEUE_DATA_SIZE]; and point to it
-}UART_DMA_QueueData; // this is used in queue structure
+	uint8_t *data;
+}UART_DMA_Rx_Data; // this is used in queue structure
+
+typedef struct
+{
+	uint32_t size; // the amount of data in the data buffer
+	uint8_t *data;
+}UART_DMA_Tx_Data; // this is used in queue structure
 
 typedef struct
 {
@@ -48,10 +54,10 @@ typedef struct
 
 typedef struct
 {
-	uint8_t *dma_data; // The DMA writes to this buffer. Create uint8_t dmaData_xx[DMA_BUFFER_SIZE]; and point to it
-	uint8_t *circularBuffer; // The dma_data is copied to this circular buffer. Created uint8_t circularBufferData_xx[UART_DMA_CIRCULAR_SIZE]; and point to it
-	UART_DMA_QueueData msgQueue[UART_DMA_QUEUE_SIZE]; // The circular buffer contents are copied to this queue buffer
-	UART_DMA_Data *msgToParse; // pointer to rx msgQueue
+	uint8_t dma_data[DMA_BUFFER_SIZE]; // The DMA writes to this buffer
+	uint8_t circularBuffer[UART_DMA_CIRCULAR_SIZE]; // The dma_data is copied to this circular buffer
+	UART_DMA_Rx_Data msgQueue[UART_DMA_QUEUE_SIZE]; // The circular buffer contents are copied to this queue buffer
+	UART_DMA_Rx_Data *msgToParse; // pointer to rx msgQueue
 	uint32_t queueSize; // The msgQueue size
 	HAL_StatusTypeDef hal_status;
 
@@ -63,7 +69,7 @@ typedef struct
 
 typedef struct
 {
-	UART_DMA_QueueData msgQueue[UART_DMA_QUEUE_SIZE]; // String packets are written to this queue to be transmitted
+	UART_DMA_Tx_Data msgQueue[UART_DMA_QUEUE_SIZE]; // String packets are written to this queue to be transmitted
 	uint32_t queueSize; // The msgQueue size
 	bool txPending; // flag to indicate if HAL transmit is busy. HAL_UART_TxCpltCallback will clear this flag
 }TxDataBuffer_t;
