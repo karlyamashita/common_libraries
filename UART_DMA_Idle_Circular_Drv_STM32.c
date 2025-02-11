@@ -12,12 +12,24 @@
 
 
 /*
- * Description: Enable rx interrupt
+ * Description: Enable rx interrupt. This only needs to be called once since DMA is enabled in circular mode.
  *
  */
 void UART_DMA_EnableRxInterruptIdle(UART_DMA_Struct_t *msg)
 {
-	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.dma_data, DMA_BUFFER_SIZE);
+	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA(msg->huart, msg->rx.dma_data, UART_DMA_BUFFER_SIZE);
+}
+
+/*
+ * Description: In the rare case UART_DMA_EnableRxInterruptIdle above returns HAL_BUSY,
+ * 				you can call this function from PollingRoutine to try again to enable interrupt.
+ */
+void UART_DMA_CheckHAL_Status(UART_DMA_Struct_t *msg)
+{
+	if(msg->rx.hal_status != HAL_OK)
+	{
+		UART_DMA_EnableRxInterruptIdle(msg);
+	}
 }
 
 /*
@@ -56,7 +68,7 @@ uint32_t UART_DMA_GetSize(UART_DMA_Struct_t *msg, uint32_t Size)
 
 	if(Size < msg->ringBuffer.dma_ptrLast)
 	{
-		size = (DMA_BUFFER_SIZE - msg->ringBuffer.dma_ptrLast) + Size;
+		size = (UART_DMA_BUFFER_SIZE - msg->ringBuffer.dma_ptrLast) + Size;
 	}
 	else
 	{
@@ -144,6 +156,27 @@ void UART_DMA_NotifyUser(UART_DMA_Struct_t *msg, char *str, uint32_t size, bool 
  - When you want to transmit strings, you can use UART_DMA_NotifyUser.
  - When you want to transmit bytes, you can use UART_DMA_TX_AddDataToBuffer
 
+
+1. For each uart instance, define these in main.h
+#define UART2_DMA_RX_QUEUE_SIZE 10 // queue size
+#define UART2_DMA_TX_QUEUE_SIZE 4
+
+2. Create variable buffer for each UART port
+UART_DMA_Data uart2_dmaDataRxQueue[UART2_DMA_RX_QUEUE_SIZE] = {0};
+UART_DMA_Data uart2_dmaDataTxQueue[UART2_DMA_TX_QUEUE_SIZE] = {0};
+
+3. Then create UART msg instance using the above parameters
+UART_DMA_Struct_t uart2_msg =
+{
+	.huart = &huart2,
+	.rx.queueSize = UART2_DMA_RX_QUEUE_SIZE,
+	.rx.msgQueue = uart2_dmaDataRxQueue,
+	.tx.queueSize = UART2_DMA_TX_QUEUE_SIZE,
+	.tx.msgQueue = uart2_dmaDataTxQueue,
+	.ringBuffer.dmaPtr.SkipOverFlow = true
+};
+
+// Add these, typically in your polling routine
 void UART_CheckForNewMessage(UART_DMA_QueueStruct *msg)
 {
 	if(UART_DMA_MsgRdy(msg))
@@ -161,7 +194,7 @@ void UART_CheckForNewMessage(UART_DMA_QueueStruct *msg)
 }
 
 // Here are callbacks that should be placed in your polling routine or interrupt routine.
- * This is for UART2. If you have more UART instances then test for those.
+// This is for UART2. If you have more UART instances then test for those.
 
 //
 // Description: Copy the DMA buffer data to circular buffer. The circular buffer will be parsed in polling routine.
@@ -182,6 +215,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 			RingBuff_Ptr_Input(&uart2_msg.ringBuffer.dmaPtr, DMA_BUFFER_SIZE);
 		}
 	}
+	// repeat for other UART ports using (else if)
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
@@ -191,18 +225,14 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		uart2_msg.tx.txPending = false;
 		UART_DMA_SendMessage(&uart2_msg);
 	}
+	// repeat for other UART ports using (else if)
 }
 
-// Be sure to initialize UART instance in polling routine
- *
-UART_DMA_Struct_t uart2_msg =
-{
-	.huart = &huart2,
-	.rx.queueSize = UART_DMA_QUEUE_SIZE,
-	.tx.queueSize = UART_DMA_QUEUE_SIZE
-};
 
+// be sure to call this in the PollingRoutine function (same as main while loop).
+// This will extract messages from the circular buffer a place into queue.
+UART_DMA_ParseCircularBuffer(&uart2_msg);
 
- */
+*/
 
 
