@@ -41,6 +41,11 @@ typedef struct
 	RING_BUFF_STRUCT circularPtr; // data pointer for the circular buffer
 	RING_BUFF_STRUCT rxQueuePtr; // rx message queue pointer
 	RING_BUFF_STRUCT txQueuePtr; // tx message queue pointer
+	// for binary packet
+	RING_BUFF_STRUCT bytePtr; // pointer for byteBuffer
+	RING_BUFF_STRUCT ptr; // pointer for queue
+	uint32_t bytePtrSize; // also used in binaryQueue
+	// end binary packet
 	uint32_t queueBytePtr; // pointer to the queue when copying data from the Circular buffer to the msgQueue
 	uint32_t dma_ptrLast; // copy of the last dmaPtr value. Helps calculate how many bytes to read with with DMA callback Size
 }__attribute__ ((aligned (32))) RingBuffer_t;
@@ -52,12 +57,13 @@ typedef struct
 	UART_DMA_Data *msgQueue; // The circular buffer contents are copied to this queue buffer
 	UART_DMA_Data *msgToParse; // pointer to rx msgQueue
 	uint32_t queueSize; // The msgQueue size
+
 	HAL_StatusTypeDef hal_status;
 
 	// TODO - write code to receive binary packets
-	//uint32_t packetSize; // for binary packets
-	//uint8_t uartType; // UART_ASCII or UART_BINARY, default UART_ASCII
-	//uint8_t checksumType; // For use with binary packets. 0 = MOD256, 1 = 16 bit (not implemented yet)
+	uint32_t packetSize; // for binary packets
+	uint8_t uartType; // UART_ASCII or UART_BINARY, default UART_ASCII
+	uint8_t checksumType; // For use with binary packets. 0 = MOD256, 1 = 16 bit (not implemented yet)
 }__attribute__ ((aligned (32))) RxDataBuffer_t;
 
 typedef struct
