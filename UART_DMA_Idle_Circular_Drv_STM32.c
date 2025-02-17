@@ -231,7 +231,7 @@ UART_DMA_Struct_t uart2_msg =
 	.rx.msgQueue = uart2_dmaDataRxQueue, // point to Rx buffer
 	.tx.queueSize = UART2_DMA_TX_QUEUE_SIZE,
 	.tx.msgQueue = uart2_dmaDataTxQueue, // point to Tx buffer
-	.ringBuffer.dmaPtr.SkipOverFlow = true
+	.dma.dmaPtr.SkipOverFlow = true
 };
 
 // Add these, typically in your polling routine
