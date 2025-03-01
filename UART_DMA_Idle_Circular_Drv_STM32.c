@@ -177,7 +177,7 @@ UART_DMA_Struct_t uart2_msg =
 };
 
 // Add these, typically in your polling routine
-void UART_CheckForNewMessage(UART_DMA_QueueStruct *msg)
+void UART_CheckForNewMessage(UART_DMA_Struct_t *msg)
 {
 	if(UART_DMA_MsgRdy(msg))
 	{
