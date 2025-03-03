@@ -94,6 +94,14 @@ uint16_t ADC_GetAverage(ADC_Buffer_Instance_t *adc_i)
 	return status;
 }
 
+int ADC_SetRdyFlag(ADC_Buffer_t *adcBuffer)
+{
+	int status = NO_ERROR;
+
+	adcBuffer->rdyFlag = true;
+
+	return status;
+}
 
 /*
 

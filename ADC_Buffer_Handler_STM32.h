@@ -43,7 +43,7 @@ int ADC_Buffer_Register(ADC_Buffer_t *adcBuffer, ADC_Buffer_Instance_t *adc_i);
 int ADC_StartDMA(ADC_Buffer_t *adc);
 int ADC_ConversionCheck(ADC_Buffer_t *adcBuffer);
 uint16_t ADC_GetAverage(ADC_Buffer_Instance_t *adc_i);
-
+int ADC_SetRdyFlag(ADC_Buffer_t *adcBuffer);
 
 
 #endif /* INC_ADC_BUFFER_HANDLER_STM32_H_ */
