@@ -5,9 +5,6 @@
  *      Author: codek
  */
 
-#ifndef INC_ADC_BUFFER_HANDLER_C_
-#define INC_ADC_BUFFER_HANDLER_C_
-
 #include "main.h"
 
 /*
@@ -134,5 +131,3 @@ ADC_StartDMA(&adc1_buffer);
  */
 
 
-
-#endif /* INC_ADC_BUFFER_C_ */
