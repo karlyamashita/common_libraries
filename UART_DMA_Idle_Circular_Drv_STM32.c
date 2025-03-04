@@ -179,7 +179,7 @@ UART_DMA_Struct_t uart2_msg =
 // Add these, typically in your polling routine
 void UART_CheckForNewMessage(UART_DMA_Struct_t *msg)
 {
-	if(UART_DMA_MsgRdy(msg))
+	if(UART_DMA_RxMsgRdy(msg))
 	{
 		// user can parse msg variable.
 		if(strncmp(msg->msgToParse->data, "get version", strlen("get version")) == 0)
