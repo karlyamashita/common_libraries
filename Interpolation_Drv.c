@@ -28,12 +28,6 @@ int Interpolation_Get_Y(Interpolation_t *interpol, float x)
 {
 	int status = NO_ERROR;
 
-#ifndef EXTRAPOLATION_ALLOWED
-	if(x < interpol->x1 || x > interpol->x2)
-    {
-		return INTERPOLATION_ERROR;
-    }
-#endif
 	interpol->x = x;
 	interpol->y = (interpol->x - interpol->x1) * (interpol->y2 - interpol->y1) / (interpol->x2 - interpol->x1) + interpol->y1;
 
@@ -47,7 +41,7 @@ int Interpolation_Get_Y(Interpolation_t *interpol, float x)
  */
 int Interpolation_Set_X1_X2(Interpolation_t *interpol, float _x1, float _x2)
 {
-	if(_x1 == 0 && _x2 == 0)
+	if((_x1 >= _x2) || (_x2 == 0))
 	{
 		return INTERPOLATION_ERROR;
 	}
@@ -65,7 +59,7 @@ int Interpolation_Set_X1_X2(Interpolation_t *interpol, float _x1, float _x2)
  */
 int Interpolation_Set_Y1_Y2(Interpolation_t *interpol, float _y1, float _y2)
 {
-	if(_y1 == 0 && _y2 == 0)
+	if((_y1 >= _y2) || (_y2 == 0))
 	{
 		return INTERPOLATION_ERROR;
 	}
@@ -88,6 +82,18 @@ int Interpolation_Set_X(Interpolation_t *interpol, float _x)
 /*
  * Description: Be sure to send message to set X prior to getting Y
  */
+int Interpolation_GetMsg_X(Interpolation_t *interpol, char *retStr)
+{
+	int status = NO_ERROR;
+
+	sprintf(retStr, "%d", (uint16_t)(interpol->x * 1000));
+
+	return status;
+}
+
+/*
+ * Description: Be sure to send message to set X prior to getting Y
+ */
 int Interpolation_GetMsg_Y(Interpolation_t *interpol, char *retStr)
 {
 	int status = NO_ERROR;
@@ -98,43 +104,40 @@ int Interpolation_GetMsg_Y(Interpolation_t *interpol, char *retStr)
 		return INTERPOLATION_ERROR;
 	}
 
-	sprintf(retStr, "%f", interpol->y);
+	sprintf(retStr, "%d", (uint16_t)(interpol->y * 1000));
 
 	return status;
 }
 
 /*
  * Description: Function to parse string message and set the appropriate x or y Set function
- * Input: The interpolation data structure. The string message containing the command and values.
+ * Input: The interpolation data structure. The string message containing the values in mV. Convert to Volt prior to saving to data structure.
  */
 int Interpolation_SetMsg(Interpolation_t *interpol, char *msg)
 {
 	int status = NO_ERROR;
-	char *token; // the x or y commands
-	char *token2; // the x value
-	char *token3; // the y value
+	char *token2; // the x1 value
+	char *token3; // the x2 value
+	char *token4; // the y1 value
+	char *token5; // the y2 value
 	char *rest = msg;
 	char delim[] = ":,";
 
-	token = strtok_r(rest, delim, &rest);
 	token2 = strtok_r(rest, delim, &rest);
 	token3 = strtok_r(rest, delim, &rest);
+	token4 = strtok_r(rest, delim, &rest);
+	token5 = strtok_r(rest, delim, &rest);
 
-	if(strncmp(token, "x1x2", strlen("x1x2")) == 0)
+	status = Interpolation_Set_X1_X2(interpol, atoi(token2), atoi(token3));
+	if(status != NO_ERROR)
 	{
-		status = Interpolation_Set_X1_X2(interpol, atof(token2), atof(token3));
+		return status;
 	}
-	else if(strncmp(token, "y1y2", strlen("y1y2")) == 0)
+
+	status = Interpolation_Set_Y1_Y2(interpol, atoi(token4), atoi(token5));
+	if(status != NO_ERROR)
 	{
-		status = Interpolation_Set_Y1_Y2(interpol, atof(token2), atof(token3));
-	}
-	else if(strncmp(token, "_x", strlen("_x")) == 0)
-	{
-		status = Interpolation_Set_X(interpol, atof(token2));
-	}
-	else
-	{
-		return COMMAND_UNKNOWN;
+		return status;
 	}
 
 	return status;
