@@ -182,11 +182,11 @@ void UART_CheckForNewMessage(UART_DMA_Struct_t *msg)
 	if(UART_DMA_RxMsgRdy(msg))
 	{
 		// user can parse msg variable.
-		if(strncmp(msg->rx.msgToParse->data, "get version", strlen("get version")) == 0)
+		if(strncmp((char*)msg->rx.msgToParse->data, "get version", strlen("get version")) == 0)
 		{
 			// call function to return version number
 		}
-		else if(strncmp(msg->rx.msgToParse->data, "get status", strlen("get status")) == 0)
+		else if(strncmp((char*)msg->rx.msgToParse->data, "get status", strlen("get status")) == 0)
 		{
 			// call function to get status information
 		}
