@@ -21,7 +21,7 @@ void UART_DMA_EnableRxInterruptIdle(UART_DMA_Struct_t *msg)
 }
 
 /*
- * Description: In the rare case UART_DMA_EnableRxInterruptIdle above returns HAL_BUSY,
+ * Description: In the rare case in UART_DMA_EnableRxInterruptIdle that HAL_UARTEx_ReceiveToIdle_DMA above returns HAL_BUSY,
  * 				you can call this function from PollingRoutine to try again to enable interrupt.
  */
 void UART_DMA_CheckHAL_Status(UART_DMA_Struct_t *msg)

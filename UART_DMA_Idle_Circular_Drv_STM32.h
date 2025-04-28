@@ -33,7 +33,7 @@ typedef struct
 {
 	uint32_t size; // the amount of data in the data buffer
 	uint8_t data[UART_DMA_QUEUE_DATA_SIZE];
-}__attribute__ ((aligned (32))) UART_DMA_Data; // this is used in queue structure
+}UART_DMA_Data; // this is used in queue structure
 
 typedef struct
 {
@@ -77,7 +77,7 @@ typedef struct
 	DMA_Buffer_t dma;
 	RxBuffer_t rx;
 	TxBuffer_t tx;
-}__attribute__ ((aligned (32))) UART_DMA_Struct_t;
+}UART_DMA_Struct_t;
 
 
 void UART_DMA_EnableRxInterruptIdle(UART_DMA_Struct_t *msg);
