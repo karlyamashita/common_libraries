@@ -10,8 +10,9 @@
 
 
 
-typedef int (*FunctionType)(char *, char *);
-typedef int (*FuncCallback)(uint8_t *data, uint32_t *size);
+typedef int (*FunctionGet)(char *, char *);
+typedef int (*FunctionSet)(char *);
+typedef int (*FuncCallback)(uint8_t *data, uint32_t *size);  // instead of pointer to data/size, create a data structure?
 
 
 typedef struct
@@ -19,13 +20,13 @@ typedef struct
 	char *command;
 	char *args;
 	char *notes;
-	FunctionType func;
+	FunctionGet func_g;
+	FunctionSet func_s;
 	FuncCallback func_cb;
 }Command_t;
 
-
-
-int Print_Functions(char* msg, char *retStr);
+void Command_List_Poll(void);
+int Command_List_Print(char* msg, char *retStr);
 
 
 #endif /* INC_CMD_LIST_H_ */
