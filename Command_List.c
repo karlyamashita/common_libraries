@@ -208,7 +208,7 @@ void Command_List_Poll(void)
 
 /*
  * Description: This will start to return all the functions created with the command name and arguments.
- * Input: msg arg can be NULL or 1. retStr not used, pass NULL.
+ * Input: msg arg can be NULL or 1. retStr not used, leave alone so it'll return OK.
  * Output: None
  *
  */
