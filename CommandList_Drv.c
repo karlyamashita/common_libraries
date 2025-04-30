@@ -15,6 +15,7 @@
  * Description: Instances of Command functions with information and pointer to a function to be called.
  * 				Each args string should have \r\n except for the last one string.
  * 				Each additional args string after the first string should have a single tab.
+ * 				Try to keep args and notes as short as possible.
  *
  */
 
@@ -24,8 +25,7 @@ const Command_t help =
 	.args = "help\r\n"
 			"\thelp 1",
 	.notes = NULL,
-	.func_g = Command_List_Print,
-	.func_s = NULL
+	.func = Command_List_Print
 };
 
 const Command_t version =
@@ -33,26 +33,24 @@ const Command_t version =
 	.command = "version",
 	.args = NULL,
 	.notes = NULL,
-	.func_g = Version,
-	.func_s = NULL
+	.func = Version,
 };
 
 const Command_t pm_vout_command =
 {
 	.command = "pm vout command",
-	.args = "pm vout command set:0,<mV value>\r\n"
-			"\tpm vout command get:<page>",
-	.notes = "When using \'set\', Enable Rail Address. When using \'get\', Disable Rail Address",
-	.func_s = Vout_Command_Set,
-	.func_g = Vout_Command_Get
+	.args = "pm vout command 0,<mV value>\r\n"
+			"\tpm vout command ? <page>",
+	.notes = "When using ?, Enable Rail Address. Else, Disable Rail Address",
+	.func = Vout_Command
 };
 
 const Command_t pm_read_vout =
 {
 	.command = "pm read vout",
-	.args = "pm read vout:0",
+	.args = "pm read vout ? <page>",
 	.notes = NULL,
-	.func_g = NULL
+	.func = NULL
 };
 
 const Command_t i2c_address =
@@ -63,8 +61,7 @@ const Command_t i2c_address =
 			"\ti2c address 3,<rail addr>,<slave addr #1>,<slave addr #2><slave addr #3>,<slave addr #4>,<slave addr #5>,<slave addr #6>\r\n"
 			"\ti2c address ?",
 	.notes = NULL,
-	.func_g = I2C_Address_Get,
-	.func_s = I2C_Address_Set
+	.func = I2C_Address
 };
 
 const Command_t pm_status =
@@ -73,28 +70,25 @@ const Command_t pm_status =
 	.args = "pm status word\r\n"
 			"\tpm status byte",
 	.notes = NULL,
-	.func_g = NULL,
-	.func_s = NULL
+	.func = NULL
 };
 
 const Command_t serial =
 {
 	.command = "serial",
-	.args = "serial set:<string>\r\n"
-			"\tserial get",
+	.args = "serial <string>\r\n"
+			"\tserial ?",
 	.notes = NULL,
-	.func_g = NULL,
-	.func_s = NULL
+	.func = NULL
 };
 
 const Command_t rail_address =
 {
 	.command = "rail address",
-	.args = "rail address en set:<1 or 0>\r\n"
-			"\trail address en get",
+	.args = "rail address en <1 or 0>\r\n"
+			"\trail address en ?",
 	.notes = NULL,
-	.func_g = NULL,
-	.func_s = NULL
+	.func = NULL
 };
 
 const Command_t pm_store_user_all =
@@ -102,18 +96,16 @@ const Command_t pm_store_user_all =
 	.command = "pm store user all",
 	.args = NULL,
 	.notes = NULL,
-	.func_g = NULL,
-	.func_s = NULL
+	.func = NULL
 };
 
 const Command_t telemetry =
 {
 	.command = "telemetry",
-	.args = "telemtry en:<1 or 0>\r\n"
-			"\ttelemtry send rate:<value in ms>",
+	.args = "telemtry en <1 or 0>\r\n"
+			"\ttelemtry send rate <value in ms>",
 	.notes = NULL,
-	.func_g = NULL,
-	.func_s = NULL
+	.func = TelemetryEn
 };
 
 const Command_t bootloader =
@@ -121,8 +113,7 @@ const Command_t bootloader =
 	.command = "bootloader",
 	.args = NULL,
 	.notes = NULL,
-	.func_g = NULL,
-	.func_s = Bootloader
+	.func = Bootloader
 };
 
 const Command_t adc =
@@ -132,8 +123,7 @@ const Command_t adc =
 			"\tadc ltm4681 sns v\r\n"
 			"\tadc op sns register voltage",
 	.notes = NULL,
-	.func_g = NULL,
-	.func_s = NULL
+	.func = NULL
 };
 
 const Command_t freq =
@@ -143,8 +133,7 @@ const Command_t freq =
 			"\tfreq 1, <time in ms>\r\n"
 			"\tfreq 0",
 	.notes = NULL,
-	.func_g = Frequency,
-	.func_s = NULL
+	.func = Frequency,
 };
 
 
