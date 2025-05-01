@@ -17,7 +17,7 @@ typedef struct
 	uint32_t size;
 }CommandData_t;
 
-typedef int (*Function)(char *, char *);
+typedef int (*Function)(char *, char *); // the function called should be able to parse get/set commands.
 typedef int (*FuncCallback)(CommandData_t *);  // instead of pointer to data/size, create a data structure?
 
 typedef struct
