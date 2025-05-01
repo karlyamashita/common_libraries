@@ -39,8 +39,8 @@ const Command_t version =
 const Command_t pm_vout_command =
 {
 	.command = "pm vout command",
-	.args = "pm vout command 0,<mV value>\r\n"
-			"\tpm vout command ? <page>",
+	.args = "pm vout command ? <page>\r\n"
+			"\tpm vout command 0,<mV value>",
 	.notes = "When using ?, Enable Rail Address. Else, Disable Rail Address",
 	.func = Vout_Command
 };
@@ -56,10 +56,10 @@ const Command_t pm_read_vout =
 const Command_t i2c_address =
 {
 	.command = "i2c address",
-	.args = "i2c address 1,<rail addr>,<slave addr #1>,<slave addr #2>\r\n"
-			"\ti2c address 2,<rail addr>,<slave addr #1>,<slave addr #2><slave addr #3>,<slave addr #4>\r\n"
-			"\ti2c address 3,<rail addr>,<slave addr #1>,<slave addr #2><slave addr #3>,<slave addr #4>,<slave addr #5>,<slave addr #6>\r\n"
-			"\ti2c address ?",
+	.args = "i2c address ?\r\n"
+			"\ti2c address 1,<rail addr>,<slave addr #1>,<slave addr #2>\r\n"
+			"\ti2c address 2,<ra>,<sa #1>,<sa #2><sa #3>,<sa #4>\r\n"
+			"\ti2c address 3,<ra>,<sa #1>,<sa #2><sa #3>,<sa #4>,<sa #5>,<sa #6>",
 	.notes = NULL,
 	.func = I2C_Address
 };
@@ -76,8 +76,8 @@ const Command_t pm_status =
 const Command_t serial =
 {
 	.command = "serial",
-	.args = "serial <string>\r\n"
-			"\tserial ?",
+	.args = "serial ?\r\n"
+			"\tserial <string>",
 	.notes = NULL,
 	.func = NULL
 };
@@ -85,8 +85,8 @@ const Command_t serial =
 const Command_t rail_address =
 {
 	.command = "rail address",
-	.args = "rail address en <1 or 0>\r\n"
-			"\trail address en ?",
+	.args = "rail address ?\r\n"
+			"\trail address en <1 or 0>",
 	.notes = NULL,
 	.func = NULL
 };
@@ -102,8 +102,9 @@ const Command_t pm_store_user_all =
 const Command_t telemetry =
 {
 	.command = "telemetry",
-	.args = "telemtry en <1 or 0>\r\n"
-			"\ttelemtry send rate <value in ms>",
+	.args = "telemtry ?\r\n"
+			"\ttelemtry en 1 <time in ms>\r\n"
+			"\ttelemtry en 0",
 	.notes = NULL,
 	.func = TelemetryEn
 };
@@ -179,6 +180,7 @@ void Command_List_Poll(void)
 	char arguments[(UART_DMA_QUEUE_DATA_SIZE/2) - 1] = {0};// so fits in str variable
 	char notes[(UART_DMA_QUEUE_DATA_SIZE/2) - 1] = {0};
 	static int cmdPtr = 0;
+	char str2[UART_DMA_QUEUE_DATA_SIZE / 2] = {0};
 	CommandData_t cData = {0};
 
 	if(cmd_list_poll_mode)
@@ -187,26 +189,33 @@ void Command_List_Poll(void)
 		{
 			sprintf(arguments, "%s", Command_List[cmdPtr].args);
 		}
-		else
-		{
-			sprintf(arguments, " ");
-		}
 		if(Command_List[cmdPtr].notes != NULL)
 		{
 			sprintf(notes, "[x] %s", Command_List[cmdPtr].notes);
 		}
-		else
-		{
-			sprintf(notes, " ");
-		}
 		if(puttyIsColor)
 		{
-			snprintf((char*)cData.data, UART_DMA_QUEUE_DATA_SIZE, "\033[0;36m > %s \033[0m %s %s", Command_List[cmdPtr].command, Command_List[cmdPtr].args, Command_List[cmdPtr].notes);
+			snprintf((char*)cData.data, UART_DMA_QUEUE_DATA_SIZE / 2, "\033[0;36m > %s \033[0m\r\n", Command_List[cmdPtr].command);
 		}
 		else
 		{
-			snprintf((char*)cData.data, UART_DMA_QUEUE_DATA_SIZE, "> %s\r\n \t%s\r\n \t%s", Command_List[cmdPtr].command, arguments, notes);
+			snprintf((char*)cData.data, UART_DMA_QUEUE_DATA_SIZE / 2, "> %s\r\n", Command_List[cmdPtr].command);
 		}
+
+		if(arguments[0] == '\0' && notes[0] == '\0')
+		{
+			sprintf(str2, " ");
+		}
+		else if(notes[0] == '\0')
+		{
+			snprintf(str2, UART_DMA_QUEUE_DATA_SIZE / 2, "\t%s", arguments[0] == '\0' ? "":arguments);
+		}
+		else
+		{
+			snprintf(str2, UART_DMA_QUEUE_DATA_SIZE / 2, "\t%s\r\n \t%s", arguments[0] == '\0' ? "":arguments , notes[0] == '\0' ? "":notes);
+		}
+
+		strcat((char*)cData.data, str2);
 
 		Command_ListNotify(&cData); // see notes at bottom of this file
 
@@ -214,6 +223,8 @@ void Command_List_Poll(void)
 		{
 			cmd_list_poll_mode = 0; // done
 			cmdPtr = 0; // reset
+			sprintf((char*)cData.data, "***** END *****");
+			Command_ListNotify(&cData);
 		}
 	}
 }
