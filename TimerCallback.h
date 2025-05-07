@@ -75,7 +75,7 @@ int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timer, TimerCallback 
 int TimerCallbackExists(TimerCallbackStruct *timer, TimerCallback callback);
 
 void TimerCallbackTick(TimerCallbackStruct *timer);
-void TimerCallbackCheck(TimerCallbackStruct *timer);
+void TimerCallbackPoll(TimerCallbackStruct *timer);
 
 void TimerCallbackHandlerTick(void);
 

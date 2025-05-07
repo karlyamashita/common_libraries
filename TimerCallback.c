@@ -43,7 +43,7 @@ Rev 3.0 - 09/11/2024, Added Instance buffer in data structure instead of declari
 #include "TimerCallback.h"
 
 
-TimerCallbackStruct timerCallback; // default instance. Try adding to main.h after including TimerCallback.h
+TimerCallbackStruct timerCallback; // default instance. Try adding to main.h with extern after including TimerCallback.h
 
 
 
@@ -459,13 +459,13 @@ void TimerCallbackTick(TimerCallbackStruct *timer)
 }
 
 /*
-function: Checks if timer is reached and jumps to callback function. 
+function: Polling routine to check if time has been reached and jumps to callback function.
 				Will enter and exit on each array pointer increment. This is to reduce doing multiple callback functions in one call.
 				Call this function from polling routine.
 input: timer instance
 output: none
 */
-void TimerCallbackCheck(TimerCallbackStruct *timer)
+void TimerCallbackPoll(TimerCallbackStruct *timer)
 {
 	int i = 0; // the array pointer
 
