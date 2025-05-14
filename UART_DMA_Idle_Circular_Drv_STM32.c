@@ -149,7 +149,7 @@ void UART_DMA_NotifyUser(UART_DMA_Struct_t *msg, char *str, uint32_t size, bool 
 
 void UART_DMA_PrintError(UART_DMA_Struct_t *msg, char *msg_copy, uint32_t error)
 {
-	char str[64] = {0};
+	char str[UART_DMA_QUEUE_DATA_SIZE] = {0};
 
 	GetErrorString(error, str);
 
