@@ -147,6 +147,32 @@ void UART_DMA_NotifyUser(UART_DMA_Struct_t *msg, char *str, uint32_t size, bool 
     UART_DMA_TX_AddDataToBuffer(msg, strMsg, size); // add message to queue
 }
 
+void UART_DMA_PrintError(UART_DMA_Struct_t *msg, char *msg_copy, uint32_t error)
+{
+	char str[64] = {0};
+
+	GetErrorString(error, str);
+
+	strcat(msg_copy, "=");
+	strcat(msg_copy, str);
+
+	UART_DMA_NotifyUser(msg, msg_copy, strlen(msg_copy), true);
+}
+
+/*
+ * Description: Returns the original message + string arguments
+ * Input: DMA message data structure, the original string message, the string to add to the original message
+ * Output: none
+ * Return: none
+ */
+void UART_DMA_PrintReply(UART_DMA_Struct_t *msg, char *msg_copy, char *msg2)
+{
+	strcat(msg_copy, "=");
+	strcat(msg_copy, msg2);
+
+	UART_DMA_NotifyUser(msg, msg_copy, strlen(msg_copy), true);
+}
+
 
 /*
  - Below is an example of checking for a new message and have msgToParse as a pointer to the queue.

@@ -86,6 +86,8 @@ void UART_DMA_ParseCircularBuffer(UART_DMA_Struct_t *msg);
 uint32_t UART_DMA_GetSize(UART_DMA_Struct_t *msg, uint32_t Size);
 int UART_DMA_RxMsgRdy(UART_DMA_Struct_t *msg);
 void UART_DMA_NotifyUser(UART_DMA_Struct_t *msg, char *str, uint32_t size, bool lineFeed);
+void UART_DMA_PrintError(UART_DMA_Struct_t *msg, char *msg_copy, uint32_t error);
+void UART_DMA_PrintReply(UART_DMA_Struct_t *msg, char *msg_copy, char *msg2);
 
 void UART_DMA_TX_AddDataToBuffer(UART_DMA_Struct_t *msg, uint8_t *data, uint32_t size);
 void UART_DMA_SendMessage(UART_DMA_Struct_t * msg);
