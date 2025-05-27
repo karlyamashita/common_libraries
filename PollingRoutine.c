@@ -69,7 +69,6 @@ void PollingRoutine(void)
 
 
 /*
-char msg_copy_command[UART_DMA_QUEUE_DATA_SIZE] = {0};
 void UART_ParseCommands(UART_DMA_Struct_t *msg)
 {
 	int status = 0;
