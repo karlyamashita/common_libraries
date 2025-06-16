@@ -53,7 +53,7 @@ int CAN_AddTxBuffer(CAN_MsgStruct *msg, CanTxMsgTypeDef *txData)
 
 	RingBuff_Ptr_Input(&msg->txPtr, msg->txQueueSize); // increment input buffer ptr
 
-	CAN_SendMessage(msg);
+	CAN_SendMessage(msg); // try sending if not busy
 
 	return 0;
 }
@@ -105,4 +105,71 @@ void MsgCopy(CanTxMsgTypeDef *TxMsg, CanRxMsgTypeDef *RxMsg)
 		TxMsg->data[i] = RxMsg->data[i];
 	}
 }
+
+/*
+
+
+
+#define CAN1_RX_QUEUE_SIZE 8
+#define CAN1_TX_QUEUE_SIZE 8
+CanRxMsgTypeDef can1RxQueue[CAN1_RX_QUEUE_SIZE] = {0};
+CanTxMsgTypeDef can1TxQueue[CAN1_TX_QUEUE_SIZE] = {0};
+
+CAN_MsgStruct can1_msg =
+{
+	.hcan = &hcan1,
+	.rxQueue = can1RxQueue,
+	.txQueue = can1TxQueue,
+	.rxQueueSize = CAN1_RX_QUEUE_SIZE,
+	.txQueueSize = CAN1_TX_QUEUE_SIZE,
+	.rxPtr = {0},
+	.txPtr = {0}
+};
+
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	HAL_StatusTypeDef hal_status;
+	CanRxMsgTypeDef ptr;
+
+	if(hcan == &hcan1)
+	{
+		ptr = can1_msg.rxQueue[can1_msg.rxPtr.index_IN];
+		hal_status = HAL_CAN_GetRxMessage(can1_msg.hcan, CAN_RX_FIFO0, &ptr.header, ptr.data);
+		if(hal_status == HAL_OK)
+		{
+			RingBuff_Ptr_Input(&can1_msg.rxPtr, can1_msg.rxQueueSize);
+		}
+	}
+	else if(hcan == &hcan2)
+	{
+		ptr = can2_msg.rxQueue[can2_msg.rxPtr.index_IN];
+		hal_status = HAL_CAN_GetRxMessage(can2_msg.hcan, CAN_RX_FIFO0, &ptr.header, ptr.data);
+		if(hal_status == HAL_OK)
+		{
+			RingBuff_Ptr_Input(&can2_msg.rxPtr, can2_msg.rxQueueSize);
+		}
+	}
+}
+
+// make duplicate for mailbox 1 and 2
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	if(hcan == &hcan1)
+	{
+		CAN_SendMessage(&can1_msg);
+	}
+	else if(hcan == &hcan2)
+	{
+		CAN_SendMessage(&can2_msg);
+	}
+}
+
+
+// add to polling init
+CAN_SetFilter(&can1_msg);
+
+
+
+ */
 
