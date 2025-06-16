@@ -118,6 +118,6 @@ void STM32_Ready(UART_DMA_Struct_t *msg)
 
 	sprintf(str, "STM32 Ready - %s", version);
 
-	UART_DMA_NotifyUser(msg->huart, str, strlen(str), true);
+	UART_DMA_NotifyUser(msg, str, strlen(str), true);
 }
 */
