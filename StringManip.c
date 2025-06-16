@@ -32,6 +32,57 @@ void RemoveSpaces(char *str)
     str[count] = '\0';
 }
 
+int Get_char_Index(const char *str, char c)
+{
+    char *ptr = strchr(str, c);
+    if (ptr == NULL)
+    {
+        return -1; // Character not found
+    }
+
+    return ptr - str; // Calculate the index
+}
+
+void Replace_Char(char *str, char findChar, char replaceChar)
+{
+    for (int i = 0; str[i] != '\0'; i++)
+    {
+        if (str[i] == findChar)
+        {
+            str[i] = replaceChar;
+        }
+    }
+}
+
+void ReplaceWord(char* str, char* oldWord, char* newWord)
+{
+    char *pos, temp[1000];
+    int index = 0;
+    int owlen;
+
+    owlen = strlen(oldWord);
+
+    // Repeat This loop until all occurrences are replaced.
+
+    while ((pos = strstr(str, oldWord)) != NULL) {
+        // Bakup current line
+        strcpy(temp, str);
+
+        // Index of current found word
+        index = pos - str;
+
+        // Terminate str after word found index
+        str[index] = '\0';
+
+        // Concatenate str with new word
+        strcat(str, newWord);
+
+        // Concatenate str with remaining words after
+        // oldword found index.
+        strcat(str, temp + index + owlen);
+    }
+}
+
 /*
  * Description: checks if character is a digit.
  * Input: character
