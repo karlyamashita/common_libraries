@@ -1,5 +1,3 @@
-#include "LSP.h"
-#ifdef USE_GMLAN_CAN_ID
 #ifndef GMLAN_CAN_ID_H
 #define GMLAN_CAN_ID_H
 
@@ -78,4 +76,3 @@
 
 
 #endif // GMLAN_CAN_ID_H
-#endif // USE_GMLAN_CAN_ID

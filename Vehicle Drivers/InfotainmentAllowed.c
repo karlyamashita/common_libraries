@@ -1,5 +1,3 @@
-#include "LSP.h"
-#ifdef USE_INFOTAINMENT_ALLOWED
 #include "main.h"
 #include "InfotainmentAllowed.h"
 #include "GMLAN_Defines.h"
@@ -46,7 +44,3 @@ void SendInfotainmentAllowed(bool flag) {
 		SendInfotainmentAllowedCallbackCAN2(flag);
 	}
 }
-
-#endif // USE_INFOTAINMENT_ALLOWED
-
-
