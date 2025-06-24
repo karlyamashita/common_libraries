@@ -40,11 +40,11 @@ void PollingRoutine(void);
 /*
 void UART_ParseCommands(UART_DMA_Struct_t *msg);
 void STM32_Ready(UART_DMA_Struct_t *msg);
-
-extern UART_HandleTypeDef huart2;
-
-extern TimerCallbackStruct timerCallback;
 */
 
+/* copy these 2 to main.h
+extern UART_HandleTypeDef huart2;
+extern TimerCallbackStruct timerCallback;
+*/
 
 #endif /* INC_POLLINGROUTINE_H_ */
