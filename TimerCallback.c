@@ -334,6 +334,60 @@ int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, 
 	return 0;
 }
 
+int TimerCallbackStartInputCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut)
+{
+	uint8_t i = 0;
+
+	while(timer->Instance[i].callback != callback) {
+		if( i == timer->timerLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+
+	timer->Instance[i].timerEventCounterTimeout = timeOut;
+	timer->Instance[i].timerEventCounterValue = 0;
+	timer->Instance[i].timerEventCounterTriggered = 0;
+	timer->Instance[i].timerTick = 0;
+	timer->Instance[i].timerEventCounterEnable = true;
+
+	return 0;
+}
+
+int TimerCallbackIncInputCounter(TimerCallbackStruct *timer, TimerCallback callback)
+{
+	uint8_t i = 0;
+
+	while(timer->Instance[i].callback != callback) {
+		if( i == timer->timerLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+
+	timer->Instance[i].timerEventCounterTriggered = 1; // allows timeout tick to start incrementing
+	timer->Instance[i].timerTick = 0; // reset tick used for timeout
+	timer->Instance[i].timerEventCounterValue += 1;
+
+	return 0;
+}
+
+int TimerCallbackGetInputCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *count)
+{
+	uint8_t i = 0;
+
+	while(timer->Instance[i].callback != callback) {
+		if( i == timer->timerLastIndex) {
+			return 1;// callback not found
+		}
+		i++;
+	};
+
+	*count = timer->Instance[i].timerEventCounterValue;
+
+	return 0;
+}
+
 /*
 function:	Disable the callback.
 input: timer instance, the callback
@@ -453,6 +507,14 @@ void TimerCallbackTick(TimerCallbackStruct *timer)
             {
             	timer->Instance[i].timerTick += 1; // increment the timerCount
             }
+            // added 7-14-2025
+            else if (timer->Instance[i].timerEventCounterEnable) // check if InputCounter is enabled.
+            {
+            	if(timer->Instance[i].timerEventCounterTriggered)
+            	{
+            		timer->Instance[i].timerTick += 1; // increment the timerCount
+            	}
+            }
         }
 		i++;
 	}
@@ -480,6 +542,16 @@ void TimerCallbackPoll(TimerCallbackStruct *timer)
 	        		timer->Instance[i].callback2();// jump to secondary callback function
 	        	}
 	        }
+	    }
+	    // added 7-14-2025
+	    if(timer->Instance[i].timerEventCounterEnable)
+	    {
+	    	if(timer->Instance[i].timerTick >= timer->Instance[i].timerEventCounterTimeout)
+	    	{
+	    		timer->Instance[i].timerEventCounterEnable = 0;
+	    		timer->Instance[i].timerEventCounterTriggered = 0;
+	    		timer->Instance[i].callback();
+	    	}
 	    }
 
 		if(timer->Instance[i].timerEnabled) {// timer or repetition is enabled

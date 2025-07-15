@@ -38,6 +38,11 @@ typedef struct __TimerCallbackStruct
 		uint32_t timerRepetitionValue; // number of repetitions
 		uint32_t timerRepetitionTick; // current number of repetitions
 
+		bool timerEventCounterEnable;
+		uint32_t timerEventCounterTimeout;
+		uint32_t timerEventCounterValue;
+		bool timerEventCounterTriggered;
+
 		bool timerEnabled; // enable/disable callback
 		uint32_t timerValue; // the time to reach
 		uint32_t timerTick; // the current timer count
@@ -66,6 +71,10 @@ int TimerCallbackRepetitionResetTimer(TimerCallbackStruct *timer, TimerCallback 
 int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timerValue, uint8_t repeat);
 int TimerCallbackDisable(TimerCallbackStruct *timer, TimerCallback callback);
 int TimerCallbackResetTimer(TimerCallbackStruct *timer, TimerCallback callback);
+
+int TimerCallbackStartInputCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut);
+int TimerCallbackIncInputCounter(TimerCallbackStruct *timer, TimerCallback callback);
+int TimerCallbackGetInputCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *count);
 
 int TimerCallbackDelete(TimerCallbackStruct *timer, TimerCallback callback);
 
