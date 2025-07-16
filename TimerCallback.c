@@ -35,6 +35,7 @@ Rev 2.7 - 12/28/2022, Modified TimerCallbackRegister to only register a function
 Rev 2.8 - 12/29/2022, Renamed ShutDown to Timeout. Added functions for 2nd callback.
 Rev 2.9 - 01/09/2023, Renamed some missed variables from ShutDown to Timeout.
 Rev 3.0 - 09/11/2024, Added Instance buffer in data structure instead of declaring timer with a buffer.
+Rev 3.1 - 07/14/2025, Added Event Counter.
 
 */
 
@@ -51,7 +52,7 @@ static void TimerCallbackSort(TimerCallbackStruct *timerCallback);
 
 
 /*
- * Description: Register a callback. There are no parameters.
+ * function: Register a callback. There are no parameters.
  * 				To start repetition, use the TimerCallbackRepetitionStart.
  * 				To start a timer to shut down after a time use TimerCallbackTimeoutStart
  * 				To start a regular timer use TimerCallbackTimerStart. You can have it repeat or no repeat.
@@ -61,12 +62,15 @@ int TimerCallbackRegisterOnly(TimerCallbackStruct *timer, TimerCallback callback
 {
     uint8_t i = 0;
 
-    while(timer->Instance[i].callback != 0) {
-		if(timer->Instance[i].callback == callback) {
+    while(timer->Instance[i].callback != 0)
+    {
+		if(timer->Instance[i].callback == callback)
+		{
 			return -1;// Callback already defined
 		}
 
-		if(i == MAX_TIMER_CALLBACK) {
+		if(i == MAX_TIMER_CALLBACK)
+		{
 			return 0;// Maximum timers reached
 		}
 		i++;// next
@@ -83,7 +87,7 @@ int TimerCallbackRegisterOnly(TimerCallbackStruct *timer, TimerCallback callback
 }
 
 /*
- * Description: Register a 2nd callback that will be called after the timer is disabled usually from a timeout or repetition.
+ * function: Register a 2nd callback that will be called after the timer is disabled usually from a timeout or repetition.
  * 				The 2nd callback is automatically enabled when this function is called.
  * 					However the 2nd callback will not be called until a timer (one shot, timeout or repetition) is started and has been disabled at the end of it's cycle.
  * 				Use TimerCallbackRegister2ndDisable to disable the 2nd callback at any time.
@@ -94,8 +98,10 @@ int TimerCallbackRegister2nd(TimerCallbackStruct *timer, TimerCallback callback,
 {
 	int i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if(i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if(i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -109,15 +115,17 @@ int TimerCallbackRegister2nd(TimerCallbackStruct *timer, TimerCallback callback,
 
 
 /*
- * Description: Disable the 2nd callback.
+ * function: Disable the 2nd callback.
  *
  */
 int TimerCallbackRegister2ndDisable(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	int i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -129,15 +137,17 @@ int TimerCallbackRegister2ndDisable(TimerCallbackStruct *timer, TimerCallback ca
 }
 
 /*
- * Description: Uses a single structure to save all the parameters instead of passing a bunch of arguments. Be sure to initialize new instance to zero.
- * Input: timerInstance to add the new callback to, timerInstanceAdd is the new callback you want to add
+ * function: Uses a single structure to save all the parameters instead of passing a bunch of arguments. Be sure to initialize new instance to zero.
+ * input: timerInstance to add the new callback to, timerInstanceAdd is the new callback you want to add
  */
 int TimerCallbackRegisterStruct(TimerCallbackStruct * timer, TimerCallbackStruct * timerInstanceAdd)
 {
     int i = 0;
     
-    while(timer->Instance[i].callback != 0) {
-		if(i == MAX_TIMER_CALLBACK) {
+    while(timer->Instance[i].callback != 0)
+    {
+		if(i == MAX_TIMER_CALLBACK)
+		{
 			return 0;// Maximum timers reached
 		}	
 		i++;// next
@@ -167,7 +177,7 @@ int TimerCallbackRegisterStruct(TimerCallbackStruct * timer, TimerCallbackStruct
 }
 
 /*
-* Description: Starts the Timeout timer. User must register a function using TimerCallbackRegisterOnly
+* function: Starts the Timeout timer. User must register a function using TimerCallbackRegisterOnly
 * input: timer instance, the function to callback, the timer value between each callback. The timerTimeoutValue for disabling the callback after amount of time.
 * output: the timer array pointer. 0 if no array available, -1 if defined already, -2 if null callback
 */
@@ -175,14 +185,17 @@ int TimerCallbackTimeoutStart(TimerCallbackStruct *timer, TimerCallback callback
 {
 	int i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
 	};
 
-	if(timerTimeoutValue < timerValue){ // timerShutDownValue should not be less than timerValue
+	if(timerTimeoutValue < timerValue) // timerShutDownValue should not be less than timerValue
+	{
 	    timerTimeoutValue = timerValue + 1;
 	}
 
@@ -199,7 +212,7 @@ int TimerCallbackTimeoutStart(TimerCallbackStruct *timer, TimerCallback callback
 }
 
 /*
- * Description: Disable the Timeout timer
+ * function: Disable the Timeout timer
  *
  *
  */
@@ -220,15 +233,17 @@ int TimerCallbackTimeoutDisable(TimerCallbackStruct *timer, TimerCallback callba
 }
 
 /*
- * Description: Resets the Timeout tick count
+ * function: Resets the Timeout tick count
  *
  */
 int TimerCallbackTimeoutReset(TimerCallbackStruct *timer, TimerCallback callback)
 {
     uint8_t i = 0;
 
-    while(timer->Instance[i].callback != callback) {
-        if(i == timer->timerLastIndex) {
+    while(timer->Instance[i].callback != callback)
+    {
+        if(i == timer->timerLastIndex)
+        {
             return 1;// callback not found
         }
         i++;
@@ -240,7 +255,7 @@ int TimerCallbackTimeoutReset(TimerCallbackStruct *timer, TimerCallback callback
 
 
 /*
- * Description: You can set how many callback repetitions to do before ending callbacks. The time is the delay between each repetition.
+ * function: You can set how many callback repetitions to do before ending callbacks. The time is the delay between each repetition.
  * 				User needs to register a callback first using TimerCallbackRegisterOnly
  *
  *				Example use would be to blink an LED 3 times On/Off using the HAL_GPIO_TogglePin.
@@ -253,8 +268,10 @@ int TimerCallbackRepetitionStart(TimerCallbackStruct *timer, TimerCallback callb
 {
     uint8_t i = 0;
 
-    while(timer->Instance[i].callback != callback) {
-        if( i == timer->timerLastIndex) {
+    while(timer->Instance[i].callback != callback)
+    {
+        if( i == timer->timerLastIndex)
+        {
             return 1;// callback not found
         }
         i++;
@@ -272,15 +289,17 @@ int TimerCallbackRepetitionStart(TimerCallbackStruct *timer, TimerCallback callb
 }
 
 /*
- * Description: Disables the Repetition
+ * function: Disables the Repetition
  *
  */
 int TimerCallbackRepetitionDisable(TimerCallbackStruct *timer, TimerCallback callback)
 {
     uint8_t i = 0;
 
-    while(timer->Instance[i].callback != callback) {
-        if( i == timer->timerLastIndex) {
+    while(timer->Instance[i].callback != callback)
+    {
+        if( i == timer->timerLastIndex)
+        {
             return 1;// callback not found
         }
         i++;
@@ -292,15 +311,17 @@ int TimerCallbackRepetitionDisable(TimerCallbackStruct *timer, TimerCallback cal
 }
 
 /*
- * Description: Resets the Repetition tick counter.
+ * function: Resets the Repetition tick counter.
  *
  */
 int TimerCallbackRepetitionResetTimer(TimerCallbackStruct *timer, TimerCallback callback)
 {
     uint8_t i = 0;
 
-    while(timer->Instance[i].callback != callback) {
-        if( i == timer->timerLastIndex) {
+    while(timer->Instance[i].callback != callback)
+    {
+        if( i == timer->timerLastIndex)
+        {
             return 1;// callback not found
         }
         i++;
@@ -313,16 +334,18 @@ int TimerCallbackRepetitionResetTimer(TimerCallbackStruct *timer, TimerCallback 
 
 
 /*
-function:	Starts the callback timer
-input: timer instance, the callback, the timerThreshold value and if it repeats.
-output: return 0 if successful
-*/
+ * function:	Starts the callback timer
+ * input: timer instance, the callback, the timerThreshold value and if it repeats.
+ * output: return 0 if successful
+ */
 int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timerValue, uint8_t repeat)
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -338,8 +361,10 @@ int TimerCallbackStartInputCounter(TimerCallbackStruct *timer, TimerCallback cal
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -354,12 +379,20 @@ int TimerCallbackStartInputCounter(TimerCallbackStruct *timer, TimerCallback cal
 	return 0;
 }
 
-int TimerCallbackIncInputCounter(TimerCallbackStruct *timer, TimerCallback callback)
+/*
+ * function: Increment the event counter
+ * input: timer instance, the callback
+ * output: the event count
+ * return: return 0 if successful
+ */
+int TimerCallbackIncEventCounter(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -372,12 +405,20 @@ int TimerCallbackIncInputCounter(TimerCallbackStruct *timer, TimerCallback callb
 	return 0;
 }
 
+/*
+ * function: Retrieves the event counter
+ * input: timer instance, the callback
+ * output: the event count
+ * return: return 0 if successful
+ */
 int TimerCallbackGetInputCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *count)
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -389,16 +430,19 @@ int TimerCallbackGetInputCounter(TimerCallbackStruct *timer, TimerCallback callb
 }
 
 /*
-function:	Disable the callback.
-input: timer instance, the callback
-output: return 0 if successful
-*/
+ * function:	Disable the callback.
+ * input: timer instance, the callback
+ * output: n/a
+ * return: return 0 if successful
+ */
 int TimerCallbackDisable(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -408,16 +452,19 @@ int TimerCallbackDisable(TimerCallbackStruct *timer, TimerCallback callback)
 }
 
 /*
-function: Resets the timerCount value to zero and enables it. Good for de-bouncing switch
-input: timer instance, the callback
-output: return 0 if successful
+ * function: Resets the timerCount value to zero and enables it. Good for de-bouncing switch
+ * input: timer instance, the callback
+ * output: n/a
+ * return: return 0 if successful
  */
 int TimerCallbackResetTimer(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -428,16 +475,19 @@ int TimerCallbackResetTimer(TimerCallbackStruct *timer, TimerCallback callback)
 
 
 /*
-function:	Get the callback's timer value
-input: timer instance, the callback, the variable address to pass the current timer value to
-output: return 0 if successful
-*/
+ * function:	Get the callback's timer value
+ * input: timer instance, the callback, the variable address to pass the current timer value to
+ * output: n/a
+ * return: return 0 if successful
+ */
 int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *timerValue)
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 1;// callback not found
 		}
 		i++;
@@ -447,16 +497,19 @@ int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timer, TimerCallback 
 }
 
 /*
-function:	See if timer callback exists
-input: timer instance, the callback
-output: return 1 if callback exists
-*/
+ * function:	See if timer callback exists
+ * input: timer instance, the callback
+ * output: n/a
+ * return: return 1 if callback exists
+ */
 int TimerCallbackExists(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-	while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+	while(timer->Instance[i].callback != callback)
+	{
+		if( i == timer->timerLastIndex)
+		{
 			return 0;// callback not found
 		}
 		i++;
@@ -465,16 +518,19 @@ int TimerCallbackExists(TimerCallbackStruct *timer, TimerCallback callback)
 }
 
 /*
-function: frees up the array callback position
-input: timer instance, the callback
-output: return 0 if successful
-*/
+ * function: frees up the array callback position
+ * input: timer instance, the callback
+ * output: n/a
+ * return: return 0 if successful
+ */
 int TimerCallbackDelete(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
-    while(timer->Instance[i].callback != callback) {
-		if( i == timer->timerLastIndex) {
+    while(timer->Instance[i].callback != callback)
+    {
+		if( i == timer->timerLastIndex)
+		{
 			return 1; // callback not found
 		}
 		i++;
@@ -487,15 +543,17 @@ int TimerCallbackDelete(TimerCallbackStruct *timer, TimerCallback callback)
 
 
 /*
-function: Call this function from SysTick_Handler() in stm32f1xx_it.c
-input: timer instance
-output: none
-*/
+ * function: Call this function from SysTick_Handler() in stm32f1xx_it.c
+ * input: timer instance
+ * output: n/a
+ * return: n/a
+ */
 void TimerCallbackTick(TimerCallbackStruct *timer)
 {
 	int i = 0;
 
-	while(i != timer->timerLastIndex) { // iterate through all arrays
+	while(i != timer->timerLastIndex) // iterate through all arrays
+	{
         if (timer->Instance[i].callback != 0)
         {
             if (timer->Instance[i].timerTimeoutEnable) // check if shutdown is enabled
@@ -521,19 +579,23 @@ void TimerCallbackTick(TimerCallbackStruct *timer)
 }
 
 /*
-function: Polling routine to check if time has been reached and jumps to callback function.
-				Will enter and exit on each array pointer increment. This is to reduce doing multiple callback functions in one call.
-				Call this function from polling routine.
-input: timer instance
-output: none
-*/
+ * function: Polling routine to check if time has been reached and jumps to callback function.
+ *				Will enter and exit on each array pointer increment. This is to reduce doing multiple callback functions in one call.
+ *				Call this function from polling routine.
+ * input: timer instance
+ * output: n/a
+ * return: n/a
+ */
 void TimerCallbackPoll(TimerCallbackStruct *timer)
 {
 	int i = 0; // the array pointer
 
-	while(i != timer->timerLastIndex) {
-	    if(timer->Instance[i].timerTimeoutEnable == 1) { // check for shutdown first
-	        if(timer->Instance[i].timerTimeoutTick >= timer[i].Instance[i].timerTimeoutValue) {
+	while(i != timer->timerLastIndex)
+	{
+	    if(timer->Instance[i].timerTimeoutEnable == 1) // check for shutdown first
+	    {
+	        if(timer->Instance[i].timerTimeoutTick >= timer[i].Instance[i].timerTimeoutValue)
+	        {
 	        	timer->Instance[i].timerTimeoutTick = 0;
 	        	timer->Instance[i].timerEnabled = 0; // disable timer
 
@@ -555,7 +617,8 @@ void TimerCallbackPoll(TimerCallbackStruct *timer)
 	    }
 
 		if(timer->Instance[i].timerEnabled) {// timer or repetition is enabled
-			if(timer->Instance[i].timerTick >= timer->Instance[i].timerValue) {
+			if(timer->Instance[i].timerTick >= timer->Instance[i].timerValue)
+			{
 				timer->Instance[i].timerTick = 0;// clear timer
 				timer->Instance[i].callback();// jump to callback function
 				if(timer->Instance[i].timerRepetitionEnable) // new 4-27-2022
@@ -570,7 +633,8 @@ void TimerCallbackPoll(TimerCallbackStruct *timer)
 						}
 				    }
 				}
-				if(timer->Instance[i].timerRepeat == TIMER_NO_REPEAT) {// if no repeat then disable timer for this function
+				if(timer->Instance[i].timerRepeat == TIMER_NO_REPEAT) // if no repeat then disable timer for this function
+				{
 					timer->Instance[i].timerEnabled = 0; // disable timer
 
 					if(timer->Instance[i].timerCallback2Enabled)// new 12-25-2022
@@ -588,17 +652,21 @@ void TimerCallbackPoll(TimerCallbackStruct *timer)
 }
 
 /*
-function: When a callback is deleted, this will sort and remove any blank callback in between other callbacks in timerCallback array.
-input: timer instance
-output: none
-*/
+ * function: When a callback is deleted, this will sort and remove any blank callback in between other callbacks in timerCallback array.
+ * input: timer instance
+ * output: n/a
+ * return: n/a
+ */
 static void TimerCallbackSort(TimerCallbackStruct *timer)
 {
 	int i = 0;
 
-	while(i != timer->timerLastIndex - 1) { // go through all callbacks
-		if(timer->Instance[i].callback == 0) { // found zero at this index
-			if(timer->Instance[i+1].callback != 0) { // make sure next index is not zero.
+	while(i != timer->timerLastIndex - 1) // go through all callbacks
+	{
+		if(timer->Instance[i].callback == 0) // found zero at this index
+		{
+			if(timer->Instance[i+1].callback != 0)  // make sure next index is not zero.
+			{
 				timer->Instance[i].callback = timer->Instance[i+1].callback;// shift following callback down one index
 				timer->Instance[i+1].callback = 0; // now delete callback that was copied
 			}
@@ -608,7 +676,12 @@ static void TimerCallbackSort(TimerCallbackStruct *timer)
 }
 
 /*
- * Description: Used for situations where you can't pass the timer instance. Otherwise call TimerCallbackTick(&timerCallback) instead
+ * function: Used for situations where you can't pass the timer instance.
+			Otherwise call TimerCallbackTick(&timerCallback) instead.
+			Uses the default timerCallback variable defined on top of this file.
+ * input: n/a
+ * output: n/a
+ * return: n/a
  */
 void TimerCallbackHandlerTick(void)
 {
