@@ -616,7 +616,8 @@ void TimerCallbackPoll(TimerCallbackStruct *timer)
 	    	}
 	    }
 
-		if(timer->Instance[i].timerEnabled) {// timer or repetition is enabled
+		if(timer->Instance[i].timerEnabled) // timer or repetition is enabled
+		{
 			if(timer->Instance[i].timerTick >= timer->Instance[i].timerValue)
 			{
 				timer->Instance[i].timerTick = 0;// clear timer
