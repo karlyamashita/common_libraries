@@ -72,9 +72,9 @@ int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, 
 int TimerCallbackDisable(TimerCallbackStruct *timer, TimerCallback callback);
 int TimerCallbackResetTimer(TimerCallbackStruct *timer, TimerCallback callback);
 
-int TimerCallbackStartEventCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut);
-int TimerCallbackIncEventCounter(TimerCallbackStruct *timer, TimerCallback callback);
-int TimerCallbackGetEventCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *count);
+int TimerCallbackEventStartCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut);
+int TimerCallbackEventIncCounter(TimerCallbackStruct *timer, TimerCallback callback);
+int TimerCallbackEventGetCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *count);
 
 int TimerCallbackDelete(TimerCallbackStruct *timer, TimerCallback callback);
 int TimerCallbackGetCurrentTimerValue(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *timerValue);

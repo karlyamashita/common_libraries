@@ -357,7 +357,7 @@ int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, 
 	return 0;
 }
 
-int TimerCallbackStartEventCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut)
+int TimerCallbackEventStartCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut)
 {
 	uint8_t i = 0;
 
@@ -385,7 +385,7 @@ int TimerCallbackStartEventCounter(TimerCallbackStruct *timer, TimerCallback cal
  * output: the event count
  * return: return 0 if successful
  */
-int TimerCallbackIncEventCounter(TimerCallbackStruct *timer, TimerCallback callback)
+int TimerCallbackEventIncCounter(TimerCallbackStruct *timer, TimerCallback callback)
 {
 	uint8_t i = 0;
 
@@ -411,7 +411,7 @@ int TimerCallbackIncEventCounter(TimerCallbackStruct *timer, TimerCallback callb
  * output: the event count
  * return: return 0 if successful
  */
-int TimerCallbackGetEventCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *count)
+int TimerCallbackEventGetCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t *count)
 {
 	uint8_t i = 0;
 
