@@ -24,7 +24,11 @@
 #include <ctype.h>
 #define Nop() asm(" NOP ")
 
+// most commonly used. Uncomment if needed.
+//#include "ErrorStatus.h"
 //#include "RingBuffer.h"
+//#include "UART_DMA_Idle_Circular_Drv_STM32.h"
+//#include "StringManip.h"
 //#include "TimerCallback.h"
 
 #include "PollingRoutine.h"
@@ -37,13 +41,17 @@
 void PollingInit(void);
 void PollingRoutine(void);
 
+// uncomment if needed
 /*
 void UART_ParseCommands(UART_DMA_Struct_t *msg);
 void STM32_Ready(UART_DMA_Struct_t *msg);
 */
 
-/* copy these 2 to main.h
+
+/* copy these 3 to main.h
 extern UART_HandleTypeDef huart2;
+
+extern UART_DMA_Struct_t uart2_msg; // uses USART2, but can be changed
 extern TimerCallbackStruct timerCallback;
 */
 
