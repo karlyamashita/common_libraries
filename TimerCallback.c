@@ -357,6 +357,13 @@ int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, 
 	return 0;
 }
 
+/*
+ * function:	Starts the Event Counter. On first call to TimerCallbackEventIncCounter, will trigger to start the timeout. 
+				Each call to TimerCallbackEventIncCounter will reset the timeout count. If no more calls to TimerCallbackEventIncCounter and 
+				it times out, then the callback is called. In the callback, you can call TimerCallbackEventGetCounter to get the counter value.
+ * input: timer instance, the callback, the timeout.
+ * output: return 0 if successful
+ */
 int TimerCallbackEventStartCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut)
 {
 	uint8_t i = 0;
