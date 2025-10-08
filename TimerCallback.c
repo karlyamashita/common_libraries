@@ -684,9 +684,9 @@ static void TimerCallbackSort(TimerCallbackStruct *timer)
 }
 
 /*
- * function: Used for situations where you can't pass the timer instance.
+ * function: Used in situations where you can't pass the timer instance.
 			Otherwise call TimerCallbackTick(&timerCallback) instead.
-			Uses the default timerCallback variable defined on top of this file.
+			This function uses the default timerCallback variable defined on top of this file.
  * input: n/a
  * output: n/a
  * return: n/a
