@@ -16,6 +16,6 @@ typedef struct
 	SystemTickCallback callback;
 }SystemTick_t;
 
-void SystmeTickCallbackRegister(SystemTick_t *sysTick, void *callback);
+void SystemTickCallbackRegister(SystemTick_t *sysTick, void *callback);
 
 #endif /* INC_SYSTEMTICK_HANDLER_STM32_H_ */
