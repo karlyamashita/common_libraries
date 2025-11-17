@@ -27,12 +27,12 @@ SystemTick_t sysTick = {0};
  */
 void HAL_IncTick(void)
 {
-  uwTick += (uint32_t)uwTickFreq;
+	uwTick += (uint32_t)uwTickFreq;
 
-  if(sysTick.callback != NULL)
-  {
+	if(sysTick.callback != NULL)
+	{
 	  sysTick.callback();
-  }
+	}
 }
 
 /*
