@@ -1,3 +1,18 @@
+
+/*
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 Karl Yamashita
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+ */
+
 /*
  * PollingRoutine.h
  *
@@ -29,7 +44,6 @@
 //#include "RingBuffer.h"
 //#include "UART_DMA_Idle_Circular_Drv_STM32.h"
 //#include "StringManip.h"
-//#include "SystemTick_Handler_STM32.h"
 //#include "TimerCallback.h"
 
 #include "PollingRoutine.h"
@@ -42,18 +56,14 @@
 void PollingInit(void);
 void PollingRoutine(void);
 
-// uncomment if needed
-/*
-void UART_ParseCommands(UART_DMA_Struct_t *msg);
-void STM32_Ready(UART_DMA_Struct_t *msg);
-*/
+void USB_Parse(USB_MsgStruct *msg) ;
+void CAN_Parse(CAN_MsgStruct *msg);
 
+void CAN_BTR_Get(CAN_MsgStruct *hcan);
+int CAN_BTR_Set(CAN_MsgStruct *hcan, uint8_t *data);
+void APB1_Frequency_Get(char *retStr);
+void SendStringInfo(uint8_t cmd, char *msg);
+void InnoMakerReady(void);
 
-/* copy these 3 to main.h
-extern UART_HandleTypeDef huart2;
-
-extern UART_DMA_Struct_t uart2_msg; // uses USART2, but can be changed
-extern TimerCallbackStruct timerCallback;
-*/
 
 #endif /* INC_POLLINGROUTINE_H_ */

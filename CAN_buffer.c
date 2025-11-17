@@ -1,9 +1,23 @@
+/*
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 Karl Yamashita
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+ */
+
 // by Karl Yamashita September 2017
 
 #include "main.h"
 
 
-HAL_StatusTypeDef CAN_Status; // make it global for debugger window
+HAL_StatusTypeDef can_status; // make it global for debugger window
 /*
  * Description: Send available Tx queue
  */
@@ -15,10 +29,11 @@ int CAN_SendMessage(CAN_MsgStruct *msg)
 	if(msg->txPtr.cnt_Handle) // send available message
 	{
 		ptr = &msg->txQueue[msg->txPtr.index_OUT];
-		CAN_Status = HAL_CAN_AddTxMessage(msg->hcan, &ptr->header, ptr->data, &CAN_Tx_Mailboxes);
-		if (CAN_Status == HAL_OK)
+		can_status = HAL_CAN_AddTxMessage(msg->hcan, &ptr->header, ptr->data, &CAN_Tx_Mailboxes);
+		if (can_status == HAL_OK)
 		{
 			RingBuff_Ptr_Output(&msg->txPtr, msg->txQueueSize); // increment queue ptr
+			msg->txCounter += 1;
 		}
 	}
 

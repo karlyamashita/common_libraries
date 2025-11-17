@@ -1,4 +1,18 @@
 /*
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 Karl Yamashita
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+ */
+
+/*
 
 Creates a timer and will callback a function when timer reaches threshold value.
 
@@ -357,13 +371,6 @@ int TimerCallbackTimerStart(TimerCallbackStruct *timer, TimerCallback callback, 
 	return 0;
 }
 
-/*
- * function:	Starts the Event Counter. On first call to TimerCallbackEventIncCounter, will trigger to start the timeout. 
-				Each call to TimerCallbackEventIncCounter will reset the timeout count. If no more calls to TimerCallbackEventIncCounter and 
-				it times out, then the callback is called. In the callback, you can call TimerCallbackEventGetCounter to get the counter value.
- * input: timer instance, the callback, the timeout.
- * output: return 0 if successful
- */
 int TimerCallbackEventStartCounter(TimerCallbackStruct *timer, TimerCallback callback, uint32_t timeOut)
 {
 	uint8_t i = 0;
@@ -684,9 +691,9 @@ static void TimerCallbackSort(TimerCallbackStruct *timer)
 }
 
 /*
- * function: Used in situations where you can't pass the timer instance.
+ * function: Used for situations where you can't pass the timer instance.
 			Otherwise call TimerCallbackTick(&timerCallback) instead.
-			This function uses the default timerCallback variable defined on top of this file.
+			Uses the default timerCallback variable defined on top of this file.
  * input: n/a
  * output: n/a
  * return: n/a

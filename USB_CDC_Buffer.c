@@ -1,98 +1,101 @@
 /*
- * USB_CDC_Buffer.c
- *
- *  Created on: Jan 22, 2023
- *      Author: codek
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 Karl Yamashita
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
  */
 
 #include "main.h"
-#include "USB_CDC_Buffer.h"
 #include "usbd_cdc_if.h"
 
-// init usb message buffer
-USB_CDC_MsgStruct usbMsg =
+
+
+// poll this to check if usb data is available to send
+int USB_SendMessage(USB_MsgStruct *msg)
 {
-	.rx.msgQueueSize = USB_CDC_QUEUE_SIZE,
-	.tx.msgQueueSize = USB_CDC_QUEUE_SIZE
-};
+	uint8_t USB_Status = USBD_OK;
 
-
-int USB_CDC_AddRxMsg(USB_CDC_MsgStruct *msg, uint8_t *data, uint32_t size)
-{
-	int status = 0;
-	USB_CDC_Data *ptr;
-
-	if(msg->rx.ptr.cnt_OverFlow > 0)
+	if(msg->txPtr.cnt_Handle) // send available message
 	{
-		return 1; // overflow
+		USB_Status = CDC_Transmit_FS(msg->txQueue[msg->txPtr.index_OUT].Byte.data, ID_AND_SIZE_LENGTH + msg->txQueue[msg->txPtr.index_OUT].Status.size);
+		if (USB_Status == USBD_OK) // make sure data was sent before incrementing pointer
+		{
+			RingBuff_Ptr_Output(&msg->txPtr, msg->txQueueSize); // increment output buffer ptr
+		}
 	}
-
-	ptr = &msg->rx.queue[msg->rx.ptr.index_IN];
-	ptr->Status.size = size;
-	memcpy(&ptr->Byte.data, data, size);
-
-	RingBuff_Ptr_Input(&msg->rx.ptr, msg->rx.msgQueueSize);
-
-	return status;
+	return msg->txPtr.cnt_Handle; // if no more message to handle then 0 will be returned
 }
 
-int USB_CDC_MsgRdy(USB_CDC_MsgStruct *msg)
+// adds data to USB Tx buffer
+void USB_AddTxBuffer(USB_MsgStruct *msg, USB_Data_t *data)
 {
-	int status = 1;
+	int i = 0;
 
-	if(msg->rx.ptr.cnt_Handle)
+	memset(&msg->txQueue[msg->txPtr.index_IN], 0, sizeof(msg->txQueue[msg->txPtr.index_IN]));
+	for(i = 0; i < (ID_AND_SIZE_LENGTH + data->Status.size); i++)
 	{
-		msg->rx.msgToParse = &msg->rx.queue[msg->rx.ptr.index_OUT];
-		RingBuff_Ptr_Output(&msg->rx.ptr, msg->rx.msgQueueSize);
+		msg->txQueue[msg->txPtr.index_IN].Byte.data[i] = data->Byte.data[i];
 	}
-	else
-	{
-		status = 0; // no new message
-	}
-
-	return status;
+	msg->txQueue[msg->txPtr.index_IN].Status.size = data->Status.size;
+	RingBuff_Ptr_Input(&msg->txPtr, msg->txQueueSize);
 }
 
-int USB_CDC_AddTxMsg(USB_CDC_MsgStruct *msg, USB_CDC_Data *msgIn)
+// add data to USB Rx buffer
+void USB_AddRxBuffer(USB_MsgStruct *msg, uint8_t *data, uint32_t size)
 {
-	USB_CDC_Data *ptr;
+	int i = 0;
 
-	if(msg->tx.ptr.cnt_OverFlow > 0)
+	memset(&msg->rxQueue[msg->rxPtr.index_IN], 0, sizeof(msg->rxQueue[msg->rxPtr.index_IN]));
+	for(i = 0; i < size; i++)
 	{
+		msg->rxQueue[msg->rxPtr.index_IN].Byte.data[i] = data[i];
+	}
+
+	msg->rxQueue[msg->rxPtr.index_IN].Status.size = size;
+
+	RingBuff_Ptr_Input(&msg->rxPtr, msg->rxQueueSize);
+}
+
+/*
+ * Check for USB Rx message
+ * Input data: pointer to array to save data from Rx buffer
+ * Output return 1 if data available, 0 if no data
+ */
+uint8_t USB_DataAvailable(USB_MsgStruct *msg)
+{
+	if(msg->rxPtr.cnt_Handle)
+	{
+		msg->msgToParse = &msg->rxQueue[msg->rxPtr.index_OUT];
+		RingBuff_Ptr_Output(&msg->rxPtr, msg->rxQueueSize);
 		return 1;
 	}
 
-	ptr = &msg->tx.queue[msg->tx.ptr.index_IN];
-	ptr->Status.size = msgIn->Status.size;
-	memcpy(&ptr->Byte.data, msgIn->Byte.data, msgIn->Status.size);
-
-	RingBuff_Ptr_Input(&msg->tx.ptr, msg->tx.msgQueueSize);
-
 	return 0;
 }
 
-int USB_CDC_SendMsg(USB_CDC_MsgStruct *msg)
+
+/*
+ * Example initializing usb instance
+
+
+#define USB_QUEUE_SIZE 16
+USB_Data_t usbRxQueue[USB_QUEUE_SIZE] = {0};
+USB_Data_t usbTxQueue[USB_QUEUE_SIZE] = {0};
+
+USB_MsgStruct usb_msg =
 {
-	USB_CDC_Data *ptr;
+	.rx.queue = usbRxQueue,
+	.rx.queueSize = USB_QUEUE_SIZE,
+	.tx.queue = usbTxQueue,
+	.tx.queueSize = USB_QUEUE_SIZE
+};
 
-	if(msg->tx.ptr.cnt_Handle)
-	{
-		ptr = &msg->tx.queue[msg->tx.ptr.index_OUT];
-#if (DEVICE_HS == 1)
-		if(CDC_Transmit_HS(ptr->Byte.data, ptr->Status.size) == 0)
-#else
-		if(CDC_Transmit_HS(ptr->Byte.data, ptr->Status.size) == 0)
 
-#endif
-		{
-			RingBuff_Ptr_Output(&msg->tx.ptr, msg->tx.msgQueueSize);
-		}
-		else
-		{
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
+ */
