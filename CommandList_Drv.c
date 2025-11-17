@@ -35,23 +35,23 @@ void Command_List_Poll(void)
 	CommandData_t cData = {0};
 
 	// copy command
-	snprintf((char*)cData.data, COMMAND_NAME_MAX_SIZE, "> %s\r\n", Command_List[cmdPtr].cmd);
+	snprintf((char*)cData.data, COMMAND_NAME_MAX_SIZE, "> %s\r\n", command_list_array[cmdPtr].cmd);
 
 	// copy description
-	if(Command_List[cmdPtr].description[0] != '\0')
+	if(command_list_array[cmdPtr].description[0] != '\0')
 	{
-		sprintf((char*)str2, "<DESCRIPTION> %s\r\n", Command_List[cmdPtr].description);
+		sprintf((char*)str2, "<DESCRIPTION> %s\r\n", command_list_array[cmdPtr].description);
 	}
 	strcat((char*)cData.data, str2);
 
 	// copy min,max, flags
-	sprintf(str2, "<ARG> min:%d, max:%d, flags:%d\r\n", Command_List[cmdPtr].min_args, Command_List[cmdPtr].max_args, Command_List[cmdPtr].flags);
+	sprintf(str2, "<ARG> min:%d, max:%d, flags:%d\r\n", command_list_array[cmdPtr].min_args, command_list_array[cmdPtr].max_args, command_list_array[cmdPtr].flags);
 	strcat((char*)cData.data, str2);
 
 	// copy syntax
-	if(Command_List[cmdPtr].syntax != NULL)
+	if(command_list_array[cmdPtr].syntax != NULL)
 	{
-		snprintf(str2, UART_DMA_QUEUE_DATA_SIZE, "%s\r\n", (char*)Command_List[cmdPtr].syntax);
+		snprintf(str2, UART_DMA_QUEUE_DATA_SIZE, "%s\r\n", (char*)command_list_array[cmdPtr].syntax);
 		strcat((char*)cData.data, str2);
 	}
 
@@ -62,7 +62,7 @@ void Command_List_Poll(void)
 	}
 	Command_ListNotify(&cData); // see notes at bottom of this file
 
-	if(++cmdPtr == (CommandList_array_size/element_size))
+	if(++cmdPtr == (commandList_array_size/commandList_element_size))
 	{
 		memset(&cData, 0, sizeof(cData));
 		TimerCallbackDisable(&timerCallback, Command_List_Poll);
@@ -73,6 +73,41 @@ void Command_List_Poll(void)
 	}
 }
 
+/*
+ * Description: Parse through Command List Array for matching command.
+ *
+ */
+int Command_List_Parse(char *msg, char *retStr)
+{
+	int status = NO_ERROR;
+	char *token;
+	char *rest = msg;
+	char delim[] = " ?:,\r";
+	char strcpy[64] = {0};
+	int i = 0;
+	int totalElements = commandList_array_size / commandList_element_size;
+	char *result;
+
+	memcpy(&strcpy, msg, strlen(msg));
+
+	// get command
+	token = strtok_r(rest, delim, &rest);
+
+	for(i = 0; i < totalElements; i++)
+	{
+		result = strstr(command_list_array[i].cmd, token);
+		if(result)
+		{
+			rest = strcpy;
+			rest += strlen(token);
+			status = command_list_array[i].func(rest, retStr);
+			return status;
+		}
+	}
+	status = COMMAND_UNKNOWN;
+
+	return status;
+}
 
 /*
  * User will need to create a function (Command_ListNotify) to receive CommandData_t data structure.
@@ -85,6 +120,7 @@ int Command_ListNotify(CommandData_t *msg)
 	int status = NO_ERROR;
 
 	// User will need to send msg using the uC UART transmit driver.
+	UART_DMA_NotifyUser(&uart2_msg, (char*)msg->data, msg->size, true);
 
 	return status;
 }

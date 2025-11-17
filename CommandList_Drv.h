@@ -39,11 +39,11 @@ typedef struct// __Command_t
 }Command_t;
 
 
-#define CMD_HELP DECLARE_CMD("help", 0, 0, 0, Command_List_Print, "show available commands", "")
+#define CMD_HELP DECLARE_CMD("help", 0, 0, 0, Command_List_Print, "show available commands", "help?")
 
 
 void Command_List_Poll(void);
 int Command_List_Print(char *msg, char *retStr);
-
+int Command_List_Parse(char *msg, char *retStr);
 
 #endif /* INC_COMMANDLIST_DRV_H_ */
