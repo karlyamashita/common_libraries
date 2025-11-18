@@ -21,24 +21,26 @@
  */
 float L5_11_to_Float(uint16_t wordValue)
 {
-    float floatValue;
-     int8_t exponent = wordValue>>11; // extract exponent as MS 5 bits
-     int16_t mantissa = wordValue & 0x7ff; // extract mantissa as LS 11 bits
-     double powValue;
+	float floatValue;
+	int8_t exponent = wordValue>>11; // extract exponent as MS 5 bits
+	int16_t mantissa = wordValue & 0x7ff; // extract mantissa as LS 11 bits
+	double powValue;
 
-     // sign extend exponent from 5 to 8 bits
-     if( exponent > 0x0F ){
-         exponent |= 0xE0;
-     }
-     // sign extend mantissa from 11 to 16 bits
-     if( mantissa > 0x03FF ){
-         mantissa |= 0xF800;
-     }
+	// sign extend exponent from 5 to 8 bits
+	if( exponent > 0x0F )
+	{
+		exponent |= 0xE0;
+	}
+	// sign extend mantissa from 11 to 16 bits
+	if( mantissa > 0x03FF )
+	{
+		mantissa |= 0xF800;
+	}
 
-     powValue = pow(2, exponent); // compute value as mantissa * 2^(exponent)
+	powValue = pow(2, exponent); // compute value as mantissa * 2^(exponent)
 
-     floatValue = mantissa * powValue;
-     return floatValue;
+	floatValue = mantissa * powValue;
+	return floatValue;
 }
 
 /*
@@ -47,7 +49,7 @@ float L5_11_to_Float(uint16_t wordValue)
  */
 uint16_t Float_to_L11(float input_val)
 {
-     uint16_t uExponent;
+	int uExponent;
      uint16_t uMantissa;
 
      // set exponent to -16
@@ -65,12 +67,12 @@ uint16_t Float_to_L11(float input_val)
          mantissa = (int)(input_val / pow(2.0, exponent));
      } while (exponent < +15);
 
-     // Format the exponent of the L11
      uExponent = exponent << 11;
      // Format the mantissa of the L11
-     uMantissa = mantissa & 0x07FF;
+     uMantissa = (mantissa & 0x07FF);
+
      // Compute value as exponent | mantissa
-     return uExponent | uMantissa;
+     return (uint16_t)(uExponent | uMantissa);
 }
 
 
@@ -95,14 +97,14 @@ float L16_to_Float(int exp, uint16_t input_val)
  * Convert a floating point value into a
  * LinearFloat16 formatted word
  */
-uint16_t Float_to_L16(float input_val)
+uint16_t Float_to_L16(int exp, float input_val)
 {
      // The length of the L16 value
      // Read the VOUT_MODE register of your
      // particular device for the value to use
      // LTC3880 = -12
      // LTC2978 = -13
-     int L16_Length = -12;
+     int L16_Length = exp;
      // set exponent to 2^L16_Length
      float exponent = pow(2.0, L16_Length);
      // convert value to uint16 and return
