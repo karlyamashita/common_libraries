@@ -58,9 +58,9 @@ void PollingRoutine(void);
 
 // uncomment if needed
 
-void UART_ParseCommands(UART_DMA_Struct_t *msg);
-void STM32_Ready(UART_DMA_Struct_t *msg);
-
+//void UART_ParseCommands(UART_DMA_Struct_t *msg);
+//void STM32_Ready(UART_DMA_Struct_t *msg);
+//int Version(char *msg, char *retStr)
 
 
 /* copy these 3 to main.h
