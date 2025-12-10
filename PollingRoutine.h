@@ -56,14 +56,19 @@
 void PollingInit(void);
 void PollingRoutine(void);
 
-void USB_Parse(USB_MsgStruct *msg) ;
-void CAN_Parse(CAN_MsgStruct *msg);
+// uncomment if needed
 
-void CAN_BTR_Get(CAN_MsgStruct *hcan);
-int CAN_BTR_Set(CAN_MsgStruct *hcan, uint8_t *data);
-void APB1_Frequency_Get(char *retStr);
-void SendStringInfo(uint8_t cmd, char *msg);
-void InnoMakerReady(void);
+void UART_ParseCommands(UART_DMA_Struct_t *msg);
+void STM32_Ready(UART_DMA_Struct_t *msg);
+
+
+
+/* copy these 3 to main.h
+extern UART_HandleTypeDef huart2;
+
+extern UART_DMA_Struct_t uart2_msg; // uses USART2, but can be changed
+extern TimerCallbackStruct timerCallback;
+*/
 
 
 #endif /* INC_POLLINGROUTINE_H_ */
