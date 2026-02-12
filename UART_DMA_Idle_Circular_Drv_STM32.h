@@ -75,7 +75,7 @@ typedef struct
 	uint32_t packetSize; // for binary packets
 	uint8_t uartType; // UART_ASCII or UART_BINARY, default UART_ASCII
 	uint8_t checksumType; // For use with binary packets. 0 = MOD256, 1 = 16 bit (not implemented yet)
-}__attribute__ ((aligned (32))) RxBuffer_t;
+}RxBuffer_t;
 
 typedef struct
 {
@@ -83,7 +83,7 @@ typedef struct
 	uint32_t queueSize; // The msgQueue size
 	RING_BUFF_STRUCT txQueuePtr; // tx message queue pointer
 	bool txPending; // flag to indicate if HAL transmit is busy. HAL_UART_TxCpltCallback will clear this flag
-}__attribute__ ((aligned (32))) TxBuffer_t;
+}TxBuffer_t;
 
 typedef struct
 {
@@ -91,7 +91,7 @@ typedef struct
 	DMA_Buffer_t dma;
 	RxBuffer_t rx;
 	TxBuffer_t tx;
-}UART_DMA_Struct_t;
+}volatile UART_DMA_Struct_t;
 
 
 void UART_DMA_EnableRxInterruptIdle(UART_DMA_Struct_t *msg);
@@ -105,6 +105,5 @@ void UART_DMA_PrintReply(UART_DMA_Struct_t *msg, char *msg_copy, char *msg2);
 
 void UART_DMA_TX_AddDataToBuffer(UART_DMA_Struct_t *msg, uint8_t *data, uint32_t size);
 void UART_DMA_SendMessage(UART_DMA_Struct_t * msg);
-
 
 #endif /* INC_UART_DMA_HANDLER_H_ */
