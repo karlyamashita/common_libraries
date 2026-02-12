@@ -22,7 +22,6 @@
 */
 
 #include "main.h"
-#include "ringBuffer.h"
 
 
 void RingBuff_Ptr_Reset(RING_BUFF_STRUCT *ptr)
@@ -80,4 +79,18 @@ int RingBuff_Ptr_Output(RING_BUFF_STRUCT *ptr, uint32_t bufferSize)
 	}
 
 	return status;
+}
+
+/*
+ Use volatile pointers for the RingBuff_Ptr_Input and RingBuff_Ptr_Output functions since these functions will be called from the IRQ handler and PollingRoutine. 
+ The volatile keyword will prevent the compiler from optimizing out necessary reads/writes to the pointer variables that are shared between the IRQ handler and PollingRoutine.
+*/
+int RingBuff_Ptr_Input_V(volatile RING_BUFF_STRUCT *ptr, uint32_t bufferSize)
+{
+	return RingBuff_Ptr_Input((RING_BUFF_STRUCT *)ptr, bufferSize);
+}
+
+int RingBuff_Ptr_Output_V(volatile RING_BUFF_STRUCT *ptr, uint32_t bufferSize)
+{
+	return RingBuff_Ptr_Output((RING_BUFF_STRUCT *)ptr, bufferSize);
 }

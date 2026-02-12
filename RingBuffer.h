@@ -32,6 +32,8 @@ typedef struct
 void RingBuff_Ptr_Reset(RING_BUFF_STRUCT *ptr);
 int RingBuff_Ptr_Input(RING_BUFF_STRUCT *ptr, uint32_t bufferSize);
 int RingBuff_Ptr_Output(RING_BUFF_STRUCT *ptr, uint32_t bufferSize);
+int RingBuff_Ptr_Input_V(volatile RING_BUFF_STRUCT *ptr, uint32_t bufferSize);
+int RingBuff_Ptr_Output_V(volatile RING_BUFF_STRUCT *ptr, uint32_t bufferSize);
 
 
 
