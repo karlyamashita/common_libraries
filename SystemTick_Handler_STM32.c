@@ -46,3 +46,11 @@ void SystemTickCallbackRegister(SystemTick_t *sysTick, void *callback)
 	sysTick->callback = callback;
 }
 
+// HAL2 - Overrides the weak function. Be sure to register the callback using SystemTickCallbackRegister().
+void HAL_CORTEX_SYSTICK_Callback(void)
+{
+	if(sysTick.callback != NULL)
+	{
+		sysTick.callback();
+	}
+}
