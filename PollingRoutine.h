@@ -44,6 +44,7 @@
 //#include "RingBuffer.h"
 //#include "UART_DMA_Idle_Circular_Drv_STM32.h"
 //#include "StringManip.h"
+//#include "SystemTick_Handler_STM32.h"
 //#include "TimerCallback.h"
 
 #include "PollingRoutine.h"
@@ -60,7 +61,7 @@ void PollingRoutine(void);
 
 //void UART_ParseCommands(UART_DMA_Struct_t *msg);
 //void STM32_Ready(UART_DMA_Struct_t *msg);
-//int Version(char *msg, char *retStr)
+//int Version(char *msg, char *retStr);
 
 
 /* copy these 3 to main.h
