@@ -6,7 +6,7 @@
  */
 
 #include "main.h"
-#include "Modulo256Checksum.h"
+
 
 /*
  * Description: Validate checksum using modulo 256
@@ -14,7 +14,8 @@
  * Output: true if valid checksum else false
  *
  */
-int ValidateChkSum(uint8_t *data, uint8_t len){
+int ValidateChkSum(uint8_t *data, uint8_t len)
+{
     uint32_t chksum = 0;
     uint32_t i = 0;
 
@@ -22,6 +23,7 @@ int ValidateChkSum(uint8_t *data, uint8_t len){
     {
         chksum += *data++;
     }
+
     if((chksum % 256) != *data)
     {
         return 1; // bad checksum
@@ -29,6 +31,8 @@ int ValidateChkSum(uint8_t *data, uint8_t len){
 
     return 0; // good checksum
 }
+
+
 
 /*
  * Description: Calculate checksum using modulo 256 and adds checksum to array at last index + 1
@@ -47,4 +51,5 @@ void CalculateChkSum(uint8_t *data, uint8_t len)
     }
     *data = (chksum % 256); // copy checksum to last index
 }
+
 
