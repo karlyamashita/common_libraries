@@ -54,22 +54,60 @@ void UART_DMA_CheckHAL_Status(UART_DMA_Struct_t *msg)
  */
 void UART_DMA_ParseCircularBuffer(UART_DMA_Struct_t *msg)
 {
+	uint32_t i = 0;
+
 	while(msg->dma.circularPtr.cnt_Handle)
 	{
-		msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[msg->dma.queueBytePtr] = msg->dma.circularBuffer[msg->dma.circularPtr.index_OUT];
-		RingBuff_Ptr_Output_V(&msg->dma.circularPtr, UART_DMA_CIRCULAR_SIZE);
-		if(msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[msg->dma.queueBytePtr] == '\n') // Line Feed
+		if(msg->uartType == UART_ASCII)
 		{
-			msg->dma.queueBytePtr += 1;
-			msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[msg->dma.queueBytePtr] = '\0'; // add null
-			msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].size = msg->dma.queueBytePtr;
-			msg->dma.queueBytePtr = 0; // reset
+			msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[msg->dma.queueBytePtr] = msg->dma.circularBuffer[msg->dma.circularPtr.index_OUT];
+			RingBuff_Ptr_Output_V(&msg->dma.circularPtr, UART_DMA_CIRCULAR_SIZE);
+			if(msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[0] == '\0') return; // skip NULL
+			if(msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[msg->dma.queueBytePtr] == '\n') // Line Feed
+			{
+				msg->dma.queueBytePtr += 1;
+				msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[msg->dma.queueBytePtr] = '\0'; // add null
+				msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].size = msg->dma.queueBytePtr;
+				msg->dma.queueBytePtr = 0; // reset
 
-			RingBuff_Ptr_Input_V(&msg->rx.rxQueuePtr, msg->rx.queueSize); // increment queue
+				RingBuff_Ptr_Input_V(&msg->rx.rxQueuePtr, msg->rx.queueSize); // increment queue
+			}
+			else
+			{
+				msg->dma.queueBytePtr++;
+			}
 		}
-		else
+		else if(msg->uartType == UART_BINARY)
 		{
-			msg->dma.queueBytePtr++;
+			msg->dma.tempBuffer[msg->dma.tempBufferBytePtr] =  msg->dma.circularBuffer[msg->dma.circularPtr.index_OUT];
+			RingBuff_Ptr_Output_V(&msg->dma.circularPtr, UART_DMA_CIRCULAR_SIZE);
+			msg->dma.tempBufferBytePtr++;
+
+			if(msg->dma.tempBufferBytePtr >= msg->rx.packetSize)
+			{
+				// verify checksum
+				if(ValidateChkSum((uint8_t*)msg->dma.tempBuffer, UART_BINARY_PACKET_SIZE) == 0) // 0 = good
+				{
+					// we have a checksum match so save the packet to the Rx queue buffer
+					for(i = 0; i < msg->rx.packetSize; i++)
+					{
+						msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[i] = msg->dma.tempBuffer[i];
+						RingBuff_Ptr_Output_V(&msg->rx.rxQueuePtr, msg->rx.queueSize);
+					}
+					msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].size = msg->rx.packetSize;
+					RingBuff_Ptr_Input_V(&msg->rx.rxQueuePtr, msg->rx.queueSize); // increment queue
+					msg->dma.tempBufferBytePtr = 0; // reset
+				}
+				else // bad checksum. shift out first byte, decrement msg->dma.queueBytePtr
+				{
+					for(i = 0; i < msg->rx.packetSize - 1; i++)
+					{
+						msg->dma.tempBuffer[i] = msg->dma.tempBuffer[i+1];
+					}
+					msg->dma.tempBufferBytePtr -= 1;
+					return;
+				}
+			}
 		}
 	}
 }
