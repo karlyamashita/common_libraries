@@ -30,10 +30,7 @@
  */
 void UART_DMA_EnableRxInterruptIdle(UART_DMA_Struct_t *msg)
 {
-	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA(
-		(UART_HandleTypeDef *)msg->huart,
-		(uint8_t *)msg->dma.dma_data,
-		UART_DMA_BUFFER_SIZE);
+	msg->rx.hal_status = HAL_UARTEx_ReceiveToIdle_DMA((UART_HandleTypeDef *)msg->huart,	(uint8_t *)msg->dma.dma_data, UART_DMA_BUFFER_SIZE);
 }
 
 /*
@@ -50,6 +47,8 @@ void UART_DMA_CheckHAL_Status(UART_DMA_Struct_t *msg)
 
 /*
  * Description: Parses circular buffer and places bytes into queue until LF is reached.
+ * 				For Binary packets fixed size, the last byte is the CRC byte.
+ * 				For Binary packets with variable length, the 1st bytes is the size of packet. The last byte is the CRC byte.
  * 				Call from Polling Routine.
  */
 void UART_DMA_ParseCircularBuffer(UART_DMA_Struct_t *msg)
@@ -77,36 +76,41 @@ void UART_DMA_ParseCircularBuffer(UART_DMA_Struct_t *msg)
 				msg->dma.queueBytePtr++;
 			}
 		}
-		else if(msg->uartType == UART_BINARY)
+		else if(msg->uartType == UART_BINARY_FIXED)
 		{
-			msg->dma.tempBuffer[msg->dma.tempBufferBytePtr] =  msg->dma.circularBuffer[msg->dma.circularPtr.index_OUT];
+			// Read one byte from circular buffer into tempBuffer
+			msg->dma.tempBuffer[msg->dma.tempBufferBytePtr] = msg->dma.circularBuffer[msg->dma.circularPtr.index_OUT];
 			RingBuff_Ptr_Output_V(&msg->dma.circularPtr, UART_DMA_CIRCULAR_SIZE);
 			msg->dma.tempBufferBytePtr++;
 
+			// When tempBuffer is full, check for valid packet
 			if(msg->dma.tempBufferBytePtr >= msg->rx.packetSize)
 			{
-				// verify checksum
-				if(ValidateChkSum((uint8_t*)msg->dma.tempBuffer, UART_BINARY_PACKET_SIZE) == 0) // 0 = good
-				{
-					// we have a checksum match so save the packet to the Rx queue buffer
-					for(i = 0; i < msg->rx.packetSize; i++)
-					{
-						msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[i] = msg->dma.tempBuffer[i];
-						RingBuff_Ptr_Output_V(&msg->rx.rxQueuePtr, msg->rx.queueSize);
-					}
-					msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].size = msg->rx.packetSize;
-					RingBuff_Ptr_Input_V(&msg->rx.rxQueuePtr, msg->rx.queueSize); // increment queue
-					msg->dma.tempBufferBytePtr = 0; // reset
-				}
-				else // bad checksum. shift out first byte, decrement msg->dma.queueBytePtr
-				{
-					for(i = 0; i < msg->rx.packetSize - 1; i++)
-					{
-						msg->dma.tempBuffer[i] = msg->dma.tempBuffer[i+1];
-					}
-					msg->dma.tempBufferBytePtr -= 1;
-					return;
-				}
+			   int chk = ValidateChkSum((uint8_t*)msg->dma.tempBuffer, msg->rx.packetSize);
+			   if(chk == 0) // 0 = good
+			   {
+				   // Copy valid packet to Rx queue
+				   for(i = 0; i < msg->rx.packetSize; i++)
+				   {
+					   msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].data[i] = msg->dma.tempBuffer[i];
+				   }
+				   msg->rx.msgQueue[msg->rx.rxQueuePtr.index_IN].size = msg->rx.packetSize;
+				   RingBuff_Ptr_Input_V(&msg->rx.rxQueuePtr, msg->rx.queueSize); // increment queue
+				   msg->dma.tempBufferBytePtr = 0; // reset for next packet
+			   }
+			   else // bad checksum: shift tempBuffer by one byte, keep pointer at (packetSize-1)
+			   {
+				   for(i = 0; i < msg->rx.packetSize - 1; i++)
+				   {
+					   msg->dma.tempBuffer[i] = msg->dma.tempBuffer[i+1];
+				   }
+				   msg->dma.tempBufferBytePtr -= 1;
+				   // Do NOT skip a byte in the circular buffer; next loop will add next byte
+			   }
+			}
+			else if(msg->uartType == UART_BINARY_VARIABLE_8)
+			{
+				// work in progress
 			}
 		}
 	}

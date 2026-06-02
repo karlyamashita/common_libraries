@@ -23,9 +23,9 @@
 #define INC_UART_DMA_HANDLER_H_
 
 // USER DEFINES User can adjust these defines to fit their project requirements
-#define UART_DMA_BUFFER_SIZE 16 // the DMA buffer size.
-#define UART_DMA_CIRCULAR_SIZE 64 // circular buffer size
-#define UART_DMA_QUEUE_DATA_SIZE 72 // max packet/message size
+#define UART_DMA_BUFFER_SIZE 32 // the DMA buffer size.
+#define UART_DMA_CIRCULAR_SIZE 256 // circular buffer size
+#define UART_DMA_QUEUE_DATA_SIZE 128 // max packet/message size
 #define UART_BINARY_PACKET_SIZE 10 //
 
 // END USER DEFINES
