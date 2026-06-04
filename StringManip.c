@@ -125,3 +125,16 @@ void ToUpper(char *str)
     }
 }
 
+int IsAllDigits(const char *str)
+{
+    if (*str == '\0') return 0; // Handle empty string case
+    while (*str)
+    {
+        if (!isdigit((unsigned char)*str))
+        {
+            return 0; // Found a non-digit
+        }
+        str++;
+    }
+    return 1; // All characters were digits
+}
