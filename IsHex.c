@@ -16,13 +16,13 @@ bool IsHex(char *msg, uint32_t *dataOut)
     if(strncmp(msg, "0x", strlen("0x")) == 0)
     {
         msg += strlen("0x");
-        *dataOut = strtol(msg, NULL, 16);
+        *dataOut = (uint32_t)strtoul(msg, NULL, 16);
                 
         return true;
     }
     else
     {
-        *dataOut = atoi(msg);
+        *dataOut = (uint32_t)strtoul(msg, NULL, 10);
     }
     
     return false;
